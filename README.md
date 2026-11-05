@@ -8,11 +8,14 @@ Claude Code plugins by [@ovski4](https://github.com/ovski4).
 
 ## Install
 
-Install a plugin by its name:
+In Claude Code, add this repository as a marketplace once, then install a plugin by its name:
 
 ```
-/plugin install <plugin> --marketplace ovski4/claude-plugins
+/plugin marketplace add ovski4/claude-plugins
+/plugin install <plugin>@ovski4
 ```
+
+Later versions arrive with `/plugin marketplace update ovski4`.
 
 Then start a new session: a plugin loads when a session starts.
 

@@ -9,7 +9,8 @@ Makes Claude work top-down: big picture first, then tasks and sub-tasks until ea
 ## Install
 
 ```
-/plugin install todo --marketplace ovski4/claude-plugins
+/plugin marketplace add ovski4/claude-plugins
+/plugin install todo@ovski4
 ```
 
 Then start a new session: the plugin loads when a session starts.
