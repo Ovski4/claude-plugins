@@ -1,0 +1,11 @@
+{
+  "name": "ovski4",
+  "owner": { "name": "Baptiste Bouchereau", "url": "https://github.com/ovski4" },
+  "plugins": [
+    {
+      "name": "todo",
+      "source": "./plugins/todo",
+      "description": "The big-picture working method, and /todo to show its remaining-work tree in a panel without asking the model"
+    }
+  ]
+}
