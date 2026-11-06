@@ -41,7 +41,9 @@ Other ways to cut a leaf: a pure move or refactor in its own step (a reviewer on
 The remaining work lives in this session's tree file (path below). The user reads it with `/todo`, which opens it in a panel without going through the model.
 
 - A numbered list that mirrors the breakdown: the big goal on top, its parts numbered (1, 2, 3), sub-tasks nested (2.1, 2.2). Mark what's next. Mark with "(you)" what waits on the user.
-- Remove what's done or dropped, and sum it up in a one-line « Done: » header instead. No strikethrough: struck lines make what's left hard to read.
+- Strike through what's done or dropped, in place (`- ~~2.1 Skeleton~~ committed 5522348`), with a short outcome after it: a commit, a decision, why it was dropped. It stays there, so the user sees what moved and can still answer by its number.
+- Prune only when asked: delete the struck items and sum them up in a one-line « Done: » header at the top. The user can ask for it at any time ("prune the tree").
+- Offer to prune when struck items reach 40 % or more of the tree's items, every numbered item counting once at any depth. Ask in the reply, before the `Next:` line, with the count: "8 of 18 items are done, prune them?". If the user says no, don't ask again until another item gets struck.
 - Add what's discovered. When a new need shows up mid-task, put it in the tree instead of doing it on the spot, unless it blocks the current leaf.
 - Every sub-point on its own line, as a real nested markdown list item (`- 1.2 …`, indented under its parent). A bare `1.2 …` line under a list item is not a list item: markdown joins it to the line above.
 - Keep item numbers stable: never renumber or reorder existing items, append new ones with the next free number. The user answers by number ("skip 3.6"), and a renumbered tree makes that answer point at other items.

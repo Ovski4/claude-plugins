@@ -5,6 +5,7 @@ Makes Claude work top-down: big picture first, then tasks and sub-tasks until ea
 - The rules Claude follows: [`rules/working-method.md`](rules/working-method.md). They are added to Claude's system prompt in every session.
 - The trees: `~/.claude/todo/<session-id>.md` (or `$CLAUDE_CONFIG_DIR/todo/` when that variable is set).
 - Claude's replies end with a `Next:` line instead of the whole tree; type `/todo` to see it.
+- Done items are struck through and stay in the tree. Claude offers to prune them once they reach 40 % of the items; you can also ask for it at any time ("prune the tree").
 
 ## Install
 
