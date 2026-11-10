@@ -1,6 +1,6 @@
 {
   "name": "todo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "The big-picture working method, and /todo to show its remaining-work tree in a panel without asking the model",
   "author": { "name": "Baptiste Bouchereau", "url": "https://github.com/ovski4" },
   "license": "MIT"

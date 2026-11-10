@@ -2,6 +2,42 @@ import type { EngineInterface, Register } from 'claude-code'
 
 const TREE_PANE = 'todo-tree'
 
+// What the person typed in the panel's search field. Module-level, so a plugin
+// reload empties it, which is fine for a search.
+let treeSearchQuery = ''
+
+/**
+ * Keeps the tree's list items whose text contains `query` (any case), with the
+ * parent items above each one so it stays readable; the prose around the list
+ * is dropped. An empty query returns the tree unchanged.
+ */
+export function filterTreeLines(tree: string, query: string): string {
+  const needle = query.trim().toLowerCase()
+  if (!needle) return tree
+
+  const keptLines: string[] = []
+  // The item lines above the current one, one per indentation level.
+  const parentItems: { indent: number; line: string; isKept: boolean }[] = []
+  for (const line of tree.split('\n')) {
+    const listItem = /^(\s*)[-*] /.exec(line)
+    if (!listItem) continue
+    const indent = listItem[1].length
+    while (parentItems.length && parentItems.at(-1)!.indent >= indent)
+      parentItems.pop()
+    const isMatch = line.toLowerCase().includes(needle)
+    if (isMatch) {
+      for (const parent of parentItems.filter(parent => !parent.isKept)) {
+        keptLines.push(parent.line)
+        parent.isKept = true
+      }
+      keptLines.push(line)
+    }
+    parentItems.push({ indent, line, isKept: isMatch })
+  }
+
+  return keptLines.join('\n')
+}
+
 /**
  * Where Claude writes each session's remaining-work tree, one file per session
  * id: `todo/` in Claude Code's config folder, `~/.claude` unless
@@ -77,7 +113,7 @@ export const register: Register = on => {
   })
 
   on('ui.render', { component: 'Pane', requestId: TREE_PANE }, async ($, e) => {
-    const { Box, Button, Markdown, Text } = $.ui.resolve(e)
+    const { Box, Button, Input, Markdown, Text } = $.ui.resolve(e)
     const treePath = await resolveTreePath($)
     const refreshButton = (
       <Button key="refresh" onPress={() => $.ui.invalidate('ui.render')}>
@@ -92,10 +128,29 @@ export const register: Register = on => {
         </Box>
       )
 
+    const filteredTree = filterTreeLines(
+      await $.fs.read(treePath),
+      treeSearchQuery,
+    )
+
     return (
       <Box flexDirection="column">
+        <Input
+          key="search"
+          placeholder="Filter items…"
+          value={treeSearchQuery}
+          onInput={query => {
+            treeSearchQuery = query
+            $.ui.invalidate('ui.render')
+          }}
+          onSubmit={() => {}}
+        />
         {refreshButton}
-        <Markdown text={await $.fs.read(treePath)} />
+        {filteredTree ? (
+          <Markdown text={filteredTree} />
+        ) : (
+          <Text dimColor>No item matches "{treeSearchQuery}".</Text>
+        )}
       </Box>
     )
   })
