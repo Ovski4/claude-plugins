@@ -53,6 +53,25 @@ async function resolveTreePath($: EngineInterface): Promise<string> {
   return `${await resolveTreesDir($)}/${await $.session.id()}.md`
 }
 
+async function composeWorkingMethod($: EngineInterface): Promise<string> {
+  const workingMethod = await $.fs.read(
+    `${$.plugin.root}/rules/working-method.md`,
+  )
+  const treeLocation = `This session's tree file: \`${await resolveTreePath($)}\`. Create it if it doesn't exist yet.`
+
+  return `${workingMethod}\n${treeLocation}`
+}
+
+const WORKING_METHOD_BLOCK = 'todoWorkingMethod'
+
+// Whether the `prompt.context` hook ran, so the working method is in the
+// conversation's context blocks. Module-level: a reload resets it, and
+// `session.start` asks for the context again so it is set back.
+let hasContextBlock = false
+// The session whose conversation got the working method beside a prompt, the
+// fallback for when the `prompt.context` hook never runs.
+let attachedSessionId: string | undefined
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({
@@ -61,6 +80,9 @@ export const register: Register = on => {
       // It only opens a panel, so it can run while Claude is mid-turn.
       immediate: true,
     })
+    // An unchanged block is not sent again, so this only tells this module
+    // whether its `prompt.context` hook still runs.
+    $.ui.invalidate('prompt.context')
 
     return next(e)
   })
@@ -91,25 +113,52 @@ export const register: Register = on => {
     return result
   })
 
-  // The working method the tree belongs to, added after the engine's own
-  // sections with this session's tree path, so the model knows where to write.
-  on('prompt.compose', async ($, e, next) => {
-    const { sections } = await next(e)
-    const workingMethod = await $.fs.read(
-      `${$.plugin.root}/rules/working-method.md`,
-    )
-    const treeLocation = `This session's tree file: \`${await resolveTreePath($)}\`. Create it if it doesn't exist yet.`
+  // The working method the tree belongs to, with this session's tree path so
+  // the model knows where to write: one of the conversation's context blocks,
+  // sent once and again after a compaction.
+  on('prompt.context', async ($, e, next) => {
+    const result = await next(e)
+    hasContextBlock = true
 
     return {
-      sections: [
-        ...sections,
-        {
-          id: 'todo:working-method',
-          text: `${workingMethod}\n${treeLocation}`,
-          scope: 'session',
-        },
+      ...result,
+      blocks: [
+        ...result.blocks.filter(block => block.name !== WORKING_METHOD_BLOCK),
+        { name: WORKING_METHOD_BLOCK, text: await composeWorkingMethod($) },
       ],
     }
+  })
+
+  // In Team and Enterprise organizations, cc-plugin-sec-default sits above
+  // user plugins and continues past their `prompt.compose` hook, and it hooks
+  // `prompt.context` too. It leaves `prompt.submit` alone, so when the hook
+  // above never ran, the working method goes beside the first prompt of each
+  // session instead, where the model reads it and the person doesn't see it.
+  on('prompt.submit', async ($, e, next) => {
+    const sessionId = await $.session.id()
+    // A slash command may never reach the model: wait for a typed prompt.
+    if (hasContextBlock || attachedSessionId === sessionId || e.command)
+      return next(e)
+
+    const workingMethod = await composeWorkingMethod($)
+    const result = await next({
+      ...e,
+      context: [...(e.context ?? []), workingMethod],
+    })
+    if (result.context?.includes(workingMethod)) attachedSessionId = sessionId
+
+    return result
+  })
+
+  // A compaction summarizes the prompt the working method was attached to, so
+  // it is attached again to the next one.
+  on('session.compact', async ($, e, next) => {
+    const result = await next(e)
+    const isMainConversationCompacted =
+      !result.skip && e.trigger !== 'precompute' && !e.agentId
+    if (isMainConversationCompacted) attachedSessionId = undefined
+
+    return result
   })
 
   on('ui.render', { component: 'Pane', requestId: TREE_PANE }, async ($, e) => {
