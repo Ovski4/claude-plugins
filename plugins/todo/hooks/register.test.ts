@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { filterTreeLines } from './register'
+import { filterTreeLines, pruneStruckItems } from './register'
 
 const TREE = `# Title
 
@@ -23,6 +23,27 @@ test('keeps matching items with their parents, drops prose', async () => {
   )
   expect(filterTreeLines(TREE, 'nothing')).toBe('')
   expect(filterTreeLines(TREE, '  ')).toBe(TREE)
+})
+
+test('prunes struck items with their children into the Done header', async () => {
+  expect(
+    pruneStruckItems(`# Title
+
+- ~~1 Skeleton~~ committed 5522348
+  - 1.1 Types
+- 2 Decoder
+  - ~~2.1 Check codec values~~ dropped
+  - 2.2 Test names`),
+  ).toBe(`# Title
+
+Done: 1 Skeleton, 2.1 Check codec values
+
+- 2 Decoder
+  - 2.2 Test names`)
+  expect(pruneStruckItems('Done: 1 Skeleton\n- 2 Decoder\n- ~~3 Errors~~')).toBe(
+    'Done: 1 Skeleton, 3 Errors\n- 2 Decoder',
+  )
+  expect(pruneStruckItems(TREE)).toBe(TREE)
 })
 
 const SUBMISSION = { wait: false, origin: { kind: 'composer' } } as const

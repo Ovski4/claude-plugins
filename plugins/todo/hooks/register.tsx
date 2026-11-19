@@ -38,6 +38,52 @@ export function filterTreeLines(tree: string, query: string): string {
   return keptLines.join('\n')
 }
 
+const STRUCK_ITEM = /^\s*[-*] ~~(?<title>.+?)~~/
+const DONE_HEADER = /^Done: /
+
+/**
+ * Deletes the struck-through list items (`- ~~2.1 Skeleton~~ committed 5522348`),
+ * with everything nested under them, and adds their titles ("2.1 Skeleton") to
+ * the one-line "Done: " header, created under the tree's `#` title (or on the
+ * first line) when missing. A tree without struck items comes back unchanged.
+ */
+export function pruneStruckItems(tree: string): string {
+  const keptLines: string[] = []
+  const prunedTitles: string[] = []
+  // Indentation of the struck item being deleted: deeper lines go with it.
+  let prunedItemIndent: number | undefined
+  for (const line of tree.split('\n')) {
+    const indent = /^\s*/.exec(line)![0].length
+    const isNestedInPrunedItem =
+      prunedItemIndent !== undefined && line.trim() !== '' && indent > prunedItemIndent
+    if (isNestedInPrunedItem) continue
+    prunedItemIndent = undefined
+
+    const struckTitle = STRUCK_ITEM.exec(line)?.groups?.title
+    if (struckTitle) {
+      prunedTitles.push(struckTitle.trim())
+      prunedItemIndent = indent
+      continue
+    }
+    keptLines.push(line)
+  }
+  if (!prunedTitles.length) return tree
+
+  const prunedList = prunedTitles.join(', ')
+  const doneHeaderIndex = keptLines.findIndex(line => DONE_HEADER.test(line))
+  const doneHeader = keptLines[doneHeaderIndex]
+  if (doneHeader !== undefined) {
+    keptLines[doneHeaderIndex] = `${doneHeader.trimEnd()}, ${prunedList}`
+  } else {
+    const titleIndex = keptLines.findIndex(line => line.startsWith('# '))
+    const doneHeaderLines =
+      titleIndex === -1 ? [`Done: ${prunedList}`] : ['', `Done: ${prunedList}`]
+    keptLines.splice(titleIndex + 1, 0, ...doneHeaderLines)
+  }
+
+  return keptLines.join('\n')
+}
+
 /**
  * Where Claude writes each session's remaining-work tree, one file per session
  * id: `todo/` in Claude Code's config folder, `~/.claude` unless
@@ -164,23 +210,12 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: TREE_PANE }, async ($, e) => {
     const { Box, Button, Input, Markdown, Text } = $.ui.resolve(e)
     const treePath = await resolveTreePath($)
-    const refreshButton = (
-      <Button key="refresh" onPress={() => $.ui.invalidate('ui.render')}>
-        Refresh
-      </Button>
-    )
     if (!(await $.fs.exists(treePath)))
-      return (
-        <Box flexDirection="column">
-          {refreshButton}
-          <Text dimColor>No remaining-work tree for this session yet.</Text>
-        </Box>
-      )
+      return <Text dimColor>No remaining-work tree for this session yet.</Text>
 
-    const filteredTree = filterTreeLines(
-      await $.fs.read(treePath),
-      treeSearchQuery,
-    )
+    const tree = await $.fs.read(treePath)
+    const prunedTree = pruneStruckItems(tree)
+    const filteredTree = filterTreeLines(tree, treeSearchQuery)
 
     return (
       <Box flexDirection="column">
@@ -194,7 +229,17 @@ export const register: Register = on => {
           }}
           onSubmit={() => {}}
         />
-        {refreshButton}
+        {prunedTree !== tree && (
+          <Button
+            key="prune"
+            onPress={async () => {
+              await $.fs.write(treePath, prunedTree)
+              $.ui.invalidate('ui.render')
+            }}
+          >
+            Prune done items
+          </Button>
+        )}
         {filteredTree ? (
           <Markdown text={filteredTree} />
         ) : (
