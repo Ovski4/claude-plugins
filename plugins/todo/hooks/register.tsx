@@ -5,6 +5,9 @@ const TREE_PANE = 'todo-tree'
 // What the person typed in the panel's search field. Module-level, so a plugin
 // reload empties it, which is fine for a search.
 let treeSearchQuery = ''
+// Whether the panel unfolds the done items. Module-level like the search: a
+// reload folds them again.
+let isDoneListShown = false
 
 /**
  * Keeps the tree's list items whose text contains `query` (any case), with the
@@ -19,9 +22,8 @@ export function filterTreeLines(tree: string, query: string): string {
   // The item lines above the current one, one per indentation level.
   const parentItems: { indent: number; line: string; isKept: boolean }[] = []
   for (const line of tree.split('\n')) {
-    const listItem = /^(\s*)[-*] /.exec(line)
-    if (!listItem) continue
-    const indent = listItem[1].length
+    if (!/^\s*[-*] /.test(line)) continue
+    const indent = line.length - line.trimStart().length
     while (parentItems.length && parentItems.at(-1)!.indent >= indent)
       parentItems.pop()
     const isMatch = line.toLowerCase().includes(needle)
@@ -38,50 +40,92 @@ export function filterTreeLines(tree: string, query: string): string {
   return keptLines.join('\n')
 }
 
-const STRUCK_ITEM = /^\s*[-*] ~~(?<title>.+?)~~/
-const DONE_HEADER = /^Done: /
+const STRUCK_ITEM = /^\s*[-*] ~~(?<title>.+?)~~(?<outcome>.*)$/
+const DONE_HEADER = /^Done:(?<inlineItems>.*)$/
+const DONE_ITEM = /^[-*] (?<item>.+)$/
+// Separators of a one-line "Done: a · b" header: " · ", or ", " before an item
+// number ("Done: 1 Skeleton, 2.1 Types"), so a comma inside an item stays.
+const INLINE_DONE_SEPARATOR = / · |, (?=\d+(?:\.\d+)* )/
+
+// "2.1 Skeleton — committed 5522348": the struck title, then its outcome.
+function describeStruckItem(title: string, outcome: string): string {
+  const trimmedOutcome = outcome.trim()
+  return trimmedOutcome ? `${title.trim()} — ${trimmedOutcome}` : title.trim()
+}
+
+/**
+ * Splits the tree into what's left and what's done. Done items come from the
+ * "Done:" header (its bullets on the lines below it, or the items of an older
+ * one-line "Done: a · b") and from the struck-through list items, which leave
+ * the remaining tree with everything nested under them.
+ */
+export function splitDoneItems(tree: string): {
+  remainingTree: string
+  doneItems: string[]
+} {
+  const remainingLines: string[] = []
+  const doneItems: string[] = []
+  // Indentation of the struck item being skipped: deeper lines go with it.
+  let struckItemIndent: number | undefined
+  let isInDoneSection = false
+  for (const line of tree.split('\n')) {
+    if (isInDoneSection) {
+      const doneItem = DONE_ITEM.exec(line)?.groups?.item
+      if (doneItem) {
+        doneItems.push(doneItem.trim())
+        continue
+      }
+      isInDoneSection = false
+    }
+    const doneHeader = DONE_HEADER.exec(line)
+    if (doneHeader) {
+      const inlineItems = doneHeader.groups?.inlineItems?.trim()
+      if (inlineItems) doneItems.push(...inlineItems.split(INLINE_DONE_SEPARATOR))
+      else isInDoneSection = true
+      continue
+    }
+
+    const indent = line.length - line.trimStart().length
+    const isNestedInStruckItem =
+      struckItemIndent !== undefined && line.trim() !== '' && indent > struckItemIndent
+    if (isNestedInStruckItem) continue
+    struckItemIndent = undefined
+
+    const struckItem = STRUCK_ITEM.exec(line)?.groups
+    if (struckItem?.title) {
+      doneItems.push(describeStruckItem(struckItem.title, struckItem.outcome ?? ''))
+      struckItemIndent = indent
+      continue
+    }
+    remainingLines.push(line)
+  }
+
+  return { remainingTree: remainingLines.join('\n'), doneItems }
+}
 
 /**
  * Deletes the struck-through list items (`- ~~2.1 Skeleton~~ committed 5522348`),
- * with everything nested under them, and adds their titles ("2.1 Skeleton") to
- * the one-line "Done: " header, created under the tree's `#` title (or on the
- * first line) when missing. A tree without struck items comes back unchanged.
+ * with everything nested under them, and lists them under the "Done:" header,
+ * one bullet each ("- 2.1 Skeleton — committed 5522348"), after the items it
+ * already had. The header goes under the tree's `#` title (or on the first
+ * line). A tree without struck items comes back unchanged.
  */
 export function pruneStruckItems(tree: string): string {
-  const keptLines: string[] = []
-  const prunedTitles: string[] = []
-  // Indentation of the struck item being deleted: deeper lines go with it.
-  let prunedItemIndent: number | undefined
-  for (const line of tree.split('\n')) {
-    const indent = /^\s*/.exec(line)![0].length
-    const isNestedInPrunedItem =
-      prunedItemIndent !== undefined && line.trim() !== '' && indent > prunedItemIndent
-    if (isNestedInPrunedItem) continue
-    prunedItemIndent = undefined
+  if (!tree.split('\n').some(line => STRUCK_ITEM.test(line))) return tree
 
-    const struckTitle = STRUCK_ITEM.exec(line)?.groups?.title
-    if (struckTitle) {
-      prunedTitles.push(struckTitle.trim())
-      prunedItemIndent = indent
-      continue
-    }
-    keptLines.push(line)
-  }
-  if (!prunedTitles.length) return tree
+  const { remainingTree, doneItems } = splitDoneItems(tree)
+  const remainingLines = remainingTree.split('\n')
+  const titleIndex = remainingLines.findIndex(line => line.startsWith('# '))
+  // The empty lines around the old header: one is put back after the section.
+  while (remainingLines[titleIndex + 1] === '') remainingLines.splice(titleIndex + 1, 1)
+  const doneSection = ['Done:', ...doneItems.map(item => `- ${item}`), '']
+  remainingLines.splice(
+    titleIndex + 1,
+    0,
+    ...(titleIndex === -1 ? doneSection : ['', ...doneSection]),
+  )
 
-  const prunedList = prunedTitles.join(', ')
-  const doneHeaderIndex = keptLines.findIndex(line => DONE_HEADER.test(line))
-  const doneHeader = keptLines[doneHeaderIndex]
-  if (doneHeader !== undefined) {
-    keptLines[doneHeaderIndex] = `${doneHeader.trimEnd()}, ${prunedList}`
-  } else {
-    const titleIndex = keptLines.findIndex(line => line.startsWith('# '))
-    const doneHeaderLines =
-      titleIndex === -1 ? [`Done: ${prunedList}`] : ['', `Done: ${prunedList}`]
-    keptLines.splice(titleIndex + 1, 0, ...doneHeaderLines)
-  }
-
-  return keptLines.join('\n')
+  return remainingLines.join('\n')
 }
 
 /**
@@ -215,7 +259,13 @@ export const register: Register = on => {
 
     const tree = await $.fs.read(treePath)
     const prunedTree = pruneStruckItems(tree)
-    const filteredTree = filterTreeLines(tree, treeSearchQuery)
+    // What's left comes first; the done items wait folded under it.
+    const { remainingTree, doneItems } = splitDoneItems(tree)
+    const filteredTree = filterTreeLines(remainingTree, treeSearchQuery)
+    const searchedText = treeSearchQuery.trim().toLowerCase()
+    const shownDoneItems = doneItems.filter(item =>
+      item.toLowerCase().includes(searchedText),
+    )
 
     return (
       <Box flexDirection="column">
@@ -244,6 +294,20 @@ export const register: Register = on => {
           <Markdown text={filteredTree} />
         ) : (
           <Text dimColor>No item matches "{treeSearchQuery}".</Text>
+        )}
+        {shownDoneItems.length > 0 && (
+          <Button
+            key="done"
+            onPress={() => {
+              isDoneListShown = !isDoneListShown
+              $.ui.invalidate('ui.render')
+            }}
+          >
+            {`${isDoneListShown ? '▾' : '▸'} Done (${shownDoneItems.length})`}
+          </Button>
+        )}
+        {isDoneListShown && shownDoneItems.length > 0 && (
+          <Markdown text={shownDoneItems.map(item => `- ${item}`).join('\n')} />
         )}
       </Box>
     )

@@ -1,5 +1,5 @@
 import { expect, test } from 'claude-code/testing'
-import { filterTreeLines, pruneStruckItems } from './register'
+import { filterTreeLines, pruneStruckItems, splitDoneItems } from './register'
 
 const TREE = `# Title
 
@@ -25,7 +25,33 @@ test('keeps matching items with their parents, drops prose', async () => {
   expect(filterTreeLines(TREE, '  ')).toBe(TREE)
 })
 
-test('prunes struck items with their children into the Done header', async () => {
+test('splits the remaining tree from the done items, one-line header included', async () => {
+  expect(
+    splitDoneItems(`# Title
+
+Done: 1 Skeleton, 2.1 Types · NC-12 guard (#80, merged)
+
+- 2 Decoder
+  - ~~2.2 Test names~~ committed 5522348
+    - 2.2.1 Union type
+  - 2.3 Errors`),
+  ).toEqual({
+    remainingTree: `# Title
+
+
+- 2 Decoder
+  - 2.3 Errors`,
+    doneItems: [
+      '1 Skeleton',
+      '2.1 Types',
+      'NC-12 guard (#80, merged)',
+      '2.2 Test names — committed 5522348',
+    ],
+  })
+  expect(splitDoneItems(TREE)).toEqual({ remainingTree: TREE, doneItems: [] })
+})
+
+test('prunes struck items with their children into the Done bullets', async () => {
   expect(
     pruneStruckItems(`# Title
 
@@ -36,13 +62,15 @@ test('prunes struck items with their children into the Done header', async () =>
   - 2.2 Test names`),
   ).toBe(`# Title
 
-Done: 1 Skeleton, 2.1 Check codec values
+Done:
+- 1 Skeleton — committed 5522348
+- 2.1 Check codec values — dropped
 
 - 2 Decoder
   - 2.2 Test names`)
-  expect(pruneStruckItems('Done: 1 Skeleton\n- 2 Decoder\n- ~~3 Errors~~')).toBe(
-    'Done: 1 Skeleton, 3 Errors\n- 2 Decoder',
-  )
+  expect(
+    pruneStruckItems('# Title\n\nDone:\n- 1 Skeleton\n\n- 2 Decoder\n- ~~3 Errors~~'),
+  ).toBe('# Title\n\nDone:\n- 1 Skeleton\n- 3 Errors\n\n- 2 Decoder')
   expect(pruneStruckItems(TREE)).toBe(TREE)
 })
 
