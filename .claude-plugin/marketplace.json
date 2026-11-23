@@ -6,6 +6,11 @@
       "name": "todo",
       "source": "./plugins/todo",
       "description": "The big-picture working method, and /todo to show its remaining-work tree in a panel without asking the model"
+    },
+    {
+      "name": "figma-component-inventory",
+      "source": "./plugins/figma-component-inventory",
+      "description": "/figma-component-inventory draws the annotated component cut of a Figma screen: one outline per component, coloured by its frontend verdict, for the developer to approve"
     }
   ]
 }

@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Découpage en composants</title>
+    <style>
+      :root {
+        --page-background: #ffffff;
+        --text: #1c2430;
+        --text-muted: #5b6676;
+        --halo: #ffffff;
+      }
+      body {
+        margin: 0;
+        padding: 24px 32px 48px;
+        background: var(--page-background);
+        color: var(--text);
+        font: 14px/1.4 system-ui, sans-serif;
+      }
+      h1 {
+        margin: 0;
+        font-size: 18px;
+      }
+      .fingerprint {
+        margin: 4px 0 16px;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      .approval {
+        display: inline-block;
+        margin: 8px 0 0;
+        padding: 2px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--halo);
+        background: var(--to-decide);
+      }
+      .approval.approved {
+        background: var(--reused);
+      }
+      .developer-words {
+        color: var(--text);
+        font-weight: 600;
+      }
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 24px;
+        margin: 0 0 16px;
+        padding: 0;
+        list-style: none;
+      }
+      .legend li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--verdict);
+        font-weight: 600;
+      }
+      .legend svg {
+        width: 36px;
+        height: 12px;
+      }
+      .not-outlined {
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      #cut {
+        display: block;
+        max-width: 100%;
+        height: auto;
+      }
+      /* Every outline is dotted; only the colour tells the verdict. */
+      .outline, .swatch {
+        fill: none;
+        stroke: var(--verdict);
+        stroke-width: 2;
+        stroke-dasharray: 2 3;
+      }
+      .explanations {
+        max-width: 900px;
+        margin: 24px 0 8px;
+        padding: 0;
+        list-style: none;
+      }
+      .explanations li {
+        margin-bottom: 10px;
+        padding-left: 12px;
+        border-left: 3px solid var(--verdict);
+      }
+      .explanations strong {
+        color: var(--verdict);
+      }
+      .outline-halo {
+        fill: none;
+        stroke: var(--halo);
+        stroke-width: 4;
+        stroke-opacity: 0.85;
+      }
+      .leader {
+        stroke: var(--verdict);
+        stroke-width: 1;
+        stroke-dasharray: none;
+      }
+      .leader-end, .badge {
+        fill: var(--verdict);
+        stroke: none;
+      }
+      .badge-text {
+        fill: var(--halo);
+        stroke: none;
+        font: 600 10px system-ui, sans-serif;
+      }
+      .label-title {
+        fill: var(--verdict);
+        stroke: none;
+        font: 600 13px system-ui, sans-serif;
+      }
+      .label-detail {
+        fill: var(--text-muted);
+        stroke: none;
+        font: 11px system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 id="screen-name"></h1>
+    <p class="approval" id="approval"></p>
+    <p class="fingerprint" id="fingerprint"></p>
+    <ul class="legend" id="legend"></ul>
+    <svg id="cut" xmlns="http://www.w3.org/2000/svg"></svg>
+    <ul class="explanations" id="explanations"></ul>
+    <p class="not-outlined" id="not-outlined"></p>
+    <script>
+      // Replaced by render.mjs with the screen, its capture and the judged candidates.
+      const cut = /*CUT*/ null
+
+      // Each verdict's colour comes with the data: "--reused" for the page's own rules, and
+      // "--verdict" on any element that carries the verdict as a class.
+      const verdictColours = document.createElement("style")
+      verdictColours.textContent = cut.verdicts
+        .map(({ key, color }) => `:root { --${key}: ${color}; } .${key} { --verdict: var(--${key}); }`)
+        .join("\n")
+      document.head.append(verdictColours)
+
+      const LABEL_COLUMN_WIDTH = 300
+      const LABEL_HEIGHT = 34
+      const GAP_BETWEEN_LABELS = 8
+      const GAP_BETWEEN_CAPTURE_AND_LABELS = 28
+      const LABEL_DETAIL_OFFSET_Y = 15
+      const BADGE_HEIGHT = 13
+      const BADGE_CHARACTER_WIDTH = 6.5
+      const BADGE_PADDING_X = 4
+      const LEADER_END_RADIUS = 2.5
+      const LEADER_OFFSET_Y = 9
+      const FULL_WIDTH_SHARE = 0.8
+      const LEADER_INSET = 12
+      const GAP_BETWEEN_LEADERS = 10
+      // A component thinner than this (a 1 px divider) gets its badge and its label, but no
+      // outline: the outline would hide the component itself.
+      const MIN_OUTLINED_THICKNESS = 4
+      const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
+
+      function createSvgElement(name, attributes, text) {
+        const element = document.createElementNS(SVG_NAMESPACE, name)
+        for (const [attribute, value] of Object.entries(attributes)) element.setAttribute(attribute, value)
+        if (text !== undefined) element.textContent = text
+        return element
+      }
+
+      // One label per candidate and verdict: the instances of a candidate that an exception
+      // judges differently get a label of their own.
+      function buildLabels(candidates, verdictLabelsByKey) {
+        const labels = []
+        for (const candidate of candidates) {
+          const instancesByVerdict = Map.groupBy(candidate.instances, (instance) => instance.verdict)
+          for (const [verdict, instances] of instancesByVerdict) {
+            const coversEveryInstance = instances.length === candidate.instances.length
+            const outlineIds = instances.map((instance) => buildOutlineId(candidate, instance))
+            const detail = [
+              candidate.figmaName + (instances.length > 1 ? ` ×${instances.length}` : ""),
+              verdictLabelsByKey.get(verdict),
+            ]
+            labels.push({
+              verdict,
+              anchor: instances[0].box,
+              title: `${coversEveryInstance ? candidate.number : outlineIds.join(" ")}  ${candidate.codeComponent ?? "?"}`,
+              detail: detail.join(" · "),
+            })
+          }
+        }
+        return labels
+      }
+
+      function buildOutlineId(candidate, instance) {
+        return candidate.instances.length > 1 ? `${candidate.number}${instance.letter}` : `${candidate.number}`
+      }
+
+      // Labels go to the column on the side of their component, in the component's vertical
+      // order. A component as wide as the screen can go either side: it takes the emptier
+      // column. Labels that would overlap are spread around the height of their components,
+      // half upwards and half downwards, so that their lines stay short.
+      // Returns the highest label's top and the lowest label's bottom.
+      function placeLabels(labels, screen) {
+        const centerX = (label) => label.anchor.x + label.anchor.width / 2
+        const centerY = (label) => label.anchor.y + label.anchor.height / 2
+        const isAsWideAsTheScreen = (label) => label.anchor.width > screen.width * FULL_WIDTH_SHARE
+        const labelsBySide = { left: [], right: [] }
+        for (const label of labels.filter((each) => !isAsWideAsTheScreen(each))) {
+          labelsBySide[centerX(label) < screen.width / 2 ? "left" : "right"].push(label)
+        }
+        for (const label of labels.filter(isAsWideAsTheScreen).toSorted((a, b) => centerY(a) - centerY(b))) {
+          labelsBySide[labelsBySide.left.length < labelsBySide.right.length ? "left" : "right"].push(label)
+        }
+
+        const step = LABEL_HEIGHT + GAP_BETWEEN_LABELS
+        for (const [side, labelsOfSide] of Object.entries(labelsBySide)) {
+          labelsOfSide.sort((a, b) => centerY(a) - centerY(b))
+          const wishedTops = labelsOfSide.map((label) => centerY(label) - LABEL_HEIGHT / 2)
+          const pushedDown = []
+          wishedTops.forEach((top, index) => pushedDown.push(index ? Math.max(top, pushedDown[index - 1] + step) : top))
+          const pushedUp = []
+          wishedTops.toReversed().forEach((top, index) => pushedUp.push(index ? Math.min(top, pushedUp[index - 1] - step) : top))
+          pushedUp.reverse()
+          labelsOfSide.forEach((label, index) => {
+            label.side = side
+            label.top = (pushedDown[index] + pushedUp[index]) / 2
+          })
+        }
+        return {
+          highestTop: Math.min(...labels.map((label) => label.top)),
+          lowestBottom: Math.max(...labels.map((label) => label.top + LABEL_HEIGHT)),
+        }
+      }
+
+      // The line from a label to its component: straight when the label sits at the
+      // component's height, otherwise horizontal then vertical, ending on the component's
+      // top or bottom edge. Two vertical parts never share the same x.
+      function routeLeaders(labels) {
+        const verticalXsBySide = { left: [], right: [] }
+        for (const label of labels.toSorted((a, b) => a.top - b.top)) {
+          const { x, y, width, height } = label.anchor
+          const isLeft = label.side === "left"
+          const lineY = label.top + LEADER_OFFSET_Y
+          if (lineY >= y && lineY <= y + height) {
+            label.leaderEnd = { x: isLeft ? x : x + width, y: lineY }
+            label.leaderCorner = null
+            continue
+          }
+          const inset = Math.min(LEADER_INSET, width / 2)
+          const towardsCenter = isLeft ? 1 : -1
+          let verticalX = isLeft ? x + inset : x + width - inset
+          const isTaken = (candidateX) =>
+            verticalXsBySide[label.side].some((takenX) => Math.abs(takenX - candidateX) < GAP_BETWEEN_LEADERS)
+          while (isTaken(verticalX) && Math.abs(verticalX - (x + width / 2)) < width / 2 - GAP_BETWEEN_LEADERS) {
+            verticalX += towardsCenter * GAP_BETWEEN_LEADERS
+          }
+          verticalXsBySide[label.side].push(verticalX)
+          label.leaderCorner = { x: verticalX, y: lineY }
+          label.leaderEnd = { x: verticalX, y: lineY < y ? y : y + height }
+        }
+      }
+
+      function drawOutline(layer, candidate, instance) {
+        const { x, y, width, height } = instance.box
+        const outlineId = buildOutlineId(candidate, instance)
+        const badgeWidth = outlineId.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
+        const group = createSvgElement("g", { class: instance.verdict })
+        if (Math.min(width, height) >= MIN_OUTLINED_THICKNESS) {
+          group.append(
+            createSvgElement("rect", { class: "outline-halo", x, y, width, height }),
+            createSvgElement("rect", { class: "outline", x, y, width, height }),
+          )
+        }
+        group.append(
+          createSvgElement("rect", { class: "badge", x: x - 1, y: y - BADGE_HEIGHT, width: badgeWidth, height: BADGE_HEIGHT }),
+          createSvgElement("text", { class: "badge-text", x: x - 1 + BADGE_PADDING_X, y: y - 3 }, outlineId),
+        )
+        layer.append(group)
+      }
+
+      function drawLabel(layer, label, screen) {
+        const isLeft = label.side === "left"
+        const captureEdge = isLeft ? screen.capture.x : screen.capture.x + screen.capture.width
+        const textX = captureEdge + (isLeft ? -1 : 1) * GAP_BETWEEN_CAPTURE_AND_LABELS
+        const titleY = label.top + LEADER_OFFSET_Y + 4
+        const { leaderCorner, leaderEnd } = label
+        const leaderPoints = [
+          [leaderStartX(textX, isLeft), label.top + LEADER_OFFSET_Y],
+          ...(leaderCorner ? [[leaderCorner.x, leaderCorner.y]] : []),
+          [leaderEnd.x, leaderEnd.y],
+        ]
+        const textAnchor = isLeft ? "end" : "start"
+        const group = createSvgElement("g", { class: label.verdict })
+        group.append(
+          createSvgElement("polyline", {
+            class: "leader",
+            fill: "none",
+            points: leaderPoints.map((point) => point.join(",")).join(" "),
+          }),
+          createSvgElement("circle", { class: "leader-end", cx: leaderEnd.x, cy: leaderEnd.y, r: LEADER_END_RADIUS }),
+          createSvgElement("text", { class: "label-title", x: textX, y: titleY, "text-anchor": textAnchor }, label.title),
+          createSvgElement(
+            "text",
+            { class: "label-detail", x: textX, y: titleY + LABEL_DETAIL_OFFSET_Y, "text-anchor": textAnchor },
+            label.detail,
+          ),
+        )
+        layer.append(group)
+      }
+
+      function drawCut(isInstanceVisible) {
+        const { screen } = cut
+        const verdictLabelsByKey = new Map(cut.verdicts.map(({ key, label }) => [key, label]))
+        const visibleCandidates = cut.candidates
+          .filter((candidate) => candidate.outlined)
+          .map((candidate) => ({ ...candidate, instances: candidate.instances.filter(isInstanceVisible) }))
+          .filter((candidate) => candidate.instances.length)
+        const labels = buildLabels(visibleCandidates, verdictLabelsByKey)
+        const { highestTop, lowestBottom } = placeLabels(labels, screen)
+        routeLeaders(labels)
+
+        const svg = document.getElementById("cut")
+        const left = screen.capture.x - GAP_BETWEEN_CAPTURE_AND_LABELS - LABEL_COLUMN_WIDTH
+        const width = screen.capture.width + 2 * (GAP_BETWEEN_CAPTURE_AND_LABELS + LABEL_COLUMN_WIDTH)
+        const top = Math.min(screen.capture.y - BADGE_HEIGHT, highestTop - GAP_BETWEEN_LABELS)
+        const height = Math.max(screen.capture.y + screen.capture.height, lowestBottom) - top + GAP_BETWEEN_LABELS
+        svg.setAttribute("viewBox", `${left} ${top} ${width} ${height}`)
+        svg.setAttribute("width", width)
+        svg.replaceChildren(
+          createSvgElement("image", { href: cut.captureDataUrl, ...pickBox(screen.capture) }),
+        )
+        // Outer components first, so that a nested component's outline stays on top.
+        const outlines = visibleCandidates
+          .flatMap((candidate) => candidate.instances.map((instance) => ({ candidate, instance })))
+          .toSorted((a, b) => a.instance.level - b.instance.level)
+        for (const { candidate, instance } of outlines) drawOutline(svg, candidate, instance)
+        for (const label of labels) drawLabel(svg, label, screen)
+      }
+
+      function leaderStartX(textX, isLeft) {
+        return textX + (isLeft ? 6 : -6)
+      }
+
+      function pickBox({ x, y, width, height }) {
+        return { x, y, width, height }
+      }
+
+      function drawHeader() {
+        const { fingerprint, screen } = cut
+        document.title = `Découpage — ${screen.name}`
+        document.getElementById("screen-name").textContent = screen.name
+        const approval = document.getElementById("approval")
+        approval.textContent = cut.approvalDate
+          ? `Validé par le développeur le ${cut.approvalDate}`
+          : "Brouillon — pas encore validé par le développeur"
+        approval.classList.toggle("approved", Boolean(cut.approvalDate))
+        const figmaLink = document.createElement("a")
+        figmaLink.href = cut.figmaUrl
+        figmaLink.textContent = "Ouvrir dans Figma"
+        document
+          .getElementById("fingerprint")
+          .append(
+            `Construit le ${fingerprint.createdAt} · maquette modifiée le ${fingerprint.figma.lastModified.slice(0, 10)} · commit ${fingerprint.gitCommit} · `,
+            figmaLink,
+          )
+
+        const legend = document.getElementById("legend")
+        for (const { key, label } of cut.verdicts) {
+          const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
+          swatch.append(createSvgElement("line", { class: `swatch ${key}`, x1: 0, y1: 6, x2: 36, y2: 6 }))
+          const item = document.createElement("li")
+          item.className = key
+          item.append(swatch, label)
+          legend.append(item)
+        }
+
+        const notOutlined = cut.candidates.filter((candidate) => !candidate.outlined)
+        if (notOutlined.length) {
+          document.getElementById("not-outlined").textContent =
+            "Non entourés : " +
+            notOutlined.map((candidate) => `${candidate.number} ${candidate.figmaName} (${candidate.note})`).join(" ; ")
+        }
+      }
+
+      // Under the image: why a component is not simply reused (what has to change, why it is
+      // left out, what the developer has to decide), one item per label that has a reason.
+      function drawExplanations() {
+        const verdictLabelsByKey = new Map(cut.verdicts.map(({ key, label }) => [key, label]))
+        const list = document.getElementById("explanations")
+        for (const candidate of cut.candidates.filter((each) => each.outlined)) {
+          for (const [verdict, instances] of Map.groupBy(candidate.instances, (instance) => instance.verdict)) {
+            const { developerDecision } = instances[0]
+            const reason = verdict === "reused" ? null : instances[0].note
+            if (!reason && developerDecision === null) continue
+            const coversEveryInstance = instances.length === candidate.instances.length
+            const outlineIds = instances.map((instance) => buildOutlineId(candidate, instance)).join(" ")
+            const title = document.createElement("strong")
+            title.textContent = `${coversEveryInstance ? candidate.number : outlineIds} ${candidate.codeComponent ?? candidate.figmaName} — ${verdictLabelsByKey.get(verdict)}`
+            const item = document.createElement("li")
+            item.className = verdict
+            item.append(title)
+            if (reason) item.append(document.createElement("br"), reason)
+            if (developerDecision !== null) {
+              const decision = document.createElement("span")
+              decision.className = "developer-words"
+              decision.textContent = `Décidé par le développeur${developerDecision ? ` : ${developerDecision}` : ""}`
+              item.append(document.createElement("br"), decision)
+            }
+            if (verdict === "to-decide") {
+              item.append(document.createElement("br"), `${candidate.question} ${candidate.options.join(" / ")}`)
+            }
+            list.append(item)
+          }
+        }
+      }
+
+      drawHeader()
+      drawCut(() => true)
+      drawExplanations()
+    </script>
+  </body>
+</html>
