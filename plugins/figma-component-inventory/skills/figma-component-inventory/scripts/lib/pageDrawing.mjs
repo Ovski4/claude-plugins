@@ -115,7 +115,10 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * @property {string[]} notOutlined one sentence per Figma component that is not a React component of its own
  */
 
-const LABEL_COLUMN_WIDTH = 300
+// Wider than the page's fonts draw an average character (13 px semi-bold title, 11 px
+// detail): a label column is never narrower than its longest label.
+const LABEL_TITLE_CHARACTER_WIDTH = 7.8
+const LABEL_DETAIL_CHARACTER_WIDTH = 6.2
 const GAP_BETWEEN_CAPTURE_AND_LABELS = 28
 const GAP_BETWEEN_LABEL_TEXT_AND_LEADER = 6
 const LABEL_TITLE_OFFSET_Y = 4
@@ -306,7 +309,22 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
 
   const labelTops = routedLabels.map((label) => label.top)
   const captureBottom = screen.capture.y + screen.capture.height
-  const labelColumn = GAP_BETWEEN_CAPTURE_AND_LABELS + LABEL_COLUMN_WIDTH
+  // Each side of the capture is as wide as its longest label; nothing on a side with none.
+  /** @param {"left" | "right"} side */
+  const measureLabelColumn = (side) => {
+    const labelWidths = routedLabels
+      .filter((label) => label.side === side)
+      .map(({ title, detail }) =>
+        Math.max(
+          title.length * LABEL_TITLE_CHARACTER_WIDTH,
+          detail.length * LABEL_DETAIL_CHARACTER_WIDTH,
+        ),
+      )
+    return labelWidths.length
+      ? GAP_BETWEEN_CAPTURE_AND_LABELS + Math.ceil(Math.max(...labelWidths))
+      : 0
+  }
+  const leftLabelColumn = measureLabelColumn("left")
   const top = Math.min(
     screen.capture.y - BADGE_HEIGHT,
     ...labelTops.map((labelTop) => labelTop - GAP_BETWEEN_LABELS),
@@ -317,9 +335,10 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
   )
   return {
     ownBox: {
-      left: screen.capture.x - labelColumn,
+      left: screen.capture.x - leftLabelColumn,
       top,
-      width: screen.capture.width + 2 * labelColumn,
+      width:
+        leftLabelColumn + screen.capture.width + measureLabelColumn("right"),
       height: bottom - top + GAP_BETWEEN_LABELS,
     },
     outlines,

@@ -231,11 +231,12 @@ test("the page gets each screen's drawing, with what is the same on every screen
       ],
     ],
   )
-  // Both screens are drawn in one box: the taller one's, 328 px of label column each side.
+  // Both screens are drawn in one box: the taller one's, with on each side a column as wide
+  // as its longest label (112 px on the left, 133 px on the right) after a 28 px gap.
   assert.deepEqual(drawing.commonBox, {
-    left: -338,
+    left: -150,
     top: -23,
-    width: 1076,
+    width: 721,
     height: 381,
   })
   assert.deepEqual(

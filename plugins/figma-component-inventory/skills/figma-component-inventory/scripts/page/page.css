@@ -90,6 +90,29 @@ h1 {
 .explanations strong {
   color: var(--verdict);
 }
+/* On a wide window the explanations sit beside the image and stay in view while it scrolls. */
+@media (min-width: 1400px) {
+  .screens-and-explanations {
+    display: flex;
+    align-items: flex-start;
+    gap: 32px;
+  }
+  .screens {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+  .explanations {
+    position: sticky;
+    top: 16px;
+    flex: 1 1 360px;
+    min-width: 360px;
+    max-width: 560px;
+    max-height: calc(100vh - 32px);
+    margin-top: 16px;
+    overflow-y: auto;
+    font-size: 13px;
+  }
+}
 .outline-halo {
   fill: none;
   stroke: var(--halo);
