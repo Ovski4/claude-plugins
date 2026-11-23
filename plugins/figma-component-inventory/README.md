@@ -1,16 +1,23 @@
 # figma-component-inventory — which components of a Figma screen the code already has
 
-For one Figma screen, the inventory of its components: each one is judged reused as it is,
-to adapt, to create, or out of scope. The result is a page showing the capture with a
-numbered outline around each component. The outline's colour gives the verdict, so the
-developer approves the inventory by looking at it.
+For one Figma screen, or several screens of one design, the inventory of the components:
+each one is judged reused as it is, to adapt, to create, or out of scope. The result is a
+page showing each capture with a numbered outline around each component. The outline's
+colour gives the verdict, so the developer approves the inventory by looking at it.
+
+With several screens (the states of a dialog, its desktop and mobile sizes), a component
+keeps one number everywhere, and the areas whose content changes from one screen to the
+next are pointed out: for each, the model proposes one component with a prop or several
+components, and the developer decides.
 
 - **The scripts** read Figma, compute every position, prepare what the repo already says
   about each component, and draw.
 - **The model** says, for each component, which React component it is and its verdict. Its
   instructions are in `skills/figma-component-inventory/SKILL.md`, which is all it reads.
 
-Call it with `/figma-component-inventory <figma-url>`.
+Call it with `/figma-component-inventory <figma-url>`, or with one URL per screen. With a
+single URL, it lists the screens drawn beside it in Figma and asks which ones to judge
+together.
 
 It is written for Claude Sonnet: in Claude Code, the `model` field of `SKILL.md` selects it.
 A tool that ignores that field runs the skill on its current model.
@@ -93,7 +100,8 @@ other line mentions the name.
 The model runs the two commands of `skills/figma-component-inventory/scripts`:
 
 ```
-node scripts/candidates.mjs <figma-url> <out-dir>   # 1. script: reads Figma, writes the files below
+node scripts/screens.mjs <figma-url>                # 0. script: lists the screens drawn beside one screen
+node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, writes the files below
 #                                                     2. model: fills verdicts.json
 node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes cut.html
 #                                                     4. developer: corrections by outline number; the model applies them
@@ -103,15 +111,15 @@ node scripts/render.mjs <out-dir> --approve         # 5. once the developer agre
 Both commands run from the repo whose code is judged, since code paths are checked against
 it.
 
-| File in `<out-dir>` | Written by | Content                                                                                                             |
-| ------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `figma-node.json`   | script     | Figma's answer, kept so that a second run calls nothing                                                             |
-| `screen.png`        | script     | capture of the Figma node, scale 2                                                                                  |
-| `candidates.json`   | script     | every component of the screen with its boxes; never edited                                                          |
-| `brief.md`          | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name |
-| `verdicts.json`     | model      | one entry per component; the only file the model writes                                                             |
-| `cut.html`          | script     | the deliverable: capture, outlines, legend, reasons                                                                 |
-| `cut.md`            | script     | written at approval: the list of components the next steps read                                                     |
+| File in `<out-dir>`      | Written by | Content                                                                                                             |
+| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------- |
+| `figma-node-<node>.json` | script     | Figma's answer for one screen, kept so that a second run calls nothing                                              |
+| `screen-<node>.png`      | script     | capture of one screen, scale 2                                                                                      |
+| `candidates.json`        | script     | every component of the screen with its boxes; never edited                                                          |
+| `brief.md`               | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name |
+| `verdicts.json`          | model      | one entry per component; the only file the model writes                                                             |
+| `cut.html`               | script     | the deliverable: capture, outlines, legend, reasons                                                                 |
+| `cut.md`                 | script     | written at approval: the list of components the next steps read                                                     |
 
 ## Code
 
@@ -120,12 +128,14 @@ Everything is in `skills/figma-component-inventory`:
 ```
 SKILL.md                  what the model follows
 scripts/
+  screens.mjs             command: lists the frames drawn beside a screen in Figma
   candidates.mjs          command: reads Figma, writes candidates.json, brief.md and the verdicts.json to fill
   render.mjs              command: checks verdicts.json, writes cut.html, approves
   template.html           the page; render.mjs writes the data into it
   lib/                    one module per job, used by the two commands
     figma.mjs               Figma links, API calls, answers kept on disk, where the capture sits
-    collectCandidates.mjs   Figma tree → candidates; reads no file
+    collectCandidates.mjs   Figma tree of one screen → candidates; reads no file
+    mergeScreens.mjs        candidates of several screens → one list, and the areas that differ
     projectSettings.mjs     the repo's settings file: its folders, its Figma-to-code map
     figmaToCodeMap.mjs      what the repo's Figma-to-code map says of a Figma component
     brief.mjs               the content of brief.md
@@ -151,10 +161,15 @@ share one number: the 4 segments of the mode selector are candidate 6, instances
 components first, then the plain frames. The exact shape of each object is the `Candidate`
 and `Instance` types of `scripts/lib/collectCandidates.mjs`.
 
-- `screen.backdrop`: the name of the veil drawn behind a dialog (a top-level "Scrim",
+- `screens`: one item per screen, numbered from 1 in the order given.
+- `screens[].backdrop`: the name of the veil drawn behind a dialog (a top-level "Scrim",
   "Backdrop" or "Overlay" layer covering the screen), or `null`. With a backdrop, only the
   layers in front of it give candidates: the page behind is in the capture, never cut.
   Whatever a scrolling area cuts off is left out too.
+- `instances[].screen`: the number of the screen the use is drawn on. Letters run across
+  the screens: `6a` to `6d` on screen 1, `6e` to `6h` on screen 2.
+- `contentsThatDiffer`: for a candidate that does not hold the same candidates on every
+  screen, what it holds on which screens. Such a candidate must be judged.
 - `kind`: `instance` for a Figma component, `frame` for a named frame that is not one.
   Frames with the same name, or siblings built the same way ("Day — Mon" … "Day — Sun"),
   are one candidate.
@@ -163,7 +178,7 @@ and `Instance` types of `scripts/lib/collectCandidates.mjs`.
   only when the model gives them a verdict.
 - `level`, per instance: 1 for the screen's root component, +1 at each component nested
   inside another. `parent` is the number of the candidate the instance sits in.
-- `box`: pixels at scale 1, from the top-left corner of the screen. `screen.capture` uses
+- `box`: pixels at scale 1, from the top-left corner of the screen. `screens[].capture` uses
   the same coordinates: it starts above and left of the screen when the screen has a shadow.
 - `mapLines`: the lines of the Figma-to-code map that name this Figma component.
   The name is pre-filled in `verdicts.json` only when they agree on one file.
@@ -185,6 +200,15 @@ What the model does not write:
   change to a verdict cancels it.
 
 ## The page
+
+With several screens, the page has two aids to compare them:
+
+- tabs show one screen at a time, all drawn at the same place: switching tab (or the left
+  and right arrow keys) shows what changes from one screen to the next. The last tab shows
+  every screen at once;
+- a switch, « Différences seulement », fades every component that is the same on all
+  screens: drawn on each of them, holding the same components, with the same verdict and
+  React component. What stays in colour is what the screens do not share.
 
 Labels are in French, since its images go into Jira tickets. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its

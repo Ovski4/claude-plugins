@@ -38,7 +38,7 @@ test("the capture is located from its size: larger than the screen when the scre
   assert.deepEqual(
     locateCapture(screenNode, { widthPx: 1056, heightPx: 936 }),
     {
-      file: "screen.png",
+      file: "screen-87-91461.png",
       x: -24,
       y: -16,
       width: 528,
@@ -46,7 +46,7 @@ test("the capture is located from its size: larger than the screen when the scre
     },
   )
   assert.deepEqual(locateCapture(screenNode, { widthPx: 960, heightPx: 840 }), {
-    file: "screen.png",
+    file: "screen-87-91461.png",
     x: 0,
     y: 0,
     width: 480,

@@ -11,7 +11,7 @@ import {
   listVerdictProblems,
 } from "../scripts/lib/verdicts.mjs"
 
-/** @typedef {import("../scripts/lib/collectCandidates.mjs").Candidate} Candidate */
+/** @typedef {import("../scripts/lib/mergeScreens.mjs").MergedCandidate} Candidate */
 /** @typedef {import("../scripts/lib/verdicts.mjs").VerdictEntry} VerdictEntry */
 
 const BUTTON_PATH = "services/frontend/src/components/ui/button.tsx"
@@ -36,8 +36,10 @@ const buildCandidate = (number, figmaName, letters, more = {}) => ({
     level: 1,
     box: { x: 0, y: 0, width: 10, height: 10 },
     parent: null,
+    screen: 1,
   })),
   icons: [],
+  contentsThatDiffer: [],
   ...more,
 })
 const candidates = [
@@ -262,12 +264,11 @@ test("an approval holds until a verdict changes, and cut.md lists the approved c
   )
 
   const summary = buildCutSummary({
-    screenName: "Editor — order",
+    screens: [{ number: 1, name: "Editor — order", nodeId: "87:91461" }],
     fingerprint: {
       createdAt: "2026-11-23",
       figma: {
         fileKey: "AbCdEfGhIjKlMnOpQrStUv",
-        nodeId: "87:91461",
         version: FIGMA_VERSION,
         lastModified: "2026-11-20T10:18:35Z",
       },

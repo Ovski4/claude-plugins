@@ -2,7 +2,17 @@
 // Writes the brief the model reads before judging: for each candidate, what the scripts can
 // already find in the repo, so that the model opens a file only to settle a verdict.
 
-/** @typedef {import("./collectCandidates.mjs").Candidate} Candidate */
+/** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
+/**
+ * What the brief says of one screen.
+ * @typedef {object} BriefScreen
+ * @property {number} number from 1, in the order the screens are shown
+ * @property {string} name
+ * @property {number} width
+ * @property {number} height
+ * @property {string | null} backdrop the name of the veil drawn behind a dialog, when the screen has one
+ * @property {{ file: string }} capture the screen's image in the output folder
+ */
 /** @typedef {import("./figmaToCodeMap.mjs").LookUpInFigmaToCodeMap} LookUpInFigmaToCodeMap */
 
 // Shorter words of a Figma name ("row", "day", "tag") match too many files to help.
@@ -98,10 +108,20 @@ function titleCandidate(candidate) {
       candidate.instances.map((instance) => instance.parent).filter(Boolean),
     ),
   ]
-  const kind =
-    candidate.kind === "instance" ? "component" : "frame used several times"
+  const kindOfFrame = candidate.contentsThatDiffer.length
+    ? "frame whose content differs between screens"
+    : "frame used several times"
+  const kind = candidate.kind === "instance" ? "component" : kindOfFrame
   const where = parents.length ? `, inside ${parents.join(" and ")}` : ""
   return `### ${candidate.number} — ${candidate.figmaName} ×${candidate.instances.length} (${kind}, level ${levels}${where})`
+}
+
+/**
+ * @param {Candidate} candidate
+ * @returns {number[]} the numbers of the screens the candidate is drawn on
+ */
+function presentOnScreens(candidate) {
+  return [...new Set(candidate.instances.map((instance) => instance.screen))]
 }
 
 /**
@@ -121,8 +141,7 @@ function describeSizes(candidate) {
 
 /**
  * @param {object} cut
- * @param {string} cut.screenName
- * @param {string | null} cut.backdrop the name of the veil drawn behind a dialog, when the screen has one
+ * @param {BriefScreen[]} cut.screens one screen, or several screens of one design
  * @param {Candidate[]} cut.candidates
  * @param {LookUpInFigmaToCodeMap} cut.lookUpInFigmaToCodeMap
  * @param {boolean} cut.hasFigmaToCodeMap false when the repo has no Figma-to-code map
@@ -133,8 +152,7 @@ function describeSizes(candidate) {
  * @returns {string} the content of brief.md
  */
 export function buildBrief({
-  screenName,
-  backdrop,
+  screens,
   candidates,
   lookUpInFigmaToCodeMap,
   hasFigmaToCodeMap,
@@ -142,14 +160,32 @@ export function buildBrief({
   componentFiles,
   readCodeFile,
 }) {
-  const lines = [
-    `# ${screenName}`,
+  const hasSeveralScreens = screens.length > 1
+  const backdrop = screens.find((screen) => screen.backdrop)?.backdrop
+  /** @param {number[]} screenNumbers */
+  const nameScreens = (screenNumbers) =>
+    screenNumbers.length === screens.length
+      ? "every screen"
+      : `screen${screenNumbers.length > 1 ? "s" : ""} ${screenNumbers.join(" ")}`
+  const lines = hasSeveralScreens
+    ? [
+        `# ${screens.length} screens of one design`,
+        "",
+        ...screens.map(
+          ({ number, name, width, height, capture }) =>
+            `${number}. ${name} — ${width} × ${height} px — \`${capture.file}\``,
+        ),
+        "",
+        "A candidate has one number on every screen: one entry in verdicts.json covers them all.",
+      ]
+    : [`# ${screens[0].name}`]
+  lines.push(
     "",
     designSystemFolder
       ? `Design system: the components of \`${designSystemFolder}\` win over a feature's own.`
       : "This repo declares no design-system folder: no component wins over another.",
     "",
-  ]
+  )
   if (!hasFigmaToCodeMap)
     lines.push(
       "This repo has no Figma-to-code map: every name comes from the code.",
@@ -165,18 +201,37 @@ export function buildBrief({
   /** @type {Map<string, number>} */
   const candidateNumbersByCodePath = new Map()
   for (const candidate of candidates.filter((each) => each.mustBeJudged)) {
-    const variants = [
-      ...new Set(
-        candidate.instances.map((instance) => instance.variant).filter(Boolean),
-      ),
-    ]
+    const screensByVariant = Map.groupBy(
+      candidate.instances.filter((instance) => instance.variant),
+      (instance) => instance.variant,
+    )
+    const variants = [...screensByVariant].map(([variant, instances]) => {
+      const screenNumbers = [
+        ...new Set(instances.map((instance) => instance.screen)),
+      ]
+      return hasSeveralScreens &&
+        screenNumbers.length < presentOnScreens(candidate).length
+        ? `${variant} (${nameScreens(screenNumbers)})`
+        : variant
+    })
     const { mapLines, mapNotes, codeComponent, codePath } =
       lookUpInFigmaToCodeMap(candidate.figmaName)
     lines.push(titleCandidate(candidate))
+    if (hasSeveralScreens)
+      lines.push(`- On: ${nameScreens(presentOnScreens(candidate))}`)
     if (variants.length) lines.push(`- Variants: ${variants.join(" | ")}`)
     lines.push(`- Size in the mock-up: ${describeSizes(candidate)}`)
     if (candidate.icons.length)
       lines.push(`- Icons inside: ${candidate.icons.join(", ")}`)
+    if (candidate.contentsThatDiffer.length) {
+      lines.push(
+        "- Its content differs between screens: choose one component with a prop, or several components",
+        ...candidate.contentsThatDiffer.map(
+          ({ screens: screenNumbers, holds }) =>
+            `  - ${nameScreens(screenNumbers)}: holds ${holds.join(" + ") || "no candidate"}`,
+        ),
+      )
+    }
     if (codePath) {
       lines.push(
         `- Figma-to-code map: \`${codeComponent}\` in \`${codePath}\` (pre-filled in verdicts.json)`,

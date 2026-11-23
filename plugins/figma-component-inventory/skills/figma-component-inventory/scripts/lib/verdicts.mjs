@@ -3,8 +3,8 @@
 // requires, the empty file given to the model, and the developer's approval.
 import { createHash } from "node:crypto"
 
-/** @typedef {import("./collectCandidates.mjs").Candidate} Candidate */
-/** @typedef {import("./collectCandidates.mjs").Instance} Instance */
+/** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
+/** @typedef {import("./mergeScreens.mjs").InstanceOnAScreen} Instance */
 /** @typedef {"reused" | "to-adapt" | "to-create" | "out-of-scope" | "to-decide"} VerdictKey */
 /**
  * What is said of a candidate, or of some of its instances.
@@ -24,10 +24,12 @@ import { createHash } from "node:crypto"
  *   number: number,
  *   figmaName: string,
  *   outlined?: boolean,
- *   except?: (Judgement & { instances: string[] })[],
+ *   except?: (Judgement & { instances?: string[], screens?: number[] })[],
  * }} VerdictEntry
  * `outlined: false`: a Figma component that is not a React component of its own.
- * `except`: the instances, by letter, whose judgement differs from the entry's.
+ * `except`: the instances whose judgement differs from the entry's, named by letter
+ * (`instances`) or by the screens they are on (`screens`): another verdict, or another
+ * React component when the candidate is several components in the code.
  */
 /**
  * @typedef {object} Approval
@@ -38,6 +40,8 @@ import { createHash } from "node:crypto"
 /**
  * @typedef {Instance & {
  *   verdict: VerdictKey,
+ *   codeComponent: string | null,
+ *   codePath: string | null,
  *   note: string | null,
  *   developerDecision: string | null,
  * }} JudgedInstance
@@ -209,17 +213,32 @@ export function listVerdictProblems({
     }
     problems.push(...listProblemsOfJudgement(entry, who, doesCodePathExist))
     const letters = candidate.instances.map((instance) => instance.letter)
+    const screenNumbers = [
+      ...new Set(candidate.instances.map((instance) => instance.screen)),
+    ]
     for (const exception of entry.except ?? []) {
       const exceptedLetters = exception.instances ?? []
+      const exceptedScreens = exception.screens ?? []
       const unknownLetters = exceptedLetters.filter(
         (letter) => !letters.includes(letter),
       )
-      const exceptionWho = `${who}, except ${exceptedLetters.join(" ")}`
-      if (!exceptedLetters.length)
-        problems.push(`${who}: an "except" has no "instances"`)
+      const unknownScreens = exceptedScreens.filter(
+        (screen) => !screenNumbers.includes(screen),
+      )
+      const exceptionWho = exceptedScreens.length
+        ? `${who}, except screens ${exceptedScreens.join(" ")}`
+        : `${who}, except ${exceptedLetters.join(" ")}`
+      if (!exceptedLetters.length && !exceptedScreens.length)
+        problems.push(
+          `${who}: an "except" has neither "instances" nor "screens"`,
+        )
       if (unknownLetters.length)
         problems.push(
           `${exceptionWho}: the candidate's instances are ${letters.join(" ")}`,
+        )
+      if (unknownScreens.length)
+        problems.push(
+          `${exceptionWho}: the candidate is on screens ${screenNumbers.join(" ")}`,
         )
       problems.push(
         ...listProblemsOfJudgement(
@@ -282,13 +301,17 @@ export function applyVerdictsToCandidates(candidates, entries) {
       ...entry,
       outlined: entry.outlined !== false,
       instances: candidate.instances.map((instance) => {
-        const exception = exceptions.find((each) =>
-          each.instances.includes(instance.letter),
+        const exception = exceptions.find(
+          (each) =>
+            each.instances?.includes(instance.letter) ||
+            each.screens?.includes(instance.screen),
         )
         const judgement = { ...entry, ...exception }
         return {
           ...instance,
           verdict: /** @type {VerdictKey} */ (judgement.verdict),
+          codeComponent: judgement.codeComponent ?? null,
+          codePath: judgement.codePath ?? null,
           note: judgement.note ?? null,
           developerDecision:
             judgement.decidedBy === "developer"

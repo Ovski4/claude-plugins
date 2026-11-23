@@ -21,8 +21,8 @@ export function Button(props: ButtonProps) {
 /**
  * @param {number} number
  * @param {string} figmaName
- * @param {Partial<import("../scripts/lib/collectCandidates.mjs").Candidate>} [more]
- * @returns {import("../scripts/lib/collectCandidates.mjs").Candidate}
+ * @param {Partial<import("../scripts/lib/mergeScreens.mjs").MergedCandidate>} [more]
+ * @returns {import("../scripts/lib/mergeScreens.mjs").MergedCandidate}
  */
 const buildCandidate = (number, figmaName, more = {}) => ({
   number,
@@ -37,16 +37,26 @@ const buildCandidate = (number, figmaName, more = {}) => ({
       level: 2,
       box: { x: 0, y: 0, width: 10, height: 10 },
       parent: number === 1 ? null : 1,
+      screen: 1,
     },
   ],
   icons: number === 1 ? ["ic/x/16"] : [],
+  contentsThatDiffer: [],
   ...more,
 })
 
 test("the brief gives each candidate what the repo already says about it", () => {
   const brief = buildBrief({
-    screenName: "Editor — order",
-    backdrop: "Scrim — modal",
+    screens: [
+      {
+        number: 1,
+        name: "Editor — order",
+        width: 480,
+        height: 420,
+        backdrop: "Scrim — modal",
+        capture: { file: "screen-87-1.png" },
+      },
+    ],
     candidates: [
       buildCandidate(1, "Button — icon"),
       buildCandidate(2, "Button"),

@@ -44,8 +44,11 @@ import path from "node:path"
 const FIGMA_API = "https://api.figma.com/v1"
 const FIGMA_SITE = "https://www.figma.com"
 const HTTP_STATUS_FORBIDDEN = 403
-const NODE_CACHE_FILE_NAME = "figma-node.json"
-export const CAPTURE_FILE_NAME = "screen.png"
+// How many levels of the file are read to find the frames beside a screen: a page, the
+// sections nested in it, then the screens.
+const FILE_DEPTHS_TRIED_TO_FIND_A_SCREEN = [3, 5]
+// What a designer draws a screen with.
+const SCREEN_NODE_TYPES = ["FRAME", "INSTANCE", "COMPONENT"]
 // Pixels of the capture per pixel of the screen: 2 keeps small texts readable when zooming.
 export const CAPTURE_SCALE = 2
 // A PNG file stores its width and height as two 4-byte integers at these positions.
@@ -71,6 +74,21 @@ export function parseFigmaUrl(url) {
 export function buildFigmaNodeUrl(fileKey, nodeId) {
   return `${FIGMA_SITE}/design/${fileKey}/?node-id=${encodeURIComponent(nodeId.replace(/:/g, "-"))}`
 }
+
+/**
+ * A node id as it can be written in a file name: "87:91461" → "87-91461".
+ * @param {string} nodeId
+ */
+const toFileNamePart = (nodeId) => nodeId.replace(/[^0-9a-z]+/gi, "-")
+/** @param {string} nodeId */
+const buildNodeCacheFileName = (nodeId) =>
+  `figma-node-${toFileNamePart(nodeId)}.json`
+/**
+ * The name of a screen's capture in the output folder: "screen-87-91461.png".
+ * @param {string} nodeId
+ */
+export const buildCaptureFileName = (nodeId) =>
+  `screen-${toFileNamePart(nodeId)}.png`
 
 /**
  * @param {string} pathAndQuery what follows "/v1" in the API's address
@@ -108,7 +126,7 @@ export async function readFigmaScreen(
   nodeId,
   { token, cacheDir, mustAskFigmaAgain },
 ) {
-  const cacheFile = path.join(cacheDir, NODE_CACHE_FILE_NAME)
+  const cacheFile = path.join(cacheDir, buildNodeCacheFileName(nodeId))
   const isKept = !mustAskFigmaAgain && fs.existsSync(cacheFile)
   const answer = isKept
     ? JSON.parse(fs.readFileSync(cacheFile, "utf8"))
@@ -126,6 +144,81 @@ export async function readFigmaScreen(
     version: answer.version,
     lastModified: answer.lastModified,
   }
+}
+
+/**
+ * A frame that sits beside the reference screen, in the same section or page.
+ * @typedef {object} NeighbourScreen
+ * @property {string} nodeId
+ * @property {string} name
+ * @property {number} width
+ * @property {number} height
+ * @property {boolean} isVariantOfTheReference true when both are instances of the same
+ *   Figma component set: the same design in another state or at another size
+ */
+
+/**
+ * Looks for a node among the descendants of another.
+ * @param {FigmaNode} ancestor
+ * @param {string} nodeId
+ * @returns {FigmaNode | null} the node's parent
+ */
+function findParentOfNode(ancestor, nodeId) {
+  for (const child of ancestor.children ?? []) {
+    if (child.id === nodeId) return ancestor
+    const parent = findParentOfNode(child, nodeId)
+    if (parent) return parent
+  }
+  return null
+}
+
+/**
+ * The frames and components drawn beside a screen: the designer keeps the states and sizes
+ * of one design side by side.
+ * @param {string} fileKey
+ * @param {string} referenceNodeId
+ * @param {string | undefined} token
+ * @returns {Promise<{ containerName: string, reference: NeighbourScreen, neighbours: NeighbourScreen[] }>}
+ */
+export async function listNeighbourScreens(fileKey, referenceNodeId, token) {
+  for (const depth of FILE_DEPTHS_TRIED_TO_FIND_A_SCREEN) {
+    const file = await fetchFromFigma(`/files/${fileKey}?depth=${depth}`, token)
+    const container = findParentOfNode(file.document, referenceNodeId)
+    if (!container) continue
+    /** @param {FigmaNode} node */
+    const readComponentSetId = (node) =>
+      (node.componentId &&
+        file.components?.[node.componentId]?.componentSetId) ||
+      null
+    const referenceNode = /** @type {FigmaNode} */ (
+      container.children?.find((child) => child.id === referenceNodeId)
+    )
+    const referenceComponentSetId = readComponentSetId(referenceNode)
+    /**
+     * @param {FigmaNode} node
+     * @returns {NeighbourScreen}
+     */
+    const describe = (node) => ({
+      nodeId: node.id,
+      name: node.name,
+      width: Math.round(node.absoluteBoundingBox?.width ?? 0),
+      height: Math.round(node.absoluteBoundingBox?.height ?? 0),
+      isVariantOfTheReference:
+        referenceComponentSetId !== null &&
+        readComponentSetId(node) === referenceComponentSetId,
+    })
+    return {
+      containerName: container.name,
+      reference: describe(referenceNode),
+      neighbours: (container.children ?? [])
+        .filter((child) => child.id !== referenceNodeId)
+        .filter((child) => SCREEN_NODE_TYPES.includes(child.type))
+        .map(describe),
+    }
+  }
+  throw new Error(
+    `Node ${referenceNodeId} was not found in the first levels of Figma file ${fileKey}: give one link per screen instead`,
+  )
 }
 
 /**
@@ -151,7 +244,7 @@ export async function downloadCapture(
   nodeId,
   { token, cacheDir, mustAskFigmaAgain },
 ) {
-  const captureFile = path.join(cacheDir, CAPTURE_FILE_NAME)
+  const captureFile = path.join(cacheDir, buildCaptureFileName(nodeId))
   if (mustAskFigmaAgain || !fs.existsSync(captureFile)) {
     const query = `ids=${encodeURIComponent(nodeId)}&scale=${CAPTURE_SCALE}&format=png`
     const { images } = await fetchFromFigma(
@@ -189,11 +282,11 @@ export function locateCapture(screenNode, captureSize) {
   )
   if (!captureBox) {
     throw new Error(
-      `${CAPTURE_FILE_NAME} is ${captureSize.widthPx}×${captureSize.heightPx} px, which matches neither the node's box nor what it paints`,
+      `${buildCaptureFileName(screenNode.id)} is ${captureSize.widthPx}×${captureSize.heightPx} px, which matches neither the node's box nor what it paints`,
     )
   }
   return {
-    file: CAPTURE_FILE_NAME,
+    file: buildCaptureFileName(screenNode.id),
     x: Math.round(captureBox.x - nodeBox.x),
     y: Math.round(captureBox.y - nodeBox.y),
     width: captureSize.widthPx / CAPTURE_SCALE,

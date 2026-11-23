@@ -50,7 +50,7 @@ function main() {
   /** @param {string} fileName */
   const readJson = (fileName) =>
     JSON.parse(fs.readFileSync(path.join(outDir, fileName), "utf8"))
-  const { fingerprint, screen, candidates } = readJson("candidates.json")
+  const { fingerprint, screens, candidates } = readJson("candidates.json")
   /** @type {import("./lib/verdicts.mjs").VerdictsFile} */
   const verdictsFile = readJson("verdicts.json")
   const repoRoot = findRepoRoot()
@@ -93,16 +93,17 @@ function main() {
     )
   }
 
-  const capturePng = fs.readFileSync(path.join(outDir, screen.capture.file))
   const cut = {
     fingerprint,
-    screen,
-    figmaUrl: buildFigmaNodeUrl(
-      fingerprint.figma.fileKey,
-      fingerprint.figma.nodeId,
+    screens: screens.map(
+      /** @param {{ nodeId: string, capture: { file: string } }} screen */
+      (screen) => ({
+        ...screen,
+        figmaUrl: buildFigmaNodeUrl(fingerprint.figma.fileKey, screen.nodeId),
+        captureDataUrl: `data:image/png;base64,${fs.readFileSync(path.join(outDir, screen.capture.file)).toString("base64")}`,
+      }),
     ),
     approvalDate,
-    captureDataUrl: `data:image/png;base64,${capturePng.toString("base64")}`,
     verdicts: VERDICT_KEYS.map((key) => ({
       key,
       label: VERDICTS[key].label,
@@ -144,7 +145,7 @@ function main() {
     fs.writeFileSync(
       summaryFile,
       buildCutSummary({
-        screenName: screen.name,
+        screens,
         fingerprint,
         approvalDate,
         judgedCandidates,

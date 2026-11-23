@@ -7,7 +7,8 @@ argument-hint: <figma-url>
 
 # Component inventory of a Figma screen
 
-You receive the Figma URL of one screen: `$ARGUMENTS`. You fill **one file**,
+You receive one or several Figma URLs: `$ARGUMENTS`. Several URLs are the screens of one
+design (its states, its sizes), judged together. You fill **one file**,
 `<out-dir>/verdicts.json`, then run `render.mjs`. The scripts do all the drawing: you never
 read or write a coordinate.
 
@@ -24,20 +25,27 @@ a file only when a verdict depends on it.
      conversation about the work (the feature, what exists, what to leave out, the name
      prefix of the new components). When they said nothing, the file holds the Figma URL
      and the whole screen is to build. Ask nothing.
-2. Run `node ${CLAUDE_SKILL_DIR}/scripts/candidates.mjs <figma-url> <out-dir>` from the
-   repo's root, then look at `<out-dir>/screen.png`. The command reads the screen from Figma
-   with `FIGMA_TOKEN` and keeps the answers in `<out-dir>`. It
+2. With a single URL, look for the other screens of the same design: run
+   `node ${CLAUDE_SKILL_DIR}/scripts/screens.mjs <figma-url>`. It lists the frames drawn
+   beside the screen, the variants of the same Figma component first. When it lists
+   comparable screens, ask the developer which ones to judge together, in one question with
+   2 to 4 sets to choose from, the smallest useful one first (one screen per state at one
+   size, plus one screen at another size: sizes rarely change the components). When it
+   lists none, go on with the single screen. Skip this step when several URLs were given.
+3. Run `node ${CLAUDE_SKILL_DIR}/scripts/candidates.mjs <out-dir> <figma-url>...` from the
+   repo's root, one URL per screen, each between quotes, then look at the captures it names. The command reads
+   the screens from Figma with `FIGMA_TOKEN` and keeps the answers in `<out-dir>`. It
    prints the **brief**: for each candidate to judge, its variants, its size in the mock-up,
    what the Figma-to-code map says, the props of the component the map gives, or the component files with a close
    name. `verdicts.json` already holds one entry per candidate, verdict empty. When the
    command says `.claude/figma-component-inventory.json` is missing, ask the developer for the paths it
    lists and write the file: it is the one file you may write outside `<out-dir>`.
-3. Open, in one command, the component files and stylesheets the verdicts depend on (see
+4. Open, in one command, the component files and stylesheets the verdicts depend on (see
    "Read the code").
-4. Write every entry of `verdicts.json` in one edit, with the rules below.
-5. Run `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir>` from the repo's root. Fix every
+5. Write every entry of `verdicts.json` in one edit, with the rules below.
+6. Run `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir>` from the repo's root. Fix every
    problem it lists and run it again until it writes `cut.html`.
-6. Report: the path of `<out-dir>/cut.html`, then one line per candidate (number, React component, verdict, and the file that
+7. Report: the path of `<out-dir>/cut.html`, then one line per candidate (number, React component, verdict, and the file that
    decided it).
 
 ## `verdicts.json`
@@ -92,7 +100,9 @@ reading order (top to bottom, then left to right).
 | `out-of-scope` | `context.md` says this work leaves it out                       | `note`: why                                                                                                                     |
 | `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`, in French                                                                                 |
 
-- `except`: the uses, by letter, whose verdict differs from the candidate's.
+- `except`: the uses whose judgement differs from the candidate's, named by letter
+  (`"instances": ["a", "b"]`) or by screen (`"screens": [1, 4]`). An exception can change
+  the verdict, name another component (`codeComponent`, `codePath`) and give its own `note`.
 - `"outlined": false` with a `note`: a Figma component that is not a React component of its
   own (one option of a tab group, a dot drawn by its parent). No verdict.
 - A plain frame of the brief's last list gets an entry only when it is a React component of
@@ -125,6 +135,22 @@ data. Example: a list of values drawn as "Input — field" with a caret is `Sele
 though the current editor shows its values with `DropdownField`. The brief lists the map's lines
 that name a Figma component inside another line ("Form field" names `Select` for the caret
 variant).
+
+**Several screens: one component with a prop, or several components.** With several
+screens, the brief marks the candidates whose content differs from one screen to the next
+and says what each screen holds. For each one, choose and say why in the `note`:
+
+- **one component with a prop** when the screens share their structure and differ by a
+  value, a label or an optional part: one `codeComponent`, and the `note` names the prop
+  and its values ("prop `mode` : Arrêt, Continu, Période") or the optional part;
+- **several components** when the contents have nothing in common, or when one prop would
+  switch between unrelated blocks: the entry names the component of some screens, and an
+  `except` with `"screens"` names the component of the others. The `note` of each says what
+  it shows.
+
+Two sizes of the same state (desktop and mobile) are one component: a width is not a prop.
+A candidate drawn on some screens only is judged as usual, and a `note` is not needed to
+say where it appears.
 
 **A dialog over a page: only the dialog is cut.** When the screen has a backdrop (a
 "Scrim", "Backdrop" or "Overlay" layer covering it), what lies behind is the page the dialog
