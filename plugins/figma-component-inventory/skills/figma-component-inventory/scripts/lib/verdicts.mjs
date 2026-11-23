@@ -307,6 +307,8 @@ export function applyVerdictsToCandidates(candidates, entries) {
             each.screens?.includes(instance.screen),
         )
         const judgement = { ...entry, ...exception }
+        // A developer's decision covers what he named: the entry, or one exception.
+        const decided = exception ?? entry
         return {
           ...instance,
           verdict: /** @type {VerdictKey} */ (judgement.verdict),
@@ -314,8 +316,8 @@ export function applyVerdictsToCandidates(candidates, entries) {
           codePath: judgement.codePath ?? null,
           note: judgement.note ?? null,
           developerDecision:
-            judgement.decidedBy === "developer"
-              ? (judgement.developerDecision ?? "")
+            decided.decidedBy === "developer"
+              ? (decided.developerDecision ?? "")
               : null,
         }
       }),

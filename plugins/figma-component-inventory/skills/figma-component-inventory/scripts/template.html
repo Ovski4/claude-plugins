@@ -17,7 +17,9 @@
         padding: 24px 32px 48px;
         background: var(--page-background);
         color: var(--text);
-        font: 14px/1.4 system-ui, sans-serif;
+        font:
+          14px/1.4 system-ui,
+          sans-serif;
       }
       h1 {
         margin: 0;
@@ -74,7 +76,8 @@
         height: auto;
       }
       /* Every outline is dotted; only the colour tells the verdict. */
-      .outline, .swatch {
+      .outline,
+      .swatch {
         fill: none;
         stroke: var(--verdict);
         stroke-width: 2;
@@ -105,24 +108,31 @@
         stroke-width: 1;
         stroke-dasharray: none;
       }
-      .leader-end, .badge {
+      .leader-end,
+      .badge {
         fill: var(--verdict);
         stroke: none;
       }
       .badge-text {
         fill: var(--halo);
         stroke: none;
-        font: 600 10px system-ui, sans-serif;
+        font:
+          600 10px system-ui,
+          sans-serif;
       }
       .label-title {
         fill: var(--verdict);
         stroke: none;
-        font: 600 13px system-ui, sans-serif;
+        font:
+          600 13px system-ui,
+          sans-serif;
       }
       .label-detail {
         fill: var(--text-muted);
         stroke: none;
-        font: 11px system-ui, sans-serif;
+        font:
+          11px system-ui,
+          sans-serif;
       }
       .screens {
         display: flex;
@@ -212,6 +222,16 @@
       .differences-only .same-on-every-screen {
         opacity: 0.12;
       }
+      .veil-over-same-components {
+        display: none;
+        fill: var(--page-background);
+        fill-opacity: 0.82;
+        stroke: none;
+        pointer-events: none;
+      }
+      .differences-only .veil-over-same-components {
+        display: inline;
+      }
       .screens h2 {
         margin: 0 0 8px;
         font-size: 14px;
@@ -226,15 +246,16 @@
     <div class="tabs" id="tabs" role="tablist"></div>
     <label class="page-switch">
       <input type="checkbox" id="texts-outside-leaves" />
-      Textes hors sous-composant : montrer chaque texte qu'aucun sous-composant ne contient
+      Textes hors sous-composant : montrer chaque texte qu'aucun sous-composant
+      ne contient
     </label>
     <label class="page-switch" id="differences-switch" hidden>
       <input type="checkbox" id="differences-only" />
       Différences seulement : estomper ce qui est identique sur tous les écrans
     </label>
     <p class="page-hint">
-      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler ; recliquer, cliquer à côté ou Échap pour
-      revenir.
+      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler ;
+      recliquer, cliquer à côté ou Échap pour revenir.
     </p>
     <div class="screens" id="screens"></div>
     <ul class="explanations" id="explanations"></ul>
@@ -247,7 +268,10 @@
       // "--verdict" on any element that carries the verdict as a class.
       const verdictColours = document.createElement("style")
       verdictColours.textContent = cut.verdicts
-        .map(({ key, color }) => `:root { --${key}: ${color}; } .${key} { --verdict: var(--${key}); }`)
+        .map(
+          ({ key, color }) =>
+            `:root { --${key}: ${color}; } .${key} { --verdict: var(--${key}); }`,
+        )
         .join("\n")
       document.head.append(verdictColours)
 
@@ -271,7 +295,8 @@
 
       function createSvgElement(name, attributes, text) {
         const element = document.createElementNS(SVG_NAMESPACE, name)
-        for (const [attribute, value] of Object.entries(attributes)) element.setAttribute(attribute, value)
+        for (const [attribute, value] of Object.entries(attributes))
+          element.setAttribute(attribute, value)
         if (text !== undefined) element.textContent = text
         return element
       }
@@ -283,10 +308,14 @@
         for (const candidate of candidates) {
           for (const instances of groupByJudgement(candidate.instances)) {
             const [{ verdict, codeComponent }] = instances
-            const coversEveryInstance = instances.length === candidate.instances.length
-            const outlineIds = instances.map((instance) => buildOutlineId(candidate, instance))
+            const coversEveryInstance =
+              instances.length === candidate.instances.length
+            const outlineIds = instances.map((instance) =>
+              buildOutlineId(candidate, instance),
+            )
             const detail = [
-              candidate.figmaName + (instances.length > 1 ? ` ×${instances.length}` : ""),
+              candidate.figmaName +
+                (instances.length > 1 ? ` ×${instances.length}` : ""),
               verdictLabelsByKey.get(verdict),
             ]
             labels.push({
@@ -304,11 +333,18 @@
       // The instances of a candidate that share a verdict and a React component: several
       // groups when an exception judges some of them differently, or names another component.
       function groupByJudgement(instances) {
-        return [...Map.groupBy(instances, (instance) => `${instance.verdict}\n${instance.codeComponent}`).values()]
+        return [
+          ...Map.groupBy(
+            instances,
+            (instance) => `${instance.verdict}\n${instance.codeComponent}`,
+          ).values(),
+        ]
       }
 
       function buildOutlineId(candidate, instance) {
-        return candidate.instances.length > 1 ? `${candidate.number}${instance.letter}` : `${candidate.number}`
+        return candidate.instances.length > 1
+          ? `${candidate.number}${instance.letter}`
+          : `${candidate.number}`
       }
 
       // Labels go to the column on the side of their component, in the component's vertical
@@ -319,23 +355,46 @@
       function placeLabels(labels, screen) {
         const centerX = (label) => label.anchor.x + label.anchor.width / 2
         const centerY = (label) => label.anchor.y + label.anchor.height / 2
-        const isAsWideAsTheScreen = (label) => label.anchor.width > screen.width * FULL_WIDTH_SHARE
+        const isAsWideAsTheScreen = (label) =>
+          label.anchor.width > screen.width * FULL_WIDTH_SHARE
         const labelsBySide = { left: [], right: [] }
-        for (const label of labels.filter((each) => !isAsWideAsTheScreen(each))) {
-          labelsBySide[centerX(label) < screen.width / 2 ? "left" : "right"].push(label)
+        for (const label of labels.filter(
+          (each) => !isAsWideAsTheScreen(each),
+        )) {
+          labelsBySide[
+            centerX(label) < screen.width / 2 ? "left" : "right"
+          ].push(label)
         }
-        for (const label of labels.filter(isAsWideAsTheScreen).toSorted((a, b) => centerY(a) - centerY(b))) {
-          labelsBySide[labelsBySide.left.length < labelsBySide.right.length ? "left" : "right"].push(label)
+        for (const label of labels
+          .filter(isAsWideAsTheScreen)
+          .toSorted((a, b) => centerY(a) - centerY(b))) {
+          labelsBySide[
+            labelsBySide.left.length < labelsBySide.right.length
+              ? "left"
+              : "right"
+          ].push(label)
         }
 
         const step = LABEL_HEIGHT + GAP_BETWEEN_LABELS
         for (const [side, labelsOfSide] of Object.entries(labelsBySide)) {
           labelsOfSide.sort((a, b) => centerY(a) - centerY(b))
-          const wishedTops = labelsOfSide.map((label) => centerY(label) - LABEL_HEIGHT / 2)
+          const wishedTops = labelsOfSide.map(
+            (label) => centerY(label) - LABEL_HEIGHT / 2,
+          )
           const pushedDown = []
-          wishedTops.forEach((top, index) => pushedDown.push(index ? Math.max(top, pushedDown[index - 1] + step) : top))
+          wishedTops.forEach((top, index) =>
+            pushedDown.push(
+              index ? Math.max(top, pushedDown[index - 1] + step) : top,
+            ),
+          )
           const pushedUp = []
-          wishedTops.toReversed().forEach((top, index) => pushedUp.push(index ? Math.min(top, pushedUp[index - 1] - step) : top))
+          wishedTops
+            .toReversed()
+            .forEach((top, index) =>
+              pushedUp.push(
+                index ? Math.min(top, pushedUp[index - 1] - step) : top,
+              ),
+            )
           pushedUp.reverse()
           labelsOfSide.forEach((label, index) => {
             label.side = side
@@ -344,7 +403,9 @@
         }
         return {
           highestTop: Math.min(...labels.map((label) => label.top)),
-          lowestBottom: Math.max(...labels.map((label) => label.top + LABEL_HEIGHT)),
+          lowestBottom: Math.max(
+            ...labels.map((label) => label.top + LABEL_HEIGHT),
+          ),
         }
       }
 
@@ -366,8 +427,14 @@
           const towardsCenter = isLeft ? 1 : -1
           let verticalX = isLeft ? x + inset : x + width - inset
           const isTaken = (candidateX) =>
-            verticalXsBySide[label.side].some((takenX) => Math.abs(takenX - candidateX) < GAP_BETWEEN_LEADERS)
-          while (isTaken(verticalX) && Math.abs(verticalX - (x + width / 2)) < width / 2 - GAP_BETWEEN_LEADERS) {
+            verticalXsBySide[label.side].some(
+              (takenX) => Math.abs(takenX - candidateX) < GAP_BETWEEN_LEADERS,
+            )
+          while (
+            isTaken(verticalX) &&
+            Math.abs(verticalX - (x + width / 2)) <
+              width / 2 - GAP_BETWEEN_LEADERS
+          ) {
             verticalX += towardsCenter * GAP_BETWEEN_LEADERS
           }
           verticalXsBySide[label.side].push(verticalX)
@@ -379,28 +446,48 @@
       function drawOutline(layer, candidate, instance) {
         const { x, y, width, height } = instance.box
         const outlineId = buildOutlineId(candidate, instance)
-        const badgeWidth = outlineId.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
+        const badgeWidth =
+          outlineId.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
         const group = createSvgElement("g", {
           class: classOfCandidate(candidate, instance.verdict),
           "data-candidate": candidate.number,
         })
         if (Math.min(width, height) >= MIN_OUTLINED_THICKNESS) {
           group.append(
-            createSvgElement("rect", { class: "outline-halo", x, y, width, height }),
+            createSvgElement("rect", {
+              class: "outline-halo",
+              x,
+              y,
+              width,
+              height,
+            }),
             createSvgElement("rect", { class: "outline", x, y, width, height }),
           )
         }
         group.append(
-          createSvgElement("rect", { class: "badge", x: x - 1, y: y - BADGE_HEIGHT, width: badgeWidth, height: BADGE_HEIGHT }),
-          createSvgElement("text", { class: "badge-text", x: x - 1 + BADGE_PADDING_X, y: y - 3 }, outlineId),
+          createSvgElement("rect", {
+            class: "badge",
+            x: x - 1,
+            y: y - BADGE_HEIGHT,
+            width: badgeWidth,
+            height: BADGE_HEIGHT,
+          }),
+          createSvgElement(
+            "text",
+            { class: "badge-text", x: x - 1 + BADGE_PADDING_X, y: y - 3 },
+            outlineId,
+          ),
         )
         layer.append(group)
       }
 
       function drawLabel(layer, label, screen) {
         const isLeft = label.side === "left"
-        const captureEdge = isLeft ? screen.capture.x : screen.capture.x + screen.capture.width
-        const textX = captureEdge + (isLeft ? -1 : 1) * GAP_BETWEEN_CAPTURE_AND_LABELS
+        const captureEdge = isLeft
+          ? screen.capture.x
+          : screen.capture.x + screen.capture.width
+        const textX =
+          captureEdge + (isLeft ? -1 : 1) * GAP_BETWEEN_CAPTURE_AND_LABELS
         const titleY = label.top + LEADER_OFFSET_Y + 4
         const { leaderCorner, leaderEnd } = label
         const leaderPoints = [
@@ -420,11 +507,30 @@
             fill: "none",
             points: leaderPoints.map((point) => point.join(",")).join(" "),
           }),
-          createSvgElement("circle", { class: "leader-end", cx: leaderEnd.x, cy: leaderEnd.y, r: LEADER_END_RADIUS }),
-          createSvgElement("text", { class: "label-title", x: textX, y: titleY, "text-anchor": textAnchor }, label.title),
+          createSvgElement("circle", {
+            class: "leader-end",
+            cx: leaderEnd.x,
+            cy: leaderEnd.y,
+            r: LEADER_END_RADIUS,
+          }),
           createSvgElement(
             "text",
-            { class: "label-detail", x: textX, y: titleY + LABEL_DETAIL_OFFSET_Y, "text-anchor": textAnchor },
+            {
+              class: "label-title",
+              x: textX,
+              y: titleY,
+              "text-anchor": textAnchor,
+            },
+            label.title,
+          ),
+          createSvgElement(
+            "text",
+            {
+              class: "label-detail",
+              x: textX,
+              y: titleY + LABEL_DETAIL_OFFSET_Y,
+              "text-anchor": textAnchor,
+            },
             label.detail,
           ),
         )
@@ -436,28 +542,47 @@
       // size: switching tab shows what changes from one screen to the next.
       function drawScreens() {
         const hasSeveralScreens = cut.screens.length > 1
-        const verdictLabelsByKey = new Map(cut.verdicts.map(({ key, label }) => [key, label]))
+        const verdictLabelsByKey = new Map(
+          cut.verdicts.map(({ key, label }) => [key, label]),
+        )
         const drawnScreens = cut.screens.map((screen) => {
           const figmaLink = document.createElement("a")
           figmaLink.href = screen.figmaUrl
-          figmaLink.textContent = hasSeveralScreens ? `Écran ${screen.number} — ${screen.name}` : "Ouvrir dans Figma"
+          figmaLink.textContent = hasSeveralScreens
+            ? `Écran ${screen.number} — ${screen.name}`
+            : "Ouvrir dans Figma"
           const title = document.createElement("h2")
           title.append(figmaLink)
           const svg = createSvgElement("svg", {})
           const section = document.createElement("section")
           section.append(title, svg)
           document.getElementById("screens").append(section)
-          return { screen, section, svg, ownBox: drawScreen(svg, screen, verdictLabelsByKey) }
+          return {
+            screen,
+            section,
+            svg,
+            ownBox: drawScreen(svg, screen, verdictLabelsByKey),
+          }
         })
-        document.getElementById("texts-outside-leaves").addEventListener("change", (event) => {
-          document.body.classList.toggle("texts-outside-leaves", event.target.checked)
-        })
+        document
+          .getElementById("texts-outside-leaves")
+          .addEventListener("change", (event) => {
+            document.body.classList.toggle(
+              "texts-outside-leaves",
+              event.target.checked,
+            )
+          })
         if (hasSeveralScreens) {
           drawTabs(drawnScreens)
           document.getElementById("differences-switch").hidden = false
-          document.getElementById("differences-only").addEventListener("change", (event) => {
-            document.body.classList.toggle("differences-only", event.target.checked)
-          })
+          document
+            .getElementById("differences-only")
+            .addEventListener("change", (event) => {
+              document.body.classList.toggle(
+                "differences-only",
+                event.target.checked,
+              )
+            })
         }
       }
 
@@ -483,24 +608,38 @@
       // "Editor · Period" give "Off" and "Period".
       function shortenScreenNames(names) {
         const NAME_PART_SEPARATOR = " · "
-        const partsOfNames = names.map((name) => name.split(NAME_PART_SEPARATOR))
+        const partsOfNames = names.map((name) =>
+          name.split(NAME_PART_SEPARATOR),
+        )
         let sharedPartCount = 0
         while (
           partsOfNames.every((parts) => parts.length > sharedPartCount + 1) &&
-          partsOfNames.every((parts) => parts[sharedPartCount] === partsOfNames[0][sharedPartCount])
+          partsOfNames.every(
+            (parts) =>
+              parts[sharedPartCount] === partsOfNames[0][sharedPartCount],
+          )
         ) {
           sharedPartCount += 1
         }
-        return partsOfNames.map((parts) => parts.slice(sharedPartCount).join(NAME_PART_SEPARATOR))
+        return partsOfNames.map((parts) =>
+          parts.slice(sharedPartCount).join(NAME_PART_SEPARATOR),
+        )
       }
 
       function drawTabs(drawnScreens) {
-        const commonBox = findCommonBox(drawnScreens.map(({ ownBox }) => ownBox))
-        const shortNames = shortenScreenNames(drawnScreens.map(({ screen }) => screen.name))
+        const commonBox = findCommonBox(
+          drawnScreens.map(({ ownBox }) => ownBox),
+        )
+        const shortNames = shortenScreenNames(
+          drawnScreens.map(({ screen }) => screen.name),
+        )
         const tabs = document.getElementById("tabs")
         const ALL_SCREENS = "all"
         const choices = [
-          ...drawnScreens.map(({ screen }, index) => ({ shown: screen.number, text: `${screen.number} · ${shortNames[index]}` })),
+          ...drawnScreens.map(({ screen }, index) => ({
+            shown: screen.number,
+            text: `${screen.number} · ${shortNames[index]}`,
+          })),
           { shown: ALL_SCREENS, text: "Tous les écrans" },
         ]
         const buttons = choices.map(({ shown, text }) => {
@@ -519,7 +658,12 @@
         let shownNow = null
         function show(shown) {
           shownNow = shown
-          buttons.forEach((button, index) => button.setAttribute("aria-selected", String(choices[index].shown === shown)))
+          buttons.forEach((button, index) =>
+            button.setAttribute(
+              "aria-selected",
+              String(choices[index].shown === shown),
+            ),
+          )
           for (const { screen, section, svg, ownBox } of drawnScreens) {
             section.hidden = shown !== ALL_SCREENS && shown !== screen.number
             showBox(svg, shown === ALL_SCREENS ? ownBox : commonBox)
@@ -538,20 +682,30 @@
       // same candidates and gets the same verdict and React component everywhere.
       function isSameOnEveryScreen(candidate) {
         const judgementsByScreen = cut.screens.map((screen) =>
-          groupByJudgement(candidate.instances.filter((instance) => instance.screen === screen.number))
-            .map(([{ verdict, codeComponent }]) => `${verdict} ${codeComponent}`)
+          groupByJudgement(
+            candidate.instances.filter(
+              (instance) => instance.screen === screen.number,
+            ),
+          )
+            .map(
+              ([{ verdict, codeComponent }]) => `${verdict} ${codeComponent}`,
+            )
             .toSorted()
             .join(" + "),
         )
         return (
-          judgementsByScreen.every((judgements) => judgements !== "" && judgements === judgementsByScreen[0]) &&
-          candidate.contentsThatDiffer.length === 0
+          judgementsByScreen.every(
+            (judgements) =>
+              judgements !== "" && judgements === judgementsByScreen[0],
+          ) && candidate.contentsThatDiffer.length === 0
         )
       }
 
       // The class that lets the "differences only" switch fade a candidate's drawing.
       function classOfCandidate(candidate, verdict) {
-        return numbersSameOnEveryScreen.has(candidate.number) ? `${verdict} same-on-every-screen` : verdict
+        return numbersSameOnEveryScreen.has(candidate.number)
+          ? `${verdict} same-on-every-screen`
+          : verdict
       }
 
       function drawScreen(svg, screen, verdictLabelsByKey) {
@@ -559,44 +713,108 @@
           .filter((candidate) => candidate.outlined)
           .map((candidate) => ({
             ...candidate,
-            instances: candidate.instances.filter((instance) => instance.screen === screen.number),
+            instances: candidate.instances.filter(
+              (instance) => instance.screen === screen.number,
+            ),
           }))
           .filter((candidate) => candidate.instances.length)
         const labels = buildLabels(visibleCandidates, verdictLabelsByKey)
         const { highestTop, lowestBottom } = placeLabels(labels, screen)
         routeLeaders(labels)
 
-        const left = screen.capture.x - GAP_BETWEEN_CAPTURE_AND_LABELS - LABEL_COLUMN_WIDTH
-        const width = screen.capture.width + 2 * (GAP_BETWEEN_CAPTURE_AND_LABELS + LABEL_COLUMN_WIDTH)
-        const top = Math.min(screen.capture.y - BADGE_HEIGHT, highestTop - GAP_BETWEEN_LABELS)
-        const height = Math.max(screen.capture.y + screen.capture.height, lowestBottom) - top + GAP_BETWEEN_LABELS
-        showBox(svg, { left, top, width, height })
-        const isolationMask = createSvgElement("path", { class: "isolation-mask" })
-        svg.replaceChildren(
-          createSvgElement("image", { href: screen.captureDataUrl, ...pickBox(screen.capture) }),
-          isolationMask,
+        const left =
+          screen.capture.x - GAP_BETWEEN_CAPTURE_AND_LABELS - LABEL_COLUMN_WIDTH
+        const width =
+          screen.capture.width +
+          2 * (GAP_BETWEEN_CAPTURE_AND_LABELS + LABEL_COLUMN_WIDTH)
+        const top = Math.min(
+          screen.capture.y - BADGE_HEIGHT,
+          highestTop - GAP_BETWEEN_LABELS,
         )
+        const height =
+          Math.max(screen.capture.y + screen.capture.height, lowestBottom) -
+          top +
+          GAP_BETWEEN_LABELS
+        showBox(svg, { left, top, width, height })
+        const isolationMask = createSvgElement("path", {
+          class: "isolation-mask",
+        })
         // Outer components first, so that a nested component's outline stays on top.
         const outlines = visibleCandidates
-          .flatMap((candidate) => candidate.instances.map((instance) => ({ candidate, instance })))
+          .flatMap((candidate) =>
+            candidate.instances.map((instance) => ({ candidate, instance })),
+          )
           .toSorted((a, b) => a.instance.level - b.instance.level)
-        for (const { candidate, instance } of outlines) drawOutline(svg, candidate, instance)
+        svg.replaceChildren(
+          createSvgElement("image", {
+            href: screen.captureDataUrl,
+            ...pickBox(screen.capture),
+          }),
+          ...buildVeilOverSameComponents(screen, outlines),
+          isolationMask,
+        )
+        for (const { candidate, instance } of outlines)
+          drawOutline(svg, candidate, instance)
         for (const label of labels) drawLabel(svg, label, screen)
         drawLooseTexts(svg, screen, outlines)
         isolationMasks.push({ screen, outlines, isolationMask })
         svg.addEventListener("click", (event) => {
           const label = event.target.closest("[data-label]")
-          isolate(label ? Number(label.dataset.candidate) : findCandidateAt(svg, outlines, event))
+          isolate(
+            label
+              ? Number(label.dataset.candidate)
+              : findCandidateAt(svg, outlines, event),
+          )
         })
         return { left, top, width, height }
       }
 
+      // The veil the "differences only" switch lays over the capture: it covers the
+      // components that are the same on every screen, and leaves clear a component that
+      // differs, even inside one that is the same. `outlines` go from outer to inner, so
+      // that the innermost component decides for the place it covers.
+      function buildVeilOverSameComponents(screen, outlines) {
+        const maskId = `same-components-of-screen-${screen.number}`
+        const mask = createSvgElement("mask", {
+          id: maskId,
+          maskUnits: "userSpaceOnUse",
+          ...pickBox(screen.capture),
+        })
+        for (const { candidate, instance } of outlines) {
+          const fill = numbersSameOnEveryScreen.has(candidate.number)
+            ? "white"
+            : "black"
+          mask.append(
+            createSvgElement("rect", {
+              fill,
+              stroke: "none",
+              ...pickBox(instance.box),
+            }),
+          )
+        }
+        const veil = createSvgElement("rect", {
+          class: "veil-over-same-components",
+          mask: `url(#${maskId})`,
+          ...pickBox(screen.capture),
+        })
+        return [mask, veil]
+      }
+
       // The candidate whose outline is the smallest one around the point clicked, or null.
       function findCandidateAt(svg, outlines, event) {
-        const { x, y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM().inverse())
+        const { x, y } = new DOMPoint(
+          event.clientX,
+          event.clientY,
+        ).matrixTransform(svg.getScreenCTM().inverse())
         const area = ({ box }) => box.width * box.height
         const [smallest] = outlines
-          .filter(({ instance: { box } }) => x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height)
+          .filter(
+            ({ instance: { box } }) =>
+              x >= box.x &&
+              x <= box.x + box.width &&
+              y >= box.y &&
+              y <= box.y + box.height,
+          )
           .toSorted((a, b) => area(a.instance) - area(b.instance))
         return smallest ? smallest.candidate.number : null
       }
@@ -605,17 +823,27 @@
       // colour, everything else fades, and the capture is veiled except where the candidate
       // is drawn. Called with the same number again, or with null, shows everything back.
       function isolate(candidateNumber) {
-        isolatedNumber = candidateNumber === isolatedNumber ? null : candidateNumber
+        isolatedNumber =
+          candidateNumber === isolatedNumber ? null : candidateNumber
         document.body.classList.toggle("isolating", isolatedNumber !== null)
         for (const element of document.querySelectorAll("[data-candidate]")) {
-          element.classList.toggle("isolated", Number(element.dataset.candidate) === isolatedNumber)
+          element.classList.toggle(
+            "isolated",
+            Number(element.dataset.candidate) === isolatedNumber,
+          )
         }
         for (const { screen, outlines, isolationMask } of isolationMasks) {
           const { x, y, width, height } = screen.capture
           const holes = outlines
             .filter(({ candidate }) => candidate.number === isolatedNumber)
-            .map(({ instance: { box } }) => `M${box.x},${box.y}h${box.width}v${box.height}h${-box.width}z`)
-          isolationMask.setAttribute("d", `M${x},${y}h${width}v${height}h${-width}z${holes.join("")}`)
+            .map(
+              ({ instance: { box } }) =>
+                `M${box.x},${box.y}h${box.width}v${box.height}h${-box.width}z`,
+            )
+          isolationMask.setAttribute(
+            "d",
+            `M${x},${y}h${width}v${height}h${-width}z${holes.join("")}`,
+          )
         }
       }
 
@@ -648,14 +876,29 @@
             .toSorted((a, b) => area(a.instance) - area(b.instance))
           if (owner && isInsideAnother(owner)) continue
           const tag = owner ? `→ ${owner.candidate.number}` : "?"
-          const tagWidth = tag.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
+          const tagWidth =
+            tag.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
           const { x, y, width, height } = text.box
           const group = createSvgElement("g", { class: "loose-text" })
           group.append(
             createSvgElement("title", {}, text.characters),
             createSvgElement("rect", { x, y, width, height }),
-            createSvgElement("rect", { class: "badge", x: x + width, y, width: tagWidth, height: BADGE_HEIGHT }),
-            createSvgElement("text", { class: "badge-text", x: x + width + BADGE_PADDING_X, y: y + BADGE_HEIGHT - 3 }, tag),
+            createSvgElement("rect", {
+              class: "badge",
+              x: x + width,
+              y,
+              width: tagWidth,
+              height: BADGE_HEIGHT,
+            }),
+            createSvgElement(
+              "text",
+              {
+                class: "badge-text",
+                x: x + width + BADGE_PADDING_X,
+                y: y + BADGE_HEIGHT - 3,
+              },
+              tag,
+            ),
           )
           layer.append(group)
         }
@@ -671,7 +914,10 @@
 
       function drawHeader() {
         const { fingerprint, screens } = cut
-        const pageTitle = screens.length > 1 ? `${screens.length} écrans d'un même design` : screens[0].name
+        const pageTitle =
+          screens.length > 1
+            ? `${screens.length} écrans d'un même design`
+            : screens[0].name
         document.title = `Découpage — ${pageTitle}`
         document.getElementById("screen-name").textContent = pageTitle
         const approval = document.getElementById("approval")
@@ -685,32 +931,52 @@
         const legend = document.getElementById("legend")
         for (const { key, label } of cut.verdicts) {
           const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
-          swatch.append(createSvgElement("line", { class: `swatch ${key}`, x1: 0, y1: 6, x2: 36, y2: 6 }))
+          swatch.append(
+            createSvgElement("line", {
+              class: `swatch ${key}`,
+              x1: 0,
+              y1: 6,
+              x2: 36,
+              y2: 6,
+            }),
+          )
           const item = document.createElement("li")
           item.className = key
           item.append(swatch, label)
           legend.append(item)
         }
 
-        const notOutlined = cut.candidates.filter((candidate) => !candidate.outlined)
+        const notOutlined = cut.candidates.filter(
+          (candidate) => !candidate.outlined,
+        )
         if (notOutlined.length) {
           document.getElementById("not-outlined").textContent =
             "Non entourés : " +
-            notOutlined.map((candidate) => `${candidate.number} ${candidate.figmaName} (${candidate.note})`).join(" ; ")
+            notOutlined
+              .map(
+                (candidate) =>
+                  `${candidate.number} ${candidate.figmaName} (${candidate.note})`,
+              )
+              .join(" ; ")
         }
       }
 
       // Under the image: why a component is not simply reused (what has to change, why it is
       // left out, what the developer has to decide), one item per label that has a reason.
       function drawExplanations() {
-        const verdictLabelsByKey = new Map(cut.verdicts.map(({ key, label }) => [key, label]))
+        const verdictLabelsByKey = new Map(
+          cut.verdicts.map(({ key, label }) => [key, label]),
+        )
         const list = document.getElementById("explanations")
-        for (const candidate of cut.candidates.filter((each) => each.outlined)) {
+        for (const candidate of cut.candidates.filter(
+          (each) => each.outlined,
+        )) {
           for (const instances of groupByJudgement(candidate.instances)) {
             const [{ verdict, codeComponent, developerDecision }] = instances
             const reason = verdict === "reused" ? null : instances[0].note
             if (!reason && developerDecision === null) continue
-            const coversEveryInstance = instances.length === candidate.instances.length
+            const coversEveryInstance =
+              instances.length === candidate.instances.length
             const title = document.createElement("strong")
             title.textContent = `${coversEveryInstance ? candidate.number : nameInstances(candidate, instances)} ${codeComponent ?? candidate.figmaName} — ${verdictLabelsByKey.get(verdict)}`
             const item = document.createElement("li")
@@ -726,7 +992,10 @@
               item.append(document.createElement("br"), decision)
             }
             if (verdict === "to-decide") {
-              item.append(document.createElement("br"), `${candidate.question} ${candidate.options.join(" / ")}`)
+              item.append(
+                document.createElement("br"),
+                `${candidate.question} ${candidate.options.join(" / ")}`,
+              )
             }
             list.append(item)
           }
@@ -736,12 +1005,18 @@
       // "17 · écrans 1 4" when the instances are everything the candidate has on those
       // screens, "6a 6b" otherwise.
       function nameInstances(candidate, instances) {
-        const screenNumbers = [...new Set(instances.map((instance) => instance.screen))]
+        const screenNumbers = [
+          ...new Set(instances.map((instance) => instance.screen)),
+        ]
         const coversWholeScreens =
-          candidate.instances.filter((instance) => screenNumbers.includes(instance.screen)).length === instances.length
+          candidate.instances.filter((instance) =>
+            screenNumbers.includes(instance.screen),
+          ).length === instances.length
         return cut.screens.length > 1 && coversWholeScreens
           ? `${candidate.number} · écran${screenNumbers.length > 1 ? "s" : ""} ${screenNumbers.join(" ")}`
-          : instances.map((instance) => buildOutlineId(candidate, instance)).join(" ")
+          : instances
+              .map((instance) => buildOutlineId(candidate, instance))
+              .join(" ")
       }
 
       let isolatedNumber = null
@@ -752,10 +1027,19 @@
       // A click beside the images and the reasons shows everything back; the page's own
       // controls (tabs, switches, links) leave the isolation as it is.
       document.addEventListener("click", (event) => {
-        if (!event.target.closest(".screens svg, [data-candidate], button, label, a")) isolate(null)
+        if (
+          !event.target.closest(
+            ".screens svg, [data-candidate], button, label, a",
+          )
+        )
+          isolate(null)
       })
       const numbersSameOnEveryScreen = new Set(
-        cut.screens.length > 1 ? cut.candidates.filter(isSameOnEveryScreen).map((candidate) => candidate.number) : [],
+        cut.screens.length > 1
+          ? cut.candidates
+              .filter(isSameOnEveryScreen)
+              .map((candidate) => candidate.number)
+          : [],
       )
       drawHeader()
       drawScreens()
