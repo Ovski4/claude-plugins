@@ -56,6 +56,7 @@ const validEntries = [
     codeComponent: "Button",
     codePath: BUTTON_PATH,
     verdict: "reused",
+    note: "28 px = largeur et hauteur de .btnIcon.discreet (button.module.css).",
     except: [
       {
         instances: ["a", "b"],
@@ -112,11 +113,18 @@ test("valid verdicts have no problem; every broken rule is listed", () => {
     { number: 2, figmaName: "Tag", verdict: "maybe" },
     { number: 2, figmaName: "Tag — status", verdict: "to-create" },
     { number: 9, figmaName: "Ghost", verdict: "reused" },
+    {
+      number: 3,
+      figmaName: "Point",
+      codeComponent: "Button",
+      codePath: BUTTON_PATH,
+      verdict: "reused",
+      note: "Même bouton que le 1.",
+    },
   ]
   assert.deepEqual(listProblemsOf(brokenEntries, "older-version"), [
     "verdicts.json was filled for Figma version older-version, candidates.json is at 2423993102449653660",
     "2 Tag — status: 2 entries in verdicts.json",
-    "3 Point: no entry in verdicts.json",
     '1 Button — icon: codePath "services/frontend/src/missing.tsx" does not exist in the repo',
     '1 Button — icon: "note" is 338 characters, the limit is 330 (2 or 3 lines)',
     '1 Button — icon: "note" leaves a point to verify; check it in the code, or use "to-decide"',
@@ -127,6 +135,7 @@ test("valid verdicts have no problem; every broken rule is listed", () => {
     '2 Tag — status: verdict "to-create" needs "codeComponent"',
     '2 Tag — status: verdict "to-create" needs "note"',
     "9 Ghost: no candidate has this number",
+    '3 Point: a "reused" note gives the height added up from the stylesheet, "36 px = 8 + 20 + 8 (.primaryLarge)"',
   ])
 })
 
@@ -287,6 +296,7 @@ Les décisions marquées « développeur » font foi : ne pas les rejuger.
 ## Réutilisé
 
 - **1c Button** — \`services/frontend/src/components/ui/button.tsx\` — Figma « Button — icon » ×1 ([nœud](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-1c))
+  - 28 px = largeur et hauteur de .btnIcon.discreet (button.module.css).
 
 ## À créer
 

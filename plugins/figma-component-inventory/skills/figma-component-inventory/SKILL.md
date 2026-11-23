@@ -60,6 +60,7 @@ a file only when a verdict depends on it.
       "codeComponent": "Button",
       "codePath": "src/components/ui/button.tsx",
       "verdict": "reused",
+      "note": "28 px = width and height of .btnIcon.discreet (button.module.css).",
       "except": [
         { "instances": ["a", "b"], "verdict": "out-of-scope", "note": "…" }
       ]
@@ -92,13 +93,13 @@ a file only when a verdict depends on it.
 `number` and `figmaName` stay as written. The uses of a candidate are lettered `a`, `b`… in
 reading order (top to bottom, then left to right).
 
-| `verdict`      | When                                                            | Required with it                                                                                                                |
-| -------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| `reused`       | an existing component whose props cover what the capture shows  | `codeComponent`, `codePath` (an existing file); no `note`                                                                       |
-| `to-adapt`     | an existing component that has to change                        | the same, plus `note`: the prop, type or style that blocks, and what the mock-up needs                                          |
-| `to-create`    | no component does this job                                      | `codeComponent`: the proposed name; `note`: where you searched, the closest existing code, what the new component takes from it |
-| `out-of-scope` | `context.md` says this work leaves it out                       | `note`: why                                                                                                                     |
-| `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`, in French                                                                                 |
+| `verdict`      | When                                                            | Required with it                                                                                                                      |
+| -------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `reused`       | an existing component whose props cover what the capture shows  | `codeComponent`, `codePath` (an existing file); `note`: the height added up from its stylesheet, "36 px = 8 + 20 + 8 (.primaryLarge)" |
+| `to-adapt`     | an existing component that has to change                        | the same, plus `note`: the prop, type or style that blocks, and what the mock-up needs                                                |
+| `to-create`    | no component does this job                                      | `codeComponent`: the proposed name; `note`: where you searched, the closest existing code, what the new component takes from it       |
+| `out-of-scope` | `context.md` says this work leaves it out                       | `note`: why                                                                                                                           |
+| `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`, in French                                                                                       |
 
 - `except`: the uses whose judgement differs from the candidate's, named by letter
   (`"instances": ["a", "b"]`) or by screen (`"screens": [1, 4]`). An exception can change
@@ -122,7 +123,9 @@ the code: open the files with a close name.
   number ending an icon's name, `ic/power/16` is 16 px), the format of the text shown. A
   height, an icon size or a text format that differs is `to-adapt`, not `reused`. Work the
   height out from the stylesheet: padding + line height + borders, with the tokens' values
-  looked up where the repo declares them. A height you did not add up is a guess.
+  looked up where the repo declares them, and write the sum in the `note`: "36 px = 7 + 20 +
+  7 + 2 (.outline)". `render.mjs` refuses a `reused` note without one. A sum that is not the
+  mock-up's height makes the verdict `to-adapt`.
 - `to-adapt` needs the file open: name the prop, the type or the style that blocks.
 - With no component from the map, open the files with a close name before concluding
   "to create", and search the design-system folder the brief names by role and by what the
@@ -177,15 +180,19 @@ For each such text, decide what draws it in the code:
 
 - a prop of the component beside it, when that component has the prop and its layout can
   hold the text. A field's `label` and `helper` props fit only when nothing sits beside the
-  field: with a tag or a unit next to it, the component around draws the label, the field
-  (without its label), the tag and the help text;
+  field. With a tag or a unit next to it, the closest component already judged around them
+  (the settings block that holds the field) draws the label, the field (without its label),
+  the tag and the help text itself: no new row or field component between them;
 - otherwise a component around the text and its neighbours: give the frame an entry,
   `to-create`, named for what the block does. A label, a control and the sentence that
   describes the choice are one component (« Mode de régulation », the mode selector and the
   sentence of the chosen mode).
-  A title above a group of fields is not a reason for a component of its own: it stays in the
-  component that holds the fields. A text left to the screen's root component is a missing
-  component, unless the root draws it on purpose (the window's title).
+
+A group of fields under a title is not a component of its own, even when its fields change
+from one screen to the next: the component that holds it draws the title and the fields,
+and its prop (the mode, the state) chooses which. Set such frames to `"outlined": false`. A
+text left to the screen's root component is a missing component, unless the root draws it
+on purpose (the window's title).
 
 **One React component, one outline.** When a Figma component and the Figma components
 nested in it are drawn by a single React component (a selector and its segments are one

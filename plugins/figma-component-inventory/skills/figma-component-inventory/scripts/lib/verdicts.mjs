@@ -67,7 +67,7 @@ export const VERDICTS = {
   reused: {
     label: "Réutilisé",
     color: "#15803d",
-    requiredFields: ["codeComponent", "codePath"],
+    requiredFields: ["codeComponent", "codePath", "note"],
     needsExistingCodePath: true,
   },
   "to-adapt": {
@@ -104,6 +104,8 @@ const MAX_NOTE_CHARACTERS = 330
 // A doubt is settled by reading the code before drawing, or asked with "to-decide".
 const OPEN_DOUBT_PATTERN =
   /non vérifié|à vérifier|pas vérifié|not verified|to verify/i
+// A "reused" note shows the height added up from the stylesheet: "36 px = 8 + 20 + 8".
+const HEIGHT_SUM_PATTERN = /\d+(?:[.,]\d+)? ?px ?=/
 
 /**
  * @param {Judgement} judgement a candidate's entry, or that entry with one of its exceptions applied
@@ -139,6 +141,15 @@ function listProblemsOfJudgement(judgement, who, doesCodePathExist) {
   if (note.length > MAX_NOTE_CHARACTERS) {
     problems.push(
       `${who}: "note" is ${note.length} characters, the limit is ${MAX_NOTE_CHARACTERS} (2 or 3 lines)`,
+    )
+  }
+  if (
+    judgement.verdict === "reused" &&
+    note &&
+    !HEIGHT_SUM_PATTERN.test(note)
+  ) {
+    problems.push(
+      `${who}: a "reused" note gives the height added up from the stylesheet, "36 px = 8 + 20 + 8 (.primaryLarge)"`,
     )
   }
   if (OPEN_DOUBT_PATTERN.test(note)) {
