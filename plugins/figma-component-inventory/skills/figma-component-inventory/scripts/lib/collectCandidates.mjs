@@ -25,6 +25,13 @@
  * @property {string[]} icons the icon components found directly inside: listed, never outlined
  */
 /**
+ * A text drawn on the screen. Icons' and hidden layers' texts are left out.
+ * @typedef {object} ScreenText
+ * @property {string} nodeId
+ * @property {string} characters what it says
+ * @property {Box} box the visible part, in pixels at scale 1 from the screen's top-left corner
+ */
+/**
  * A candidate while the tree is being walked: no number yet, and each use points to the
  * group it sits in instead of that group's number.
  * @typedef {object} CandidateGroup
@@ -139,8 +146,9 @@ function findOrCreateGroup(groupsByKey, key, kind, nameGroup) {
  * @param {FigmaNode} screenNode the node the Figma link points to
  * @param {Record<string, FigmaComponent>} componentsById
  * @param {Record<string, { name: string }>} componentSetsById
- * @returns {{ candidates: Candidate[], backdrop: string | null }} backdrop: the name of the
- *   veil drawn behind a dialog, when the screen has one
+ * @returns {{ candidates: Candidate[], backdrop: string | null, texts: ScreenText[] }}
+ *   backdrop: the name of the veil drawn behind a dialog, when the screen has one; texts:
+ *   every text the cut part of the screen shows
  */
 export function collectCandidates(
   screenNode,
@@ -162,6 +170,8 @@ export function collectCandidates(
   const componentGroupsByComponent = new Map()
   /** @type {Map<string, CandidateGroup>} */
   const frameGroupsByKey = new Map()
+  /** @type {ScreenText[]} */
+  const texts = []
 
   /** @param {Box} absoluteBox */
   const toScreenBox = (absoluteBox) => ({
@@ -237,6 +247,14 @@ export function collectCandidates(
         ? screenBox
         : clipBox(toScreenBox(node.absoluteBoundingBox), clip)
     if (!visibleBox) return
+    if (node.type === "TEXT") {
+      texts.push({
+        nodeId: node.id,
+        characters: node.characters ?? "",
+        box: visibleBox,
+      })
+      return
+    }
     const level = enclosingLevel + 1
     const use = { nodeId: node.id, level, enclosingGroup, box: visibleBox }
     let surroundingsOfChildren = {
@@ -321,5 +339,5 @@ export function collectCandidates(
       })),
     icons: [...group.icons],
   }))
-  return { candidates, backdrop }
+  return { candidates, backdrop, texts }
 }

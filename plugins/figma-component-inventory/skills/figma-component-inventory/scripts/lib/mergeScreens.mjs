@@ -29,6 +29,9 @@ import { toInstanceLetter } from "./collectCandidates.mjs"
  * one component with a prop and several components. Such a candidate must be judged.
  */
 
+// In Figma, a layer's name often reads "Role — detail": "Group — setpoint".
+const NAME_PART_SEPARATOR = " — "
+
 /**
  * @param {Box} inner
  * @param {Box} outer
@@ -136,15 +139,32 @@ function fillContentsThatDiffer(placedByScreen) {
 export function mergeScreenCandidates(candidatesByScreen) {
   /** @type {Map<string, { merged: MergedCandidate, origins: Candidate[] }>} */
   const groupsByKey = new Map()
+  // On one screen, look-alike frames are one candidate named after what their names share
+  // ("Group — dates" and "Group — setpoint" give "Group"). The same frame alone on another
+  // screen joins that candidate.
+  const namesOfFrameGroups = new Set(
+    candidatesByScreen
+      .flat()
+      .filter((candidate) => candidate.kind === "frame")
+      .map((candidate) => candidate.figmaName),
+  )
+  /** @param {Candidate} candidate */
+  const nameAcrossScreens = (candidate) => {
+    const [firstPartOfName] = candidate.figmaName.split(NAME_PART_SEPARATOR)
+    return candidate.kind === "frame" && namesOfFrameGroups.has(firstPartOfName)
+      ? firstPartOfName
+      : candidate.figmaName
+  }
   candidatesByScreen.forEach((candidates) => {
     for (const candidate of candidates) {
-      const key = `${candidate.kind}\n${candidate.figmaName}`
+      const figmaName = nameAcrossScreens(candidate)
+      const key = `${candidate.kind}\n${figmaName}`
       const group = groupsByKey.get(key) ?? {
         merged: {
           number: 0,
           kind: candidate.kind,
           mustBeJudged: false,
-          figmaName: candidate.figmaName,
+          figmaName,
           instances: [],
           icons: [],
           contentsThatDiffer: [],
@@ -190,6 +210,13 @@ export function mergeScreenCandidates(candidatesByScreen) {
             : candidatesByOldNumber.get(instance.parent)
         const instanceOnTheScreen = {
           ...instance,
+          // A frame that joined a group keeps its own name as its variant, like the
+          // frames grouped on one screen.
+          variant:
+            instance.variant ||
+            (candidate.figmaName === group.merged.figmaName
+              ? ""
+              : candidate.figmaName),
           letter: toInstanceLetter(group.merged.instances.length),
           parent: parentCandidate
             ? (newNumbersByScreenCandidate.get(parentCandidate) ?? null)

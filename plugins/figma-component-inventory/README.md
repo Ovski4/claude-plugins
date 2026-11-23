@@ -162,6 +162,7 @@ components first, then the plain frames. The exact shape of each object is the `
 and `Instance` types of `scripts/lib/collectCandidates.mjs`.
 
 - `screens`: one item per screen, numbered from 1 in the order given.
+- `screens[].texts`: every text the screen shows, with its box.
 - `screens[].backdrop`: the name of the veil drawn behind a dialog (a top-level "Scrim",
   "Backdrop" or "Overlay" layer covering the screen), or `null`. With a backdrop, only the
   layers in front of it give candidates: the page behind is in the capture, never cut.
@@ -209,6 +210,11 @@ With several screens, the page has two aids to compare them:
 - a switch, « Différences seulement », fades every component that is the same on all
   screens: drawn on each of them, holding the same components, with the same verdict and
   React component. What stays in colour is what the screens do not share.
+
+A switch, « Textes hors sous-composant », tints every text that no sub-component holds:
+the smallest outlined component around it is the screen's outermost one (the dialog, the
+page), or there is none. It shows what the cut leaves loose: a label or a help text that
+may deserve a component, or be a prop of the component beside it.
 
 Labels are in French, since its images go into Jira tickets. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its

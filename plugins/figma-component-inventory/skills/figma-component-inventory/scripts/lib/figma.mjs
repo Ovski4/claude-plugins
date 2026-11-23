@@ -23,6 +23,7 @@ import path from "node:path"
  * @property {Box | null} [absoluteBoundingBox] the node's box, in the page's coordinates
  * @property {Box | null} [absoluteRenderBounds] what the node paints, shadow included
  * @property {string} [componentId] for an INSTANCE, the component it is an instance of
+ * @property {string} [characters] for a TEXT, what it says
  * @property {FigmaNode[]} [children] from back to front
  */
 /** @typedef {{ name: string, componentSetId?: string }} FigmaComponent */

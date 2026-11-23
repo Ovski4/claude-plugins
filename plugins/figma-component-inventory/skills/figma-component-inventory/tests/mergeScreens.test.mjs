@@ -52,6 +52,19 @@ test("a component keeps one number on every screen, and a frame whose content di
     buildCandidate(3, "frame", "Body", [20, 20, 360, 240], 1),
     buildCandidate(4, "frame", "Settings", [20, 100, 360, 100], 1),
   ]
+  // On a third screen two look-alike frames were grouped as "Group": the lone
+  // "Group — setpoint" of another screen joins them.
+  const groupOnOneScreen = mergeScreenCandidates([
+    [buildCandidate(1, "frame", "Group — setpoint", [0, 0, 100, 40], null)],
+    [buildCandidate(1, "frame", "Group", [0, 0, 100, 40], null)],
+  ])
+  assert.deepEqual(
+    groupOnOneScreen.map((candidate) => [
+      candidate.figmaName,
+      candidate.instances.map((instance) => instance.variant),
+    ]),
+    [["Group", ["Group — setpoint", ""]]],
+  )
 
   const merged = mergeScreenCandidates([offScreen, continuousScreen])
 

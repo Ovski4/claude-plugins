@@ -86,6 +86,7 @@ async function main() {
         await downloadCapture(fileKey, nodeId, figmaAccess),
       ),
       backdrop: collected.backdrop,
+      texts: collected.texts,
     })
   }
   /** @type {CandidateWithMapLines[]} */

@@ -10,6 +10,7 @@
         --text: #1c2430;
         --text-muted: #5b6676;
         --halo: #ffffff;
+        --loose-text: #d97706;
       }
       body {
         margin: 0;
@@ -158,13 +159,33 @@
         color: var(--text-muted);
         font-size: 12px;
       }
-      .differences-switch {
+      .page-switch {
         display: block;
-        margin: 0 0 16px;
+        margin: 0 0 8px;
         cursor: pointer;
       }
-      .differences-switch[hidden] {
+      .page-switch[hidden] {
         display: none;
+      }
+      .screens {
+        margin-top: 16px;
+      }
+      .loose-text {
+        display: none;
+      }
+      .texts-outside-leaves .loose-text {
+        display: inline;
+      }
+      .loose-text rect {
+        fill: var(--loose-text);
+        fill-opacity: 0.22;
+        stroke: var(--loose-text);
+        stroke-width: 1;
+      }
+      .loose-text .badge {
+        fill: var(--loose-text);
+        fill-opacity: 1;
+        stroke: none;
       }
       .differences-only .same-on-every-screen {
         opacity: 0.12;
@@ -181,7 +202,11 @@
     <p class="fingerprint" id="fingerprint"></p>
     <ul class="legend" id="legend"></ul>
     <div class="tabs" id="tabs" role="tablist"></div>
-    <label class="differences-switch" id="differences-switch" hidden>
+    <label class="page-switch">
+      <input type="checkbox" id="texts-outside-leaves" />
+      Textes hors sous-composant : montrer chaque texte qu'aucun sous-composant ne contient
+    </label>
+    <label class="page-switch" id="differences-switch" hidden>
       <input type="checkbox" id="differences-only" />
       Différences seulement : estomper ce qui est identique sur tous les écrans
     </label>
@@ -390,6 +415,9 @@
           document.getElementById("screens").append(section)
           return { screen, section, svg, ownBox: drawScreen(svg, screen, verdictLabelsByKey) }
         })
+        document.getElementById("texts-outside-leaves").addEventListener("change", (event) => {
+          document.body.classList.toggle("texts-outside-leaves", event.target.checked)
+        })
         if (hasSeveralScreens) {
           drawTabs(drawnScreens)
           document.getElementById("differences-switch").hidden = false
@@ -516,7 +544,50 @@
           .toSorted((a, b) => a.instance.level - b.instance.level)
         for (const { candidate, instance } of outlines) drawOutline(svg, candidate, instance)
         for (const label of labels) drawLabel(svg, label, screen)
+        drawLooseTexts(svg, screen, outlines)
         return { left, top, width, height }
+      }
+
+      function isBoxInside(inner, outer) {
+        return (
+          inner.x >= outer.x &&
+          inner.y >= outer.y &&
+          inner.x + inner.width <= outer.x + outer.width &&
+          inner.y + inner.height <= outer.y + outer.height
+        )
+      }
+
+      // A text is "loose" when no sub-component holds it: the smallest outlined component
+      // around it is the screen's outermost one (the dialog, the page), or there is none.
+      // Each one is tinted and tagged with the number of that component ("?" when there is
+      // none), shown on demand: a loose text may be a label or a help text that deserves a
+      // component, or a prop of the component next to it.
+      function drawLooseTexts(layer, screen, outlines) {
+        const area = ({ box }) => box.width * box.height
+        const isInsideAnother = (outline) =>
+          outlines.some(
+            (other) =>
+              other !== outline &&
+              area(other.instance) > area(outline.instance) &&
+              isBoxInside(outline.instance.box, other.instance.box),
+          )
+        for (const text of screen.texts ?? []) {
+          const [owner] = outlines
+            .filter(({ instance }) => isBoxInside(text.box, instance.box))
+            .toSorted((a, b) => area(a.instance) - area(b.instance))
+          if (owner && isInsideAnother(owner)) continue
+          const tag = owner ? `→ ${owner.candidate.number}` : "?"
+          const tagWidth = tag.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
+          const { x, y, width, height } = text.box
+          const group = createSvgElement("g", { class: "loose-text" })
+          group.append(
+            createSvgElement("title", {}, text.characters),
+            createSvgElement("rect", { x, y, width, height }),
+            createSvgElement("rect", { class: "badge", x: x + width, y, width: tagWidth, height: BADGE_HEIGHT }),
+            createSvgElement("text", { class: "badge-text", x: x + width + BADGE_PADDING_X, y: y + BADGE_HEIGHT - 3 }, tag),
+          )
+          layer.append(group)
+        }
       }
 
       function leaderStartX(textX, isLeft) {

@@ -198,12 +198,20 @@ test("sibling frames built the same way are one candidate that must be judged; a
     }),
   ])
 
-  const { candidates } = collectCandidates(
+  const { candidates, texts } = collectCandidates(
     screen,
     componentsById,
     componentSetsById,
   )
 
+  assert.deepEqual(
+    texts.map(({ box }) => box),
+    [
+      { x: 0, y: 0, width: 40, height: 40 },
+      { x: 0, y: 40, width: 40, height: 40 },
+      { x: 0, y: 80, width: 40, height: 40 },
+    ],
+  )
   assert.deepEqual(
     candidates.map(({ figmaName, kind, mustBeJudged, instances }) => ({
       figmaName,
