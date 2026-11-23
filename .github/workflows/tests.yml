@@ -1,0 +1,32 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  todo:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The tests import 'claude-code/testing', which only the Claude Code CLI
+      # provides. Running them needs no login. Pinned so that a CLI release
+      # changing the testing kit can't break CI without a commit here.
+      - run: npm install --global @anthropic-ai/claude-code@2.1.322
+      - run: claude plugin test plugins/todo
+
+  figma-component-inventory:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/figma-component-inventory/skills/figma-component-inventory
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test
