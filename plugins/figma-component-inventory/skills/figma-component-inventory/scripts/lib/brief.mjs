@@ -179,15 +179,15 @@ function listTextsHeldDirectly(screens, candidates) {
 }
 
 /**
- * @param {object} cut
- * @param {BriefScreen[]} cut.screens one screen, or several screens of one design
- * @param {Candidate[]} cut.candidates
- * @param {LookUpInFigmaToCodeMap} cut.lookUpInFigmaToCodeMap
- * @param {boolean} cut.hasFigmaToCodeMap false when the repo has no Figma-to-code map
- * @param {string | null} cut.designSystemFolder the folder of the shared components, from
+ * @param {object} inventory
+ * @param {BriefScreen[]} inventory.screens one screen, or several screens of one design
+ * @param {Candidate[]} inventory.candidates
+ * @param {LookUpInFigmaToCodeMap} inventory.lookUpInFigmaToCodeMap
+ * @param {boolean} inventory.hasFigmaToCodeMap false when the repo has no Figma-to-code map
+ * @param {string | null} inventory.designSystemFolder the folder of the shared components, from
  *   the repo's root; null when the repo has none
- * @param {string[]} cut.componentFiles every component file of the repo, from its root
- * @param {(codePath: string) => string} cut.readCodeFile "" when the file cannot be read
+ * @param {string[]} inventory.componentFiles every component file of the repo, from its root
+ * @param {(codePath: string) => string} inventory.readCodeFile "" when the file cannot be read
  * @returns {string} the content of brief.md
  */
 export function buildBrief({
@@ -232,7 +232,7 @@ export function buildBrief({
     )
   if (backdrop)
     lines.push(
-      `Backdrop "${backdrop}": only the dialog in front of it is cut, never the page behind.`,
+      `Backdrop "${backdrop}": only the dialog in front of it is judged, never the page behind.`,
       "",
     )
   lines.push("## Candidates to judge: one entry each in verdicts.json", "")

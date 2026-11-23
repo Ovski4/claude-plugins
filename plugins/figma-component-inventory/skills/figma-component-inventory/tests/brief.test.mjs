@@ -116,7 +116,7 @@ test("the brief gives each candidate what the repo already says about it", () =>
 
 Design system: the components of \`services/frontend/src/components/ui\` win over a feature's own.
 
-Backdrop "Scrim — modal": only the dialog in front of it is cut, never the page behind.
+Backdrop "Scrim — modal": only the dialog in front of it is judged, never the page behind.
 
 ## Candidates to judge: one entry each in verdicts.json
 

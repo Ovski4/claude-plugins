@@ -1,5 +1,5 @@
 // @ts-check
-// The French words that cut.html and cut.md both use to name a cut, its outlines and
+// The French words that inventory.html and inventory.md both use to name an inventory, its outlines and
 // its screens, so that the page and the summary always say the same thing.
 
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
@@ -36,7 +36,7 @@ export function nameScreens(screenNumbers) {
  * @param {{ name: string }[]} screens
  * @returns {string} the screen's name, or "3 écrans d'un même design"
  */
-export function titleCut(screens) {
+export function titleInventory(screens) {
   return screens.length > 1
     ? `${screens.length} écrans d'un même design`
     : screens[0].name

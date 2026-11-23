@@ -1,6 +1,10 @@
 // @ts-check
-// Writes cut.md: what the next steps of the workflow read instead of the page.
-import { nameOutlines, nameScreens, titleCut } from "./cutWording.mjs"
+// Writes inventory.md: what the next steps of the workflow read instead of the page.
+import {
+  nameOutlines,
+  nameScreens,
+  titleInventory,
+} from "./inventoryWording.mjs"
 import { buildFigmaNodeUrl } from "./figma.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
 import { groupByJudgement, VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
@@ -17,14 +21,14 @@ import { groupByJudgement, VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
 /**
  * One section per verdict, one item per component, with its reason, the developer's decision
  * when he gave one, and where to look in Figma and in the code.
- * @param {object} cut
- * @param {{ number: number, name: string, nodeId: string }[]} cut.screens
- * @param {Fingerprint} cut.fingerprint
- * @param {string} cut.approvalDate "2026-11-23"
- * @param {JudgedCandidate[]} cut.judgedCandidates
- * @returns {string} the content of cut.md, in French
+ * @param {object} inventory
+ * @param {{ number: number, name: string, nodeId: string }[]} inventory.screens
+ * @param {Fingerprint} inventory.fingerprint
+ * @param {string} inventory.approvalDate "2026-11-23"
+ * @param {JudgedCandidate[]} inventory.judgedCandidates
+ * @returns {string} the content of inventory.md, in French
  */
-export function buildCutSummary({
+export function buildInventorySummary({
   screens,
   fingerprint,
   approvalDate,
@@ -38,7 +42,7 @@ export function buildCutSummary({
       : `[Figma](${buildFigmaNodeUrl(fileKey, nodeId)})`,
   )
   const lines = [
-    `# Découpage en composants — ${titleCut(screens)}`,
+    `# Inventaire des composants — ${titleInventory(screens)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Maquette : ${figmaLinks.join(", ")}, modifiée le ${lastModified.slice(0, 10)} (version ${version}). Code : commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",

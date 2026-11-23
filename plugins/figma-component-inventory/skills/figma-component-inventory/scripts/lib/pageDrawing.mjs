@@ -1,5 +1,5 @@
 // @ts-check
-// Works out everything cut.html draws: where each outline, label and line goes, which
+// Works out everything inventory.html draws: where each outline, label and line goes, which
 // components are the same on every screen, which texts no sub-component holds. The page
 // itself only draws these coordinates and answers clicks.
 // Every coordinate is in pixels at scale 1, from the top-left corner of its own screen.
@@ -9,8 +9,8 @@ import {
   nameOutline,
   nameOutlines,
   nameScreens,
-  titleCut,
-} from "./cutWording.mjs"
+  titleInventory,
+} from "./inventoryWording.mjs"
 import {
   GAP_BETWEEN_LABELS,
   LABEL_HEIGHT,
@@ -104,7 +104,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 /**
  * @typedef {object} PageDrawing
  * @property {string} title
- * @property {string} fingerprintLine when the cut was built, on which mock-up and which commit
+ * @property {string} fingerprintLine when the inventory was built, on which mock-up and which commit
  * @property {number} badgeHeight
  * @property {DrawnScreen[]} screens
  * @property {DrawingBox} commonBox what holds every screen's drawing: shown one at a time
@@ -352,10 +352,10 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
 }
 
 /**
- * @param {object} cut
- * @param {ScreenToDraw[]} cut.screens
- * @param {JudgedCandidate[]} cut.judgedCandidates
- * @param {import("./cutSummary.mjs").Fingerprint} cut.fingerprint
+ * @param {object} inventory
+ * @param {ScreenToDraw[]} inventory.screens
+ * @param {JudgedCandidate[]} inventory.judgedCandidates
+ * @param {import("./inventorySummary.mjs").Fingerprint} inventory.fingerprint
  * @returns {PageDrawing} texts in French, as the page shows them
  */
 export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
@@ -412,7 +412,7 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
   )
 
   return {
-    title: titleCut(screens),
+    title: titleInventory(screens),
     fingerprintLine: `Construit le ${fingerprint.createdAt} · maquette modifiée le ${fingerprint.figma.lastModified.slice(0, 10)} · commit ${fingerprint.gitCommit}`,
     badgeHeight: BADGE_HEIGHT,
     screens: drawnScreens,

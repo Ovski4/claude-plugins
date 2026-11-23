@@ -16,7 +16,7 @@ Everything you need is in this file and in the brief the first command prints. E
 your work re-reads all you have read so far: group your file reads in one command, and open
 a file only when a verdict depends on it.
 
-## Steps — first cut
+## Steps — first inventory
 
 1. Prepare the context, unless `<out-dir>/context.md` exists:
    - `<out-dir>` is `.claude/local/figma-component-inventory/out/<screen name>`, lower case with dashes
@@ -44,8 +44,8 @@ a file only when a verdict depends on it.
    "Read the code").
 5. Write every entry of `verdicts.json` in one edit, with the rules below.
 6. Run `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir>` from the repo's root. Fix every
-   problem it lists and run it again until it writes `cut.html`.
-7. Report: the path of `<out-dir>/cut.html`, then one line per candidate (number, React component, verdict, and the file that
+   problem it lists and run it again until it writes `inventory.html`.
+7. Report: the path of `<out-dir>/inventory.html`, then one line per candidate (number, React component, verdict, and the file that
    decided it).
 
 ## `verdicts.json`
@@ -157,7 +157,7 @@ Two sizes of the same state (desktop and mobile) are one component: a width is n
 A candidate drawn on some screens only is judged as usual, and a `note` is not needed to
 say where it appears.
 
-**A dialog over a page: only the dialog is cut.** When the screen has a backdrop (a
+**A dialog over a page: only the dialog is judged.** When the screen has a backdrop (a
 "Scrim", "Backdrop" or "Overlay" layer covering it), what lies behind is the page the dialog
 was opened from: it already exists and is not part of the work. The brief lists only
 the layers in front and names the backdrop in its first lines. Do not judge, search or mention
@@ -247,10 +247,10 @@ an opinion to weigh.
 4. Never touch an entry that already has `"decidedBy": "developer"` unless he corrects it
    again. `candidates.mjs --reset-verdicts` keeps those entries too.
 5. Run `render.mjs` and report what changed: one line per corrected number, before → after.
-6. When the developer says the cut is right, and only then, run
+6. When the developer says the inventory is right, and only then, run
    `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir> --approve`. It refuses while a `to-decide`
    remains. It stamps `verdicts.json`, turns the page from « Brouillon » to « Validé », and
-   writes `<out-dir>/cut.md`, the file the next steps read. When the repo has a
+   writes `<out-dir>/inventory.md`, the file the next steps read. When the repo has a
    Figma-to-code map, it also adds the approved Figma components that existing code draws
    and the map does not name yet: tell the developer which lines it added, to review and
    commit. Never run `--approve` on your own: the stamp says the developer approved.

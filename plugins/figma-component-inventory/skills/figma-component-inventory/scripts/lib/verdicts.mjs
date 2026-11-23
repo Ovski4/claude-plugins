@@ -174,11 +174,11 @@ function listProblemsOfJudgement(judgement, who, doesCodePathExist) {
 
 /**
  * Everything that keeps verdicts.json from being drawn. An empty list means it is valid.
- * @param {object} cut
- * @param {Candidate[]} cut.candidates
- * @param {string} cut.figmaVersionOfCandidates the Figma version candidates.json was built on
- * @param {VerdictsFile} cut.verdictsFile
- * @param {(codePath: string) => boolean} cut.doesCodePathExist
+ * @param {object} inventory
+ * @param {Candidate[]} inventory.candidates
+ * @param {string} inventory.figmaVersionOfCandidates the Figma version candidates.json was built on
+ * @param {VerdictsFile} inventory.verdictsFile
+ * @param {(codePath: string) => boolean} inventory.doesCodePathExist
  * @returns {string[]}
  */
 export function listVerdictProblems({
@@ -264,11 +264,11 @@ export function listVerdictProblems({
 
 /**
  * The verdicts.json given to the model: one entry to fill per candidate that must be judged.
- * @param {object} cut
- * @param {Candidate[]} cut.candidates
- * @param {string} cut.figmaVersion
- * @param {import("./figmaToCodeMap.mjs").LookUpInFigmaToCodeMap} cut.lookUpInFigmaToCodeMap
- * @param {VerdictEntry[]} cut.previousEntries the entries of the file being replaced: those
+ * @param {object} inventory
+ * @param {Candidate[]} inventory.candidates
+ * @param {string} inventory.figmaVersion
+ * @param {import("./figmaToCodeMap.mjs").LookUpInFigmaToCodeMap} inventory.lookUpInFigmaToCodeMap
+ * @param {VerdictEntry[]} inventory.previousEntries the entries of the file being replaced: those
  *   the developer decided are kept, found again by Figma name since numbers may have moved
  * @returns {VerdictsFile}
  */
@@ -338,7 +338,7 @@ export function applyVerdictsToCandidates(candidates, entries) {
 /**
  * The instances of a candidate that share a verdict and a React component: several groups
  * when an exception judges some of them differently, or names another component. The page
- * and cut.md show one item per group.
+ * and inventory.md show one item per group.
  * @param {JudgedInstance[]} instances
  */
 export function groupByJudgement(instances) {
@@ -351,7 +351,7 @@ export function groupByJudgement(instances) {
 }
 
 /**
- * The numbers of the outlined candidates the developer still has to decide on: the cut
+ * The numbers of the outlined candidates the developer still has to decide on: the inventory
  * cannot be approved while there is one.
  * @param {JudgedCandidate[]} judgedCandidates
  */

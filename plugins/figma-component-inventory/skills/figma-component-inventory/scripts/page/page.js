@@ -1,5 +1,5 @@
 // @ts-check
-// The script of cut.html: draws what lib/pageDrawing.mjs worked out, and answers the tabs,
+// The script of inventory.html: draws what lib/pageDrawing.mjs worked out, and answers the tabs,
 // the switches and the clicks. render.mjs pastes it into the page, so it imports nothing.
 
 /** @typedef {import("../lib/pageDrawing.mjs").PageDrawing} PageDrawing */
@@ -12,7 +12,7 @@
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
  *   verdicts: { key: string, label: string, color: string }[],
- * }} Cut
+ * }} Inventory
  */
 
 const SVG_NAMESPACE = "http://www.w3.org/2000/svg"
@@ -28,11 +28,11 @@ function getElement(id) {
   return element
 }
 
-const cutElement = getElement("cut")
-/** @type {Cut} */
-const cut = JSON.parse(cutElement.textContent ?? "")
+const inventoryElement = getElement("inventory")
+/** @type {Inventory} */
+const inventory = JSON.parse(inventoryElement.textContent ?? "")
 // Its text holds the captures a second time; the parsed copy is all the page needs.
-cutElement.remove()
+inventoryElement.remove()
 
 /**
  * @param {string} name
@@ -73,21 +73,21 @@ function classOfPart({ verdict, isSameOnEveryScreen }) {
  */
 function createBadge(box, badgeText, badgeWidth, badgePlace) {
   const x = badgePlace === "above" ? box.x - 1 : box.x + box.width
-  const y = badgePlace === "above" ? box.y - cut.badgeHeight : box.y
+  const y = badgePlace === "above" ? box.y - inventory.badgeHeight : box.y
   return [
     createSvgElement("rect", {
       class: "badge",
       x,
       y,
       width: badgeWidth,
-      height: cut.badgeHeight,
+      height: inventory.badgeHeight,
     }),
     createSvgElement(
       "text",
       {
         class: "badge-text",
         x: x + BADGE_TEXT_PADDING_X,
-        y: y + cut.badgeHeight - BADGE_TEXT_RISE,
+        y: y + inventory.badgeHeight - BADGE_TEXT_RISE,
       },
       badgeText,
     ),
@@ -317,7 +317,7 @@ function drawTabs(drawnScreens) {
     )
     for (const { screen, section, svg } of drawnScreens) {
       section.hidden = shown !== ALL_SCREENS && shown !== screen.number
-      showBox(svg, shown === ALL_SCREENS ? screen.ownBox : cut.commonBox)
+      showBox(svg, shown === ALL_SCREENS ? screen.ownBox : inventory.commonBox)
     }
   }
   const buttons = choices.map(({ shown, text }) => {
@@ -353,20 +353,20 @@ function wireSwitch(switchId) {
 }
 
 function drawHeader() {
-  document.title = `Découpage — ${cut.title}`
-  getElement("screen-name").textContent = cut.title
+  document.title = `Inventaire — ${inventory.title}`
+  getElement("screen-name").textContent = inventory.title
   const approval = getElement("approval")
-  approval.textContent = cut.approvalDate
-    ? `Validé par le développeur le ${cut.approvalDate}`
+  approval.textContent = inventory.approvalDate
+    ? `Validé par le développeur le ${inventory.approvalDate}`
     : "Brouillon — pas encore validé par le développeur"
-  approval.classList.toggle("approved", Boolean(cut.approvalDate))
-  getElement("fingerprint").textContent = cut.fingerprintLine
+  approval.classList.toggle("approved", Boolean(inventory.approvalDate))
+  getElement("fingerprint").textContent = inventory.fingerprintLine
 
   // Each verdict's colour comes with the data: "--reused" for the page's own rules, and
   // "--verdict" on any element that carries the verdict as a class.
   const verdictColours = createElement(
     "style",
-    cut.verdicts
+    inventory.verdicts
       .map(
         ({ key, color }) =>
           `:root { --${key}: ${color}; } .${key} { --verdict: var(--${key}); }`,
@@ -374,7 +374,7 @@ function drawHeader() {
       .join("\n"),
   )
   document.head.append(verdictColours)
-  for (const { key, label } of cut.verdicts) {
+  for (const { key, label } of inventory.verdicts) {
     const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
     swatch.append(
       createSvgElement("line", {
@@ -390,9 +390,9 @@ function drawHeader() {
     item.append(swatch, label)
     getElement("legend").append(item)
   }
-  if (cut.notOutlined.length) {
+  if (inventory.notOutlined.length) {
     getElement("not-outlined").textContent =
-      `Non entourés : ${cut.notOutlined.join(" ; ")}`
+      `Non entourés : ${inventory.notOutlined.join(" ; ")}`
   }
 }
 
@@ -401,7 +401,7 @@ function drawHeader() {
  * left out, what the developer has to decide).
  */
 function drawExplanations() {
-  for (const explanation of cut.explanations) {
+  for (const explanation of inventory.explanations) {
     const item = createElement("li")
     item.className = classOfPart(explanation)
     item.setAttribute("data-candidate", String(explanation.candidateNumber))
@@ -423,7 +423,7 @@ function drawExplanations() {
 }
 
 drawHeader()
-const drawnScreens = cut.screens.map(drawScreen)
+const drawnScreens = inventory.screens.map(drawScreen)
 wireSwitch("texts-outside-leaves")
 if (drawnScreens.length > 1) {
   drawTabs(drawnScreens)

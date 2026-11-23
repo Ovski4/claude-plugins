@@ -103,9 +103,9 @@ The model runs the two commands of `skills/figma-component-inventory/scripts`:
 node scripts/screens.mjs <figma-url>                # 0. script: lists the screens drawn beside one screen
 node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, writes the files below
 #                                                     2. model: fills verdicts.json
-node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes cut.html
+node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes inventory.html
 #                                                     4. developer: corrections by outline number; the model applies them
-node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + cut.md + map lines
+node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + inventory.md + map lines
 ```
 
 Both commands run from the repo whose code is judged, since code paths are checked against
@@ -118,8 +118,8 @@ it.
 | `candidates.json`        | script     | every component of the screen with its boxes; never edited                                                                              |
 | `brief.md`               | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name, the texts it holds |
 | `verdicts.json`          | model      | one entry per component; the only file the model writes                                                                                 |
-| `cut.html`               | script     | the deliverable: capture, outlines, legend, reasons                                                                                     |
-| `cut.md`                 | script     | written at approval: the list of components the next steps read                                                                         |
+| `inventory.html`         | script     | the deliverable: capture, outlines, legend, reasons                                                                                     |
+| `inventory.md`           | script     | written at approval: the list of components the next steps read                                                                         |
 
 ## Code
 
@@ -130,8 +130,8 @@ SKILL.md                  what the model follows
 scripts/
   screens.mjs             command: lists the frames drawn beside a screen in Figma
   candidates.mjs          command: reads Figma, writes candidates.json, brief.md and the verdicts.json to fill
-  render.mjs              command: checks verdicts.json, writes cut.html, approves
-  page/                   the three parts of cut.html, which render.mjs pastes into one file
+  render.mjs              command: checks verdicts.json, writes inventory.html, approves
+  page/                   the three parts of inventory.html, which render.mjs pastes into one file
     page.html               its structure
     page.css                its styles
     page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches and clicks
@@ -143,9 +143,9 @@ scripts/
     figmaToCodeMap.mjs      what the repo's Figma-to-code map says of a Figma component
     brief.mjs               the content of brief.md
     verdicts.mjs            the five verdicts (label, colour, required fields), the checks, the approval
-    cutSummary.mjs          the content of cut.md
-    cutWording.mjs          the French names that cut.html and cut.md share: outlines, screens, title
-    pageDrawing.mjs         everything cut.html draws: outlines, labels, loose texts, what is the same on every screen
+    inventorySummary.mjs    the content of inventory.md
+    inventoryWording.mjs    the French names that inventory.html and inventory.md share: outlines, screens, title
+    pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     gitRepo.mjs             the repo's root, current commit and tracked files
     box.mjs                 comparisons between boxes
@@ -172,7 +172,7 @@ and `Instance` types of `scripts/lib/collectCandidates.mjs`.
 - `screens[].texts`: every text the screen shows, with its box.
 - `screens[].backdrop`: the name of the veil drawn behind a dialog (a top-level "Scrim",
   "Backdrop" or "Overlay" layer covering the screen), or `null`. With a backdrop, only the
-  layers in front of it give candidates: the page behind is in the capture, never cut.
+  layers in front of it give candidates: the page behind is in the capture, never judged.
   Whatever a scrolling area cuts off is left out too.
 - `instances[].screen`: the number of the screen the use is drawn on. Letters run across
   the screens: `6a` to `6d` on screen 1, `6e` to `6h` on screen 2.
@@ -200,7 +200,7 @@ What the model does not write:
 
 - `decidedBy: "developer"` and `developerDecision`: the entry is a correction the developer
   gave. `developerDecision` is one short French sentence saying what he decided, written so
-  that it reads alone in `cut.md`. No model changes the entry afterwards.
+  that it reads alone in `inventory.md`. No model changes the entry afterwards.
 - `approval` (written by `render.mjs --approve`): the date the developer approved and a hash
   of the verdicts. A page without a valid approval is shown as « Brouillon »; any later
   change to a verdict cancels it.
@@ -218,7 +218,7 @@ With several screens, the page has two aids to compare them:
 
 A switch, « Textes hors sous-composant », tints every text that no sub-component holds:
 the smallest outlined component around it is the screen's outermost one (the dialog, the
-page), or there is none. It shows what the cut leaves loose: a label or a help text that
+page), or there is none. It shows the texts no component holds: a label or a help text that
 may deserve a component, or be a prop of the component beside it.
 
 A click on a component, on its label or on its reason isolates it: everything else fades

@@ -1,7 +1,7 @@
 // @ts-check
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { buildCutSummary } from "../scripts/lib/cutSummary.mjs"
+import { buildInventorySummary } from "../scripts/lib/inventorySummary.mjs"
 import {
   applyVerdictsToCandidates,
   buildApproval,
@@ -241,7 +241,7 @@ test("the file given to the model has one empty entry per candidate to judge and
   })
 })
 
-test("an approval holds until a verdict changes, and cut.md lists the approved components", () => {
+test("an approval holds until a verdict changes, and inventory.md lists the approved components", () => {
   const approval = buildApproval(validEntries, new Date("2026-11-23T10:00:00Z"))
   assert.equal(approval.date, "2026-11-23")
   assert.equal(
@@ -272,7 +272,7 @@ test("an approval holds until a verdict changes, and cut.md lists the approved c
     false,
   )
 
-  const summary = buildCutSummary({
+  const summary = buildInventorySummary({
     screens: [{ number: 1, name: "Editor — order", nodeId: "87:91461" }],
     fingerprint: {
       createdAt: "2026-11-23",
@@ -288,7 +288,7 @@ test("an approval holds until a verdict changes, and cut.md lists the approved c
   })
   assert.equal(
     summary,
-    `# Découpage en composants — Editor — order
+    `# Inventaire des composants — Editor — order
 
 Validé par le développeur le 2026-11-23. Maquette : [Figma](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-91461), modifiée le 2026-11-20 (version 2423993102449653660). Code : commit 34ee98aa6.
 Les décisions marquées « développeur » font foi : ne pas les rejuger.

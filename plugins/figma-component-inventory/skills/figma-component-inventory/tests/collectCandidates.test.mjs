@@ -154,7 +154,7 @@ test("what the screen does not show is left out: hidden layers, rows scrolled ou
   )
 })
 
-test("with a backdrop covering the screen, only the layers in front of it are cut", () => {
+test("with a backdrop covering the screen, only the layers in front of it give candidates", () => {
   const screen = buildScreen([
     buildNode("INSTANCE", "Page card", [0, 0, 400, 100], {
       componentId: "card",

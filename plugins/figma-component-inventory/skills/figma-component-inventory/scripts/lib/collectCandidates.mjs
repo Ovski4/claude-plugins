@@ -51,7 +51,7 @@
 
 const ICON_NAME_PREFIX = "ic/"
 // A top-level layer with one of these names that covers the whole screen is the veil drawn
-// behind a dialog: only the layers above it are cut.
+// behind a dialog: only the layers above it give candidates.
 const BACKDROP_NAME_PATTERN = /^(scrim|backdrop|overlay)\b/i
 const MIN_REPEATS_OF_A_COMPONENT = 2
 const MIN_COMMON_NAME_LENGTH = 3
@@ -148,7 +148,7 @@ function findOrCreateGroup(groupsByKey, key, kind, nameGroup) {
  * @param {Record<string, { name: string }>} componentSetsById
  * @returns {{ candidates: Candidate[], backdrop: string | null, texts: ScreenText[] }}
  *   backdrop: the name of the veil drawn behind a dialog, when the screen has one; texts:
- *   every text the cut part of the screen shows
+ *   every text the judged part of the screen shows
  */
 export function collectCandidates(
   screenNode,
@@ -291,7 +291,7 @@ export function collectCandidates(
   }
 
   // Layers are listed from back to front. With a backdrop, what lies behind it is the page
-  // the dialog was opened from: it is drawn in the capture but never cut.
+  // the dialog was opened from: it is drawn in the capture but never judged.
   const layers = screenNode.children ?? []
   const backdropIndex = layers.findLastIndex((layer) => {
     if (!layer.absoluteBoundingBox || !BACKDROP_NAME_PATTERN.test(layer.name))
