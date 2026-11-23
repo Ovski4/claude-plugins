@@ -1,7 +1,10 @@
 // @ts-check
 import assert from "node:assert/strict"
 import { test } from "node:test"
-import { buildLookUpInFigmaToCodeMap } from "../scripts/lib/figmaToCodeMap.mjs"
+import {
+  addApprovedComponentsToMap,
+  buildLookUpInFigmaToCodeMap,
+} from "../scripts/lib/figmaToCodeMap.mjs"
 
 const MAP_TEXT = `# Figma to React
 
@@ -54,4 +57,68 @@ test("a name is pre-filled only when its lines agree on one file and no other li
     codeComponent: null,
     codePath: null,
   })
+})
+
+test("at approval, the map gets the Figma components that existing code draws and that it does not name", () => {
+  /**
+   * @param {string} figmaName
+   * @param {"instance" | "frame"} kind
+   * @param {import("../scripts/lib/verdicts.mjs").VerdictKey} verdict
+   * @param {string | null} codePath
+   * @returns {import("../scripts/lib/verdicts.mjs").JudgedCandidate}
+   */
+  const buildJudged = (figmaName, kind, verdict, codePath) => ({
+    number: 1,
+    kind,
+    mustBeJudged: true,
+    figmaName,
+    icons: [],
+    contentsThatDiffer: [],
+    outlined: true,
+    verdict,
+    instances: [
+      {
+        letter: "a",
+        nodeId: "1:1",
+        variant: "",
+        level: 1,
+        box: { x: 0, y: 0, width: 10, height: 10 },
+        parent: null,
+        screen: 1,
+        verdict,
+        codeComponent: codePath ? "MonthDayPicker" : "FlowEditor",
+        codePath,
+        note: null,
+        developerDecision: null,
+      },
+    ],
+  })
+
+  const { mapText, addedFigmaNames } = addApprovedComponentsToMap(
+    MAP_TEXT,
+    [
+      buildJudged(
+        "Field — date",
+        "instance",
+        "to-adapt",
+        "src/ui/monthDayPicker.tsx",
+      ),
+      buildJudged("Button", "instance", "reused", "src/ui/other.tsx"),
+      buildJudged("Editor", "instance", "to-create", null),
+      buildJudged("Group", "frame", "reused", "src/ui/monthDayPicker.tsx"),
+    ],
+    "2026-11-23",
+  )
+
+  // "Button" is already in the map, which wins; frames and components to create are left out.
+  assert.deepEqual(addedFigmaNames, ["Field — date"])
+  assert.equal(
+    buildLookUpInFigmaToCodeMap(mapText)("Field — date").codePath,
+    "src/ui/monthDayPicker.tsx",
+  )
+  assert.ok(
+    mapText.includes(
+      "| Field — date | `src/ui/monthDayPicker.tsx` · `MonthDayPicker` | approved by the developer, 2026-11-23 (figma-component-inventory) |\n\n## Tokens",
+    ),
+  )
 })

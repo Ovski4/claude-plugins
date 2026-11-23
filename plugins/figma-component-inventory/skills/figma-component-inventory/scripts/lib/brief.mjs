@@ -1,6 +1,7 @@
 // @ts-check
 // Writes the brief the model reads before judging: for each candidate, what the scripts can
 // already find in the repo, so that the model opens a file only to settle a verdict.
+import { isBoxInside, measureArea } from "./box.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
 
 /** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
@@ -13,6 +14,7 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  * @property {number} height
  * @property {string | null} backdrop the name of the veil drawn behind a dialog, when the screen has one
  * @property {{ file: string }} capture the screen's image in the output folder
+ * @property {import("./collectCandidates.mjs").ScreenText[]} [texts] the visible texts of the screen
  */
 /** @typedef {import("./figmaToCodeMap.mjs").LookUpInFigmaToCodeMap} LookUpInFigmaToCodeMap */
 
@@ -20,6 +22,8 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
 const MIN_SEARCHED_WORD_LENGTH = 4
 const MAX_FILES_WITH_A_CLOSE_NAME = 6
 const MAX_SIZES_SHOWN = 3
+// A longer text is cut in the brief: its start is enough to find it on the capture.
+const MAX_TEXT_LENGTH_SHOWN = 60
 // A longer props declaration is cut: the model opens the file if it needs the rest.
 const MAX_PROPS_DECLARATION_LINES = 40
 const FIRST_LINE_OF_A_PROPS_DECLARATION =
@@ -133,6 +137,48 @@ function describeSizes(candidate) {
 }
 
 /**
+ * For each candidate to judge, the texts it holds directly: those whose smallest candidate
+ * to judge around them is that one. When a frame that is not to judge sits in between, the
+ * text names it: outlining that frame gives the text a component.
+ * @param {BriefScreen[]} screens
+ * @param {Candidate[]} candidates
+ * @returns {Map<Candidate, Set<string>>} « Mode de régulation » (in 16 Block — mode)
+ */
+function listTextsHeldDirectly(screens, candidates) {
+  /** @type {Map<Candidate, Set<string>>} */
+  const textsByCandidate = new Map()
+  for (const screen of screens) {
+    const placed = candidates.flatMap((candidate) =>
+      candidate.instances
+        .filter((instance) => instance.screen === screen.number)
+        .map((instance) => ({ candidate, box: instance.box })),
+    )
+    for (const text of screen.texts ?? []) {
+      const holders = placed
+        .filter(({ box }) => isBoxInside(text.box, box))
+        .toSorted((a, b) => measureArea(a.box) - measureArea(b.box))
+      const judgedHolder = holders.find(
+        ({ candidate }) => candidate.mustBeJudged,
+      )
+      if (!judgedHolder) continue
+      const [closestHolder] = holders
+      const shortText =
+        text.characters.length > MAX_TEXT_LENGTH_SHOWN
+          ? `${text.characters.slice(0, MAX_TEXT_LENGTH_SHOWN)}…`
+          : text.characters
+      const inFrame =
+        closestHolder.candidate === judgedHolder.candidate
+          ? ""
+          : ` (in ${closestHolder.candidate.number} ${closestHolder.candidate.figmaName})`
+      const texts = textsByCandidate.get(judgedHolder.candidate) ?? new Set()
+      texts.add(`« ${shortText} »${inFrame}`)
+      textsByCandidate.set(judgedHolder.candidate, texts)
+    }
+  }
+  return textsByCandidate
+}
+
+/**
  * @param {object} cut
  * @param {BriefScreen[]} cut.screens one screen, or several screens of one design
  * @param {Candidate[]} cut.candidates
@@ -193,6 +239,7 @@ export function buildBrief({
   // A file's props are written once, under the first candidate that uses it.
   /** @type {Map<string, number>} */
   const candidateNumbersByCodePath = new Map()
+  const textsByCandidate = listTextsHeldDirectly(screens, candidates)
   for (const candidate of candidates.filter((each) => each.mustBeJudged)) {
     const screensByVariant = Map.groupBy(
       candidate.instances.filter((instance) => instance.variant),
@@ -214,6 +261,8 @@ export function buildBrief({
     lines.push(`- Size in the mock-up: ${describeSizes(candidate)}`)
     if (candidate.icons.length)
       lines.push(`- Icons inside: ${candidate.icons.join(", ")}`)
+    const texts = textsByCandidate.get(candidate)
+    if (texts) lines.push(`- Texts it holds directly: ${[...texts].join(", ")}`)
     if (candidate.contentsThatDiffer.length) {
       lines.push(
         "- Its content differs between screens: choose one component with a prop, or several components",

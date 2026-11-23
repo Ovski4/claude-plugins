@@ -22,9 +22,15 @@ export function Button(props: ButtonProps) {
  * @param {number} number
  * @param {string} figmaName
  * @param {Partial<import("../scripts/lib/mergeScreens.mjs").MergedCandidate>} [more]
+ * @param {import("../scripts/lib/figma.mjs").Box} [box]
  * @returns {import("../scripts/lib/mergeScreens.mjs").MergedCandidate}
  */
-const buildCandidate = (number, figmaName, more = {}) => ({
+const buildCandidate = (
+  number,
+  figmaName,
+  more = {},
+  box = { x: 0, y: 0, width: 10, height: 10 },
+) => ({
   number,
   kind: "instance",
   mustBeJudged: true,
@@ -35,7 +41,7 @@ const buildCandidate = (number, figmaName, more = {}) => ({
       nodeId: `87:${number}`,
       variant: number === 1 ? "Style=Ghost" : "",
       level: 2,
-      box: { x: 0, y: 0, width: 10, height: 10 },
+      box,
       parent: number === 1 ? null : 1,
       screen: 1,
     },
@@ -55,13 +61,35 @@ test("the brief gives each candidate what the repo already says about it", () =>
         height: 420,
         backdrop: "Scrim — modal",
         capture: { file: "screen-87-1.png" },
+        texts: [
+          {
+            nodeId: "t1",
+            characters: "Statut",
+            box: { x: 5, y: 20, width: 30, height: 10 },
+          },
+          {
+            nodeId: "t2",
+            characters: "Note under the body",
+            box: { x: 5, y: 60, width: 40, height: 10 },
+          },
+        ],
       },
     ],
     candidates: [
       buildCandidate(1, "Button — icon"),
       buildCandidate(2, "Button"),
-      buildCandidate(3, "Tile — status"),
-      buildCandidate(4, "Body", { kind: "frame", mustBeJudged: false }),
+      buildCandidate(
+        3,
+        "Tile — status",
+        {},
+        { x: 0, y: 0, width: 100, height: 100 },
+      ),
+      buildCandidate(
+        4,
+        "Body",
+        { kind: "frame", mustBeJudged: false },
+        { x: 0, y: 50, width: 100, height: 40 },
+      ),
     ],
     lookUpInFigmaToCodeMap: (figmaName) =>
       figmaName.startsWith("Button")
@@ -114,7 +142,8 @@ interface ButtonProps extends HTMLProps<HTMLButtonElement> {
 - Props declared in that file: see candidate 1
 
 ### 3 — Tile — status ×1 (component, level 2, inside 1)
-- Size in the mock-up: 10 × 10 px
+- Size in the mock-up: 100 × 100 px
+- Texts it holds directly: « Statut », « Note under the body » (in 4 Body)
 - Figma-to-code map: no line
 - Component files with a close name: services/frontend/src/components/ui/molecules/kpiTile/KpiTile.tsx, services/frontend/src/components/admin/DashboardTileGrid.tsx
 

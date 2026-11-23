@@ -58,12 +58,12 @@ The repo declares its paths in
 }
 ```
 
-| Setting                   | What it is                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `componentsFolder`        | The folder that holds every UI component. Required.                                                                                               |
-| `componentFileExtensions` | The extensions of a component file. Test and Storybook files (`button.test.tsx`, `button.stories.tsx`) are left out. Required.                    |
-| `designSystemFolder`      | The folder of the shared components: its files are proposed to the model before a feature's own. `null` or absent: no file gets priority.         |
-| `figmaToCodeMap`          | The table that gives the component of each Figma component. `null` or absent: no name is pre-filled, the model finds every component in the code. |
+| Setting                   | What it is                                                                                                                                                                                                                                                                          |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `componentsFolder`        | The folder that holds every UI component. Required.                                                                                                                                                                                                                                 |
+| `componentFileExtensions` | The extensions of a component file. Test and Storybook files (`button.test.tsx`, `button.stories.tsx`) are left out. Required.                                                                                                                                                      |
+| `designSystemFolder`      | The folder of the shared components: its files are proposed to the model before a feature's own. `null` or absent: no file gets priority.                                                                                                                                           |
+| `figmaToCodeMap`          | The table that gives the component of each Figma component. `null` or absent: no name is pre-filled, the model finds every component in the code. At approval, the Figma components that existing code draws and the table does not name yet are added to its "Components" section. |
 
 All paths start at the repo's root. The output of each screen goes to
 `.claude/local/figma-component-inventory/out/<screen name>` of that repo.
@@ -105,21 +105,21 @@ node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, 
 #                                                     2. model: fills verdicts.json
 node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes cut.html
 #                                                     4. developer: corrections by outline number; the model applies them
-node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + cut.md
+node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + cut.md + map lines
 ```
 
 Both commands run from the repo whose code is judged, since code paths are checked against
 it.
 
-| File in `<out-dir>`      | Written by | Content                                                                                                             |
-| ------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------- |
-| `figma-node-<node>.json` | script     | Figma's answer for one screen, kept so that a second run calls nothing                                              |
-| `screen-<node>.png`      | script     | capture of one screen, scale 2                                                                                      |
-| `candidates.json`        | script     | every component of the screen with its boxes; never edited                                                          |
-| `brief.md`               | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name |
-| `verdicts.json`          | model      | one entry per component; the only file the model writes                                                             |
-| `cut.html`               | script     | the deliverable: capture, outlines, legend, reasons                                                                 |
-| `cut.md`                 | script     | written at approval: the list of components the next steps read                                                     |
+| File in `<out-dir>`      | Written by | Content                                                                                                                                 |
+| ------------------------ | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `figma-node-<node>.json` | script     | Figma's answer for one screen, kept so that a second run calls nothing                                                                  |
+| `screen-<node>.png`      | script     | capture of one screen, scale 2                                                                                                          |
+| `candidates.json`        | script     | every component of the screen with its boxes; never edited                                                                              |
+| `brief.md`               | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name, the texts it holds |
+| `verdicts.json`          | model      | one entry per component; the only file the model writes                                                                                 |
+| `cut.html`               | script     | the deliverable: capture, outlines, legend, reasons                                                                                     |
+| `cut.md`                 | script     | written at approval: the list of components the next steps read                                                                         |
 
 ## Code
 

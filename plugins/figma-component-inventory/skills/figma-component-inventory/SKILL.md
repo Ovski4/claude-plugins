@@ -120,7 +120,9 @@ the code: open the files with a close name.
 - `reused` means the same props **and the same look**. Open the component's file and its
   stylesheet, and compare with the brief: the size in the mock-up, the size of the icons (the
   number ending an icon's name, `ic/power/16` is 16 px), the format of the text shown. A
-  height, an icon size or a text format that differs is `to-adapt`, not `reused`.
+  height, an icon size or a text format that differs is `to-adapt`, not `reused`. Work the
+  height out from the stylesheet: padding + line height + borders, with the tokens' values
+  looked up where the repo declares them. A height you did not add up is a guess.
 - `to-adapt` needs the file open: name the prop, the type or the style that blocks.
 - With no component from the map, open the files with a close name before concluding
   "to create", and search the design-system folder the brief names by role and by what the
@@ -167,7 +169,23 @@ component of its own (it has its own state or action).
 
 **Judge what the outline covers, nothing more.** A candidate is the box Figma gives it: a
 title above it or a sentence under it belongs to another candidate or to a frame, not to
-this one. Do not invent a wrapper component to hold them.
+this one. Do not stretch the candidate to hold them: the next rule says where they go.
+
+**Every text has a home.** The brief lists, under each candidate, the texts it holds
+directly; "(in 16 Block — mode)" means the text sits in frame 16, which has no entry yet.
+For each such text, decide what draws it in the code:
+
+- a prop of the component beside it, when that component has the prop and its layout can
+  hold the text. A field's `label` and `helper` props fit only when nothing sits beside the
+  field: with a tag or a unit next to it, the component around draws the label, the field
+  (without its label), the tag and the help text;
+- otherwise a component around the text and its neighbours: give the frame an entry,
+  `to-create`, named for what the block does. A label, a control and the sentence that
+  describes the choice are one component (« Mode de régulation », the mode selector and the
+  sentence of the chosen mode).
+  A title above a group of fields is not a reason for a component of its own: it stays in the
+  component that holds the fields. A text left to the screen's root component is a missing
+  component, unless the root draws it on purpose (the window's title).
 
 **One React component, one outline.** When a Figma component and the Figma components
 nested in it are drawn by a single React component (a selector and its segments are one
@@ -225,5 +243,7 @@ an opinion to weigh.
 6. When the developer says the cut is right, and only then, run
    `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir> --approve`. It refuses while a `to-decide`
    remains. It stamps `verdicts.json`, turns the page from « Brouillon » to « Validé », and
-   writes `<out-dir>/cut.md`, the file the next steps read. Never run `--approve` on your
-   own: the stamp says the developer approved.
+   writes `<out-dir>/cut.md`, the file the next steps read. When the repo has a
+   Figma-to-code map, it also adds the approved Figma components that existing code draws
+   and the map does not name yet: tell the developer which lines it added, to review and
+   commit. Never run `--approve` on your own: the stamp says the developer approved.

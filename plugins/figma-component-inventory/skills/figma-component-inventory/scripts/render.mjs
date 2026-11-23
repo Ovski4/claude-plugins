@@ -5,14 +5,18 @@
 // Nothing is drawn while a check fails: every problem is listed and the exit code is 3.
 // --approve is run once the developer has said the cut is right: it stamps verdicts.json and
 // writes cut.md, the list the next steps of the workflow read. The stamp holds a hash of the
-// verdicts: any later change makes the page a draft again.
+// verdicts: any later change makes the page a draft again. It also adds to the repo's
+// Figma-to-code map the approved Figma components that existing code draws and that the map
+// does not name yet, so that the next screen is pre-filled.
 // Run from inside the repo whose code is judged: the code paths of verdicts.json are checked against it.
 import fs from "node:fs"
 import path from "node:path"
 import { buildCutSummary } from "./lib/cutSummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
+import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
 import { buildPageDrawing } from "./lib/pageDrawing.mjs"
+import { readProjectSettings } from "./lib/projectSettings.mjs"
 import {
   applyVerdictsToCandidates,
   buildApproval,
@@ -166,6 +170,21 @@ function main() {
       }),
     )
     console.log(summaryFile)
+    const { figmaToCodeMap } = readProjectSettings(repoRoot)
+    if (figmaToCodeMap !== null) {
+      const mapFile = path.join(repoRoot, figmaToCodeMap)
+      const { mapText, addedFigmaNames } = addApprovedComponentsToMap(
+        fs.readFileSync(mapFile, "utf8"),
+        judgedCandidates,
+        approvalDate,
+      )
+      if (addedFigmaNames.length) {
+        fs.writeFileSync(mapFile, mapText)
+        console.log(
+          `${figmaToCodeMap}: added ${addedFigmaNames.join(", ")} (format the table, then review and commit it)`,
+        )
+      }
+    }
   }
 }
 

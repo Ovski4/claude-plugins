@@ -1,8 +1,9 @@
 // @ts-check
-// Reads the repo's Figma-to-code map: the table that says which React component draws each
-// Figma component.
+// Reads the repo's Figma-to-code map, the table that says which React component draws each
+// Figma component, and adds to it what the developer approved.
 import fs from "node:fs"
 import path from "node:path"
+import { groupByJudgement } from "./verdicts.mjs"
 
 /**
  * What the map says about one Figma component.
@@ -18,6 +19,7 @@ import path from "node:path"
  * @property {string | null} codePath that component's file, from the repo's root; null with codeComponent
  */
 /** @typedef {(figmaName: string) => MapAnswer} LookUpInFigmaToCodeMap */
+/** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 
 const COMPONENTS_SECTION_TITLE = "Components"
 // In a line's first cell, the Figma name is followed by its node id and its file: "Button · 251:958 · Design Tokens".
@@ -46,16 +48,23 @@ function readCodeCell(codeCell) {
 }
 
 /**
- * @param {string} mapText the content of the map file; "" when the repo has none
- * @returns {LookUpInFigmaToCodeMap}
+ * The lines of the map's "Components" section; none when the map has no such section.
+ * @param {string} mapText
  */
-export function buildLookUpInFigmaToCodeMap(mapText) {
+function listComponentsSectionLines(mapText) {
   const componentsSection =
     mapText
       .split(/^## /m)
       .find((section) => section.startsWith(COMPONENTS_SECTION_TITLE)) ?? ""
-  const rows = componentsSection
-    .split("\n")
+  return componentsSection.split("\n")
+}
+
+/**
+ * @param {string} mapText the content of the map file; "" when the repo has none
+ * @returns {LookUpInFigmaToCodeMap}
+ */
+export function buildLookUpInFigmaToCodeMap(mapText) {
+  const rows = listComponentsSectionLines(mapText)
     .map((line) => line.split("|").map((cell) => cell.trim()))
     .filter(([, figmaCell, codeCell]) => figmaCell && codeCell?.includes("`"))
     .map(([, figmaCell, codeCell, notesCell = ""]) => ({
@@ -105,4 +114,62 @@ export function readFigmaToCodeMap(repoRoot, figmaToCodeMap) {
       `The Figma-to-code map ${figmaToCodeMap} does not exist in ${repoRoot}`,
     )
   return buildLookUpInFigmaToCodeMap(fs.readFileSync(mapFile, "utf8"))
+}
+
+/**
+ * Adds to the map's "Components" table one line per approved Figma component that existing
+ * code draws (reused or to adapt, one React component for all its instances) and that the
+ * map does not name yet, so that the next screen using it is pre-filled. A Figma name the
+ * map already has keeps its lines: the map is maintained by hand and wins. Frames are left
+ * out: their names are not stable components.
+ * The line fills the table's first two columns ("Name", "`path` · `Component`"), puts the
+ * approval in its last one when the table has a third, and "—" in between; its cells are
+ * not padded to the others'.
+ * @param {string} mapText
+ * @param {JudgedCandidate[]} judgedCandidates
+ * @param {string} approvalDate "2026-11-23"
+ * @returns {{ mapText: string, addedFigmaNames: string[] }} the map unchanged, and no name,
+ *   when it has no "Components" table
+ */
+export function addApprovedComponentsToMap(
+  mapText,
+  judgedCandidates,
+  approvalDate,
+) {
+  const lines = mapText.split("\n")
+  const sectionLines = listComponentsSectionLines(mapText)
+  const tableLines = sectionLines.filter((line) => line.startsWith("|"))
+  if (!tableLines.length) return { mapText, addedFigmaNames: [] }
+  const columnCount = tableLines[0].split("|").length - 2
+  const lookUp = buildLookUpInFigmaToCodeMap(mapText)
+  const newLines = judgedCandidates.flatMap((candidate) => {
+    const judgements = groupByJudgement(candidate.instances)
+    if (candidate.kind !== "instance" || !candidate.outlined) return []
+    if (judgements.length !== 1) return []
+    const [{ verdict, codeComponent, codePath }] = judgements[0]
+    if (verdict !== "reused" && verdict !== "to-adapt") return []
+    if (!codePath || lookUp(candidate.figmaName).mapLines.length) return []
+    const cells = [
+      candidate.figmaName,
+      `\`${codePath}\` · \`${codeComponent}\``,
+      ...Array.from({ length: columnCount - 3 }, () => EMPTY_CELL),
+      `approved by the developer, ${approvalDate} (figma-component-inventory)`,
+    ].slice(0, columnCount)
+    return [
+      { figmaName: candidate.figmaName, line: `| ${cells.join(" | ")} |` },
+    ]
+  })
+  if (!newLines.length) return { mapText, addedFigmaNames: [] }
+  const lastTableLineIndex = lines.lastIndexOf(
+    tableLines[tableLines.length - 1],
+  )
+  lines.splice(
+    lastTableLineIndex + 1,
+    0,
+    ...newLines.map((newLine) => newLine.line),
+  )
+  return {
+    mapText: lines.join("\n"),
+    addedFigmaNames: newLines.map((newLine) => newLine.figmaName),
+  }
 }
