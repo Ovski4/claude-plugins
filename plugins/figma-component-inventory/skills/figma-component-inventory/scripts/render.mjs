@@ -12,6 +12,7 @@ import path from "node:path"
 import { buildCutSummary } from "./lib/cutSummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
+import { buildPageDrawing } from "./lib/pageDrawing.mjs"
 import {
   applyVerdictsToCandidates,
   buildApproval,
@@ -26,9 +27,14 @@ const EXIT_CODE_FAILED = 1
 const EXIT_CODE_INVALID_VERDICTS = 3
 const EXIT_CODE_NOT_READY_TO_APPROVE = 4
 const USAGE = "Usage: node scripts/render.mjs <out-dir> [--approve]"
-// In template.html, where the data of the cut is written.
-const CUT_PLACEHOLDER_IN_TEMPLATE = "/*CUT*/ null"
-const TEMPLATE_FILE = path.join(import.meta.dirname, "template.html")
+// cut.html is page/page.html with each of these comments replaced: by the page's styles,
+// by its script, and by what the script draws. One file, which opens without a server.
+const PAGE_FOLDER = path.join(import.meta.dirname, "page")
+const PLACEHOLDERS_IN_PAGE = {
+  styles: "/*PAGE_STYLES*/",
+  script: "/*PAGE_SCRIPT*/",
+  cut: "/*CUT*/",
+}
 
 /** Stops the command: the message goes to the error output, the code tells the caller why. */
 class CommandFailure extends Error {
@@ -93,31 +99,40 @@ function main() {
     )
   }
 
+  const verdicts = VERDICT_KEYS.map((key) => ({
+    key,
+    label: VERDICTS[key].label,
+    color: VERDICTS[key].color,
+  }))
   const cut = {
     fingerprint,
-    screens: screens.map(
-      /** @param {{ nodeId: string, capture: { file: string } }} screen */
-      (screen) => ({
-        ...screen,
-        figmaUrl: buildFigmaNodeUrl(fingerprint.figma.fileKey, screen.nodeId),
-        captureDataUrl: `data:image/png;base64,${fs.readFileSync(path.join(outDir, screen.capture.file)).toString("base64")}`,
-      }),
-    ),
     approvalDate,
-    verdicts: VERDICT_KEYS.map((key) => ({
-      key,
-      label: VERDICTS[key].label,
-      color: VERDICTS[key].color,
-    })),
-    candidates: judgedCandidates,
+    verdicts,
+    ...buildPageDrawing({
+      screens: screens.map(
+        /** @param {import("./lib/pageDrawing.mjs").ScreenToDraw & { nodeId: string, capture: { file: string } }} screen */
+        (screen) => ({
+          ...screen,
+          figmaUrl: buildFigmaNodeUrl(fingerprint.figma.fileKey, screen.nodeId),
+          captureDataUrl: `data:image/png;base64,${fs.readFileSync(path.join(outDir, screen.capture.file)).toString("base64")}`,
+        }),
+      ),
+      judgedCandidates,
+      verdicts,
+    }),
   }
-  // "<" is escaped so that a note containing "</script>" cannot close the page's script.
-  const cutAsScriptValue = JSON.stringify(cut).replace(/</g, "\\u003c")
+  /** @param {string} fileName */
+  const readPageFile = (fileName) =>
+    fs.readFileSync(path.join(PAGE_FOLDER, fileName), "utf8")
+  // "<" is escaped so that a note containing "</script>" cannot close the data's script.
+  const cutAsJson = JSON.stringify(cut).replace(/</g, "\\u003c")
   const pageFile = path.join(outDir, "cut.html")
-  const template = fs.readFileSync(TEMPLATE_FILE, "utf8")
   fs.writeFileSync(
     pageFile,
-    template.replace(CUT_PLACEHOLDER_IN_TEMPLATE, () => cutAsScriptValue),
+    readPageFile("page.html")
+      .replace(PLACEHOLDERS_IN_PAGE.styles, () => readPageFile("page.css"))
+      .replace(PLACEHOLDERS_IN_PAGE.script, () => readPageFile("page.js"))
+      .replace(PLACEHOLDERS_IN_PAGE.cut, () => cutAsJson),
   )
 
   const outlinedInstances = judgedCandidates

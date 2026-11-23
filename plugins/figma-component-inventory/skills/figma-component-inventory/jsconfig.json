@@ -4,9 +4,9 @@
     "strict": true,
     "noEmit": true,
     "target": "esnext",
-    "lib": ["esnext"],
+    "lib": ["esnext", "dom", "dom.iterable"],
     "module": "nodenext",
     "types": ["node"]
   },
-  "include": ["scripts/**/*.mjs", "tests/*.mjs"]
+  "include": ["scripts/**/*.mjs", "scripts/page/*.js", "tests/*.mjs"]
 }

@@ -131,7 +131,10 @@ scripts/
   screens.mjs             command: lists the frames drawn beside a screen in Figma
   candidates.mjs          command: reads Figma, writes candidates.json, brief.md and the verdicts.json to fill
   render.mjs              command: checks verdicts.json, writes cut.html, approves
-  template.html           the page; render.mjs writes the data into it
+  page/                   the three parts of cut.html, which render.mjs pastes into one file
+    page.html               its structure
+    page.css                its styles
+    page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches and clicks
   lib/                    one module per job, used by the two commands
     figma.mjs               Figma links, API calls, answers kept on disk, where the capture sits
     collectCandidates.mjs   Figma tree of one screen → candidates; reads no file
@@ -141,6 +144,8 @@ scripts/
     brief.mjs               the content of brief.md
     verdicts.mjs            the five verdicts (label, colour, required fields), the checks, the approval
     cutSummary.mjs          the content of cut.md
+    pageDrawing.mjs         everything cut.html draws: outlines, labels, loose texts, what is the same on every screen
+    labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     gitRepo.mjs             the repo's root, current commit and tracked files
 tests/                    one test file per module of scripts/lib
 ```

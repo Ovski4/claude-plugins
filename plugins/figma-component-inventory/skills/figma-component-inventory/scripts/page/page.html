@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Découpage en composants</title>
+    <style>
+      /*PAGE_STYLES*/
+    </style>
+  </head>
+  <body>
+    <h1 id="screen-name"></h1>
+    <p class="approval" id="approval"></p>
+    <p class="fingerprint" id="fingerprint"></p>
+    <ul class="legend" id="legend"></ul>
+    <div class="tabs" id="tabs" role="tablist"></div>
+    <label class="page-switch">
+      <input type="checkbox" id="texts-outside-leaves" />
+      Textes hors sous-composant : montrer chaque texte qu'aucun sous-composant
+      ne contient
+    </label>
+    <label class="page-switch" id="differences-switch" hidden>
+      <input type="checkbox" id="differences-only" />
+      Différences seulement : estomper ce qui est identique sur tous les écrans
+    </label>
+    <p class="page-hint">
+      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler ;
+      recliquer, cliquer à côté ou Échap pour revenir.
+    </p>
+    <div class="screens" id="screens"></div>
+    <ul class="explanations" id="explanations"></ul>
+    <p class="not-outlined" id="not-outlined"></p>
+    <!-- Written by render.mjs: everything the page draws, worked out by lib/pageDrawing.mjs. -->
+    <script type="application/json" id="cut">
+      /*CUT*/
+    </script>
+    <script>
+      /*PAGE_SCRIPT*/
+    </script>
+  </body>
+</html>
