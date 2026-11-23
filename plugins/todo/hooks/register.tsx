@@ -1,6 +1,8 @@
 import type { EngineInterface, Register } from 'claude-code'
 
 const TREE_PANE = 'todo-tree'
+// Longer than any panel: the Text holding it cuts it to the panel's width.
+const SECTION_LINE = '─'.repeat(400)
 
 // What the person typed in the panel's search field. Module-level, so a plugin
 // reload empties it, which is fine for a search.
@@ -40,7 +42,53 @@ export function filterTreeLines(tree: string, query: string): string {
   return keptLines.join('\n')
 }
 
-const STRUCK_ITEM = /^\s*[-*] ~~(?<title>.+?)~~(?<outcome>.*)$/
+/** One part of the tree the panel draws apart, with a line between parts. */
+export type TreeSection = {
+  /** `title`: the `#` line; `prose`: one paragraph (the goal, what's out of scope, a note); `list`: the items */
+  kind: 'title' | 'prose' | 'list'
+  text: string
+}
+
+/**
+ * Cuts the tree into its title, each prose paragraph (empty lines end one), and
+ * each run of list items, which empty lines between items don't end.
+ */
+export function splitTreeSections(tree: string): TreeSection[] {
+  const sections: TreeSection[] = []
+  let current: { kind: TreeSection['kind']; lines: string[] } | undefined
+  // Empty lines inside a run of items, kept only if another item follows.
+  let pendingEmptyLines = 0
+  const closeCurrent = () => {
+    if (current) sections.push({ kind: current.kind, text: current.lines.join('\n') })
+    current = undefined
+    pendingEmptyLines = 0
+  }
+  for (const line of tree.split('\n')) {
+    if (line.trim() === '') {
+      if (current?.kind === 'list') pendingEmptyLines++
+      else closeCurrent()
+      continue
+    }
+    if (line.startsWith('# ')) {
+      closeCurrent()
+      sections.push({ kind: 'title', text: line })
+      continue
+    }
+    // An indented line under an item belongs to that item.
+    const isListLine =
+      /^\s*[-*] /.test(line) || (current?.kind === 'list' && /^\s/.test(line))
+    const kind = isListLine ? 'list' : 'prose'
+    if (current?.kind !== kind) closeCurrent()
+    if (!current) current = { kind, lines: [] }
+    current.lines.push(...Array<string>(pendingEmptyLines).fill(''), line)
+    pendingEmptyLines = 0
+  }
+  closeCurrent()
+
+  return sections
+}
+
+const STRUCK_ITEM =/^\s*[-*] ~~(?<title>.+?)~~(?<outcome>.*)$/
 const DONE_HEADER = /^Done:(?<inlineItems>.*)$/
 const DONE_ITEM = /^[-*] (?<item>.+)$/
 // Separators of a one-line "Done: a · b" header: " · ", or ", " before an item
@@ -291,7 +339,19 @@ export const register: Register = on => {
           </Button>
         )}
         {filteredTree ? (
-          <Markdown text={filteredTree} />
+          splitTreeSections(filteredTree).flatMap((section, index, sections) => [
+            // A thin line between parts; the title sits on the part below it.
+            index > 0 && sections[index - 1]?.kind !== 'title' && (
+              <Text dimColor wrap="truncate">
+                {SECTION_LINE}
+              </Text>
+            ),
+            section.kind === 'list' &&
+              sections.findIndex(({ kind }) => kind === 'list') === index && (
+                <Text weight="semibold">Todo items:</Text>
+              ),
+            <Markdown key={`section-${index}`} text={section.text} />,
+          ])
         ) : (
           <Text dimColor>No item matches "{treeSearchQuery}".</Text>
         )}

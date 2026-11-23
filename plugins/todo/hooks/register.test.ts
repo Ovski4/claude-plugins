@@ -1,5 +1,10 @@
 import { expect, test } from 'claude-code/testing'
-import { filterTreeLines, pruneStruckItems, splitDoneItems } from './register'
+import {
+  filterTreeLines,
+  pruneStruckItems,
+  splitDoneItems,
+  splitTreeSections,
+} from './register'
 
 const TREE = `# Title
 
@@ -23,6 +28,34 @@ test('keeps matching items with their parents, drops prose', async () => {
   )
   expect(filterTreeLines(TREE, 'nothing')).toBe('')
   expect(filterTreeLines(TREE, '  ')).toBe(TREE)
+})
+
+test('cuts the tree into its title, prose paragraphs and runs of items', async () => {
+  expect(
+    splitTreeSections(`# Title
+
+Goal: some prose
+on two lines.
+
+Out of scope: more prose.
+
+- 1 Decoder
+  - 1.1 Check codec values
+    continued under 1.1
+
+- 2 Errors
+
+Notes: after the list.`),
+  ).toEqual([
+    { kind: 'title', text: '# Title' },
+    { kind: 'prose', text: 'Goal: some prose\non two lines.' },
+    { kind: 'prose', text: 'Out of scope: more prose.' },
+    {
+      kind: 'list',
+      text: '- 1 Decoder\n  - 1.1 Check codec values\n    continued under 1.1\n\n- 2 Errors',
+    },
+    { kind: 'prose', text: 'Notes: after the list.' },
+  ])
 })
 
 test('splits the remaining tree from the done items, one-line header included', async () => {
@@ -74,7 +107,47 @@ Done:
   expect(pruneStruckItems(TREE)).toBe(TREE)
 })
 
-const SUBMISSION = { wait: false, origin: { kind: 'composer' } } as const
+test('the panel draws what is left, lines between parts, and folds the done items', async ($, on) => {
+  on('env.get', (_, e) => ({ value: e.name === 'HOME' ? '/home/me' : undefined }))
+  on('session.id', () => ({ value: 's3' }))
+  on('fs.exists', () => ({ value: true }))
+  on('fs.read', () => ({
+    value: `# Title
+
+Done:
+- 1 Skeleton — committed 5522348
+
+Goal: some prose.
+
+Out of scope: more prose.
+
+- 2 Decoder
+  - ~~2.1 Types~~ dropped
+  - 2.2 Test names`,
+  }))
+
+  const ui = await $.ui.mount({
+    plugin: 'todo',
+    component: 'Pane',
+    requestId: 'todo-tree',
+    props: {
+      title: 'Remaining work',
+      isFocused: false,
+      bodyColumns: 40,
+      placement: 'dock',
+      scroll: { offset: 0, bodyRows: 40 },
+      view: {},
+    },
+    surface: 'terminal',
+  })
+  expect((await ui.find({ type: 'Text', text: /^Todo items:$/ }))?.text).toBe('Todo items:')
+  expect(await ui.find({ type: 'Text', text: /^─+$/ })).toBeDefined()
+  expect(await ui.find({ type: 'Button', text: /Done \(2\)/ })).toBeDefined()
+  expect(await ui.find({ type: 'Markdown', text: /Skeleton/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+const SUBMISSION ={ wait: false, origin: { kind: 'composer' } } as const
 
 test('attaches the working method beside the first prompt when its context hook never ran', async ($, on) => {
   on('fs.read', () => ({ value: 'RULES' }))
