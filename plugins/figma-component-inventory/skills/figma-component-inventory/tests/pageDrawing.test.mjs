@@ -239,10 +239,14 @@ test("the page gets each screen's drawing, with what is the same on every screen
     height: 381,
   })
   assert.deepEqual(
-    drawing.explanations.map(({ title, reason }) => [title, reason]),
+    drawing.explanations.map(({ title, screens, reason }) => [
+      title,
+      screens,
+      reason,
+    ]),
     [
-      ["2 · écran 1 OrderOffNotice — À créer", "Un composant par mode."],
-      ["2 · écran 2 OrderSettings — À créer", "Un composant par mode."],
+      ["2 · écran 1 OrderOffNotice — À créer", [1], "Un composant par mode."],
+      ["2 · écran 2 OrderSettings — À créer", [2], "Un composant par mode."],
     ],
   )
   assert.deepEqual(drawing.notOutlined, ["3 Divider (Un trait du conteneur.)"])

@@ -95,10 +95,12 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * Under the images: why a component is not simply reused.
  * @typedef {DrawnCandidatePart & {
  *   title: string,
+ *   screens: number[],
  *   reason: string | null,
  *   developerDecision: string | null,
  *   question: string | null,
  * }} DrawnExplanation
+ * `screens`: the numbers of the screens where what it explains is drawn.
  * `developerDecision`: null when the model judged; "" when the developer decided without a sentence.
  */
 /**
@@ -409,6 +411,7 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
         {
           ...buildPart(candidate, verdict),
           title: `${name} ${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].label}`,
+          screens: listScreenNumbers(instances),
           reason,
           developerDecision,
           question:

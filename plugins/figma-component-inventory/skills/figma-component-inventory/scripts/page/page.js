@@ -294,9 +294,11 @@ function drawScreen(screen) {
 /**
  * Tabs show one screen at a time, all at the same place and size: switching tab shows
  * what changes from one screen to the next. The last tab shows them all, one under the other.
+ * Under the images, only the explanations of what the shown screen draws are listed.
  * @param {ReturnType<typeof drawScreen>[]} drawnScreens
+ * @param {ReturnType<typeof drawExplanations>} drawnExplanations
  */
-function drawTabs(drawnScreens) {
+function drawTabs(drawnScreens, drawnExplanations) {
   const choices = [
     ...drawnScreens.map(({ screen }) => ({
       shown: /** @type {number | string} */ (screen.number),
@@ -318,6 +320,11 @@ function drawTabs(drawnScreens) {
     for (const { screen, section, svg } of drawnScreens) {
       section.hidden = shown !== ALL_SCREENS && shown !== screen.number
       showBox(svg, shown === ALL_SCREENS ? screen.ownBox : inventory.commonBox)
+    }
+    for (const { explanation, item } of drawnExplanations) {
+      item.hidden =
+        shown !== ALL_SCREENS &&
+        !explanation.screens.some((screenNumber) => screenNumber === shown)
     }
   }
   const buttons = choices.map(({ shown, text }) => {
@@ -401,7 +408,7 @@ function drawHeader() {
  * left out, what the developer has to decide).
  */
 function drawExplanations() {
-  for (const explanation of inventory.explanations) {
+  return inventory.explanations.map((explanation) => {
     const item = createElement("li")
     item.className = classOfPart(explanation)
     item.setAttribute("data-candidate", String(explanation.candidateNumber))
@@ -419,18 +426,19 @@ function drawExplanations() {
     if (explanation.question)
       item.append(createElement("br"), explanation.question)
     getElement("explanations").append(item)
-  }
+    return { explanation, item }
+  })
 }
 
 drawHeader()
 const drawnScreens = inventory.screens.map(drawScreen)
 wireSwitch("texts-outside-leaves")
+const drawnExplanations = drawExplanations()
 if (drawnScreens.length > 1) {
-  drawTabs(drawnScreens)
+  drawTabs(drawnScreens, drawnExplanations)
   getElement("differences-switch").hidden = false
   wireSwitch("differences-only")
 }
-drawExplanations()
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && isolatedNumber !== null) isolate(null)
