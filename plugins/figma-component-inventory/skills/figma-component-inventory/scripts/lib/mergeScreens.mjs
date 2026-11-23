@@ -3,7 +3,7 @@
 // number on every screen, and the areas whose content differs from one screen to the next
 // are pointed out. Reads no file and calls nothing.
 import { isBoxInside, measureArea } from "./box.mjs"
-import { toInstanceLetter } from "./collectCandidates.mjs"
+import { readFirstPartOfName, toInstanceLetter } from "./collectCandidates.mjs"
 
 /** @typedef {import("./collectCandidates.mjs").Candidate} Candidate */
 /** @typedef {import("./collectCandidates.mjs").Instance} Instance */
@@ -28,9 +28,6 @@ import { toInstanceLetter } from "./collectCandidates.mjs"
  * it is on. Otherwise one item per different content: the developer has to choose between
  * one component with a prop and several components. Such a candidate must be judged.
  */
-
-// In Figma, a layer's name often reads "Role — detail": "Group — setpoint".
-const NAME_PART_SEPARATOR = " — "
 
 /**
  * The screens some instances are drawn on, each once, in the order they come.
@@ -142,7 +139,7 @@ export function mergeScreenCandidates(candidatesByScreen) {
   )
   /** @param {Candidate} candidate */
   const nameAcrossScreens = (candidate) => {
-    const [firstPartOfName] = candidate.figmaName.split(NAME_PART_SEPARATOR)
+    const firstPartOfName = readFirstPartOfName(candidate.figmaName)
     return candidate.kind === "frame" && namesOfFrameGroups.has(firstPartOfName)
       ? firstPartOfName
       : candidate.figmaName
@@ -150,13 +147,15 @@ export function mergeScreenCandidates(candidatesByScreen) {
   candidatesByScreen.forEach((candidates) => {
     for (const candidate of candidates) {
       const figmaName = nameAcrossScreens(candidate)
-      const key = `${candidate.kind}\n${figmaName}`
+      // Two Figma components can have one name: their key tells them apart.
+      const key = `${candidate.kind}\n${candidate.componentKey ?? figmaName}`
       const group = groupsByKey.get(key) ?? {
         merged: {
           number: 0,
           kind: candidate.kind,
           mustBeJudged: false,
           figmaName,
+          componentKey: candidate.componentKey,
           instances: [],
           icons: [],
           contentsThatDiffer: [],

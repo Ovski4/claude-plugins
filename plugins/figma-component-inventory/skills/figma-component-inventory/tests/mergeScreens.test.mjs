@@ -12,6 +12,7 @@ import { applyVerdictsToCandidates } from "../scripts/lib/verdicts.mjs"
  * @param {string} figmaName
  * @param {[x: number, y: number, width: number, height: number]} box
  * @param {number | null} parent
+ * @param {string} [componentId] for a Figma component whose name another component has too
  * @returns {Candidate}
  */
 const buildCandidate = (
@@ -20,11 +21,13 @@ const buildCandidate = (
   figmaName,
   [x, y, width, height],
   parent,
+  componentId = figmaName,
 ) => ({
   number,
   kind,
   mustBeJudged: kind === "instance",
   figmaName,
+  componentKey: kind === "instance" ? componentId : null,
   instances: [
     {
       letter: "a",
@@ -53,17 +56,30 @@ test("a component keeps one number on every screen, and a frame whose content di
     buildCandidate(4, "frame", "Settings", [20, 100, 360, 100], 1),
   ]
   // On a third screen two look-alike frames were grouped as "Group": the lone
-  // "Group — setpoint" of another screen joins them.
+  // "Group — setpoint" and "Group · hover" of other screens join them. Two Figma
+  // components that share the name "Tag" stay two candidates.
   const groupOnOneScreen = mergeScreenCandidates([
-    [buildCandidate(1, "frame", "Group — setpoint", [0, 0, 100, 40], null)],
-    [buildCandidate(1, "frame", "Group", [0, 0, 100, 40], null)],
+    [
+      buildCandidate(1, "instance", "Tag", [0, 50, 40, 20], null, "12:1"),
+      buildCandidate(2, "frame", "Group — setpoint", [0, 0, 100, 40], null),
+    ],
+    [
+      buildCandidate(1, "instance", "Tag", [0, 50, 40, 20], null, "34:5"),
+      buildCandidate(2, "frame", "Group", [0, 0, 100, 40], null),
+    ],
+    [buildCandidate(1, "frame", "Group · hover", [0, 0, 100, 40], null)],
   ])
   assert.deepEqual(
     groupOnOneScreen.map((candidate) => [
+      candidate.number,
       candidate.figmaName,
       candidate.instances.map((instance) => instance.variant),
     ]),
-    [["Group", ["Group — setpoint", ""]]],
+    [
+      [1, "Tag", [""]],
+      [2, "Tag", [""]],
+      [3, "Group", ["Group — setpoint", "", "Group · hover"]],
+    ],
   )
 
   const merged = mergeScreenCandidates([offScreen, continuousScreen])

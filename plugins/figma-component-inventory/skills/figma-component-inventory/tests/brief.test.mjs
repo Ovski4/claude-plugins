@@ -35,6 +35,7 @@ const buildCandidate = (
   kind: "instance",
   mustBeJudged: true,
   figmaName,
+  componentKey: null,
   instances: [
     {
       letter: "a",

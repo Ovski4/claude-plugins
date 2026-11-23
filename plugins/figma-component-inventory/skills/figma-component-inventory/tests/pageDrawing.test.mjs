@@ -34,6 +34,7 @@ function buildJudgedCandidate(
     kind: "instance",
     mustBeJudged: true,
     figmaName,
+    componentKey: null,
     icons: [],
     contentsThatDiffer: [],
     outlined: true,
@@ -158,6 +159,14 @@ test("the page gets each screen's drawing, with what is the same on every screen
       [{ screen: 2, level: 2, box: [20, 90, 360, 1] }],
       { outlined: false, note: "Un trait du conteneur." },
     ),
+    // A plain frame around the settings: no component is nested between them, so both
+    // have the same level.
+    buildJudgedCandidate(
+      4,
+      "Body",
+      [{ screen: 2, level: 2, box: [10, 80, 380, 200] }],
+      { kind: "frame", verdict: "to-create" },
+    ),
   ]
   /** @param {number} number @param {string} name @param {number} height */
   const buildScreen = (number, name, height) => ({
@@ -213,10 +222,11 @@ test("the page gets each screen's drawing, with what is the same on every screen
       ],
       [
         "2 · Continuous",
-        ["1 same", "2"],
+        ["1 same", "4", "2"],
         [
           "1  Editor (Editor · Réutilisé)",
           "2  OrderSettings (Settings · À créer)",
+          "4  Body (Body · À créer)",
         ],
       ],
     ],

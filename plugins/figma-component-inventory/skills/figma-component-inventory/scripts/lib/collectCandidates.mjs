@@ -21,6 +21,8 @@
  * @property {"instance" | "frame"} kind "instance" for a Figma component, "frame" for a named frame that is not one
  * @property {boolean} mustBeJudged true when verdicts.json must hold an entry for it
  * @property {string} figmaName
+ * @property {string | null} componentKey what tells two Figma components with one name apart:
+ *   the id of the component set, or of the component when it has no variants; null for a frame
  * @property {Instance[]} instances
  * @property {string[]} icons the icon components found directly inside: listed, never outlined
  */
@@ -37,6 +39,7 @@
  * @typedef {object} CandidateGroup
  * @property {"instance" | "frame"} kind
  * @property {string} figmaName
+ * @property {string | null} componentKey
  * @property {(Omit<Instance, "letter" | "parent"> & { enclosingGroup: CandidateGroup | null })[]} uses
  * @property {Set<string>} icons
  */
@@ -50,6 +53,8 @@
  */
 
 const ICON_NAME_PREFIX = "ic/"
+// In Figma, a layer's name often reads "Role — detail": "Group — setpoint", "Day · hover".
+const NAME_PART_SEPARATOR_PATTERN = /\s[—–·:-]\s/
 // A top-level layer with one of these names that covers the whole screen is the veil drawn
 // behind a dialog: only the layers above it give candidates.
 const BACKDROP_NAME_PATTERN = /^(scrim|backdrop|overlay)\b/i
@@ -74,14 +79,21 @@ export function toInstanceLetter(index) {
 }
 
 /**
+ * "Group — setpoint" → "Group"; the whole name when it has one part.
+ * @param {string} layerName
+ */
+export function readFirstPartOfName(layerName) {
+  return layerName.split(NAME_PART_SEPARATOR_PATTERN)[0]
+}
+
+/**
  * What tells two rows of a list alike: the first part of their name ("Day — Mon" and
  * "Day — Wed · hover" are both "Day") and the kind of their direct children. Names or texts
  * further down do not count: a row with no slot still is a row.
  * @param {FigmaNode} node
  */
 function describeStructure(node) {
-  const nameStart = node.name.split(/\s[—–·:-]\s/)[0]
-  return `${nameStart}[${(node.children ?? []).map((child) => child.type).join(",")}]`
+  return `${readFirstPartOfName(node.name)}[${(node.children ?? []).map((child) => child.type).join(",")}]`
 }
 
 /**
@@ -136,7 +148,13 @@ function isRepeatedOutsideNestedComponents(group) {
 function findOrCreateGroup(groupsByKey, key, kind, nameGroup) {
   let group = groupsByKey.get(key)
   if (!group) {
-    group = { kind, figmaName: nameGroup(), uses: [], icons: new Set() }
+    group = {
+      kind,
+      figmaName: nameGroup(),
+      componentKey: kind === "instance" ? key : null,
+      uses: [],
+      icons: new Set(),
+    }
     groupsByKey.set(key, group)
   }
   return group
@@ -327,6 +345,7 @@ export function collectCandidates(
     mustBeJudged:
       group.kind === "instance" || isRepeatedOutsideNestedComponents(group),
     figmaName: group.figmaName,
+    componentKey: group.componentKey,
     instances: group.uses
       .toSorted((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)
       .map(({ enclosingGroup, nodeId, variant, level, box }, useIndex) => ({

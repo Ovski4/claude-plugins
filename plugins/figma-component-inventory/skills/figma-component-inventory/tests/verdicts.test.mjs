@@ -29,6 +29,7 @@ const buildCandidate = (number, figmaName, letters, more = {}) => ({
   kind: "instance",
   mustBeJudged: true,
   figmaName,
+  componentKey: null,
   instances: letters.map((letter) => ({
     letter,
     nodeId: `87:${number}${letter}`,

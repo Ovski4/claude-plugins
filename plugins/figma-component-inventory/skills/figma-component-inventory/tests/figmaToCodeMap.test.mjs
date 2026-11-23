@@ -72,6 +72,7 @@ test("at approval, the map gets the Figma components that existing code draws an
     kind,
     mustBeJudged: true,
     figmaName,
+    componentKey: null,
     icons: [],
     contentsThatDiffer: [],
     outlined: true,

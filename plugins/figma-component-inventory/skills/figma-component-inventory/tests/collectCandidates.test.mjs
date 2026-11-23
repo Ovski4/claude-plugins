@@ -76,6 +76,7 @@ test("the variants of a component are one candidate, lettered in reading order, 
       kind: "instance",
       mustBeJudged: true,
       figmaName: "Card",
+      componentKey: "card",
       instances: [
         {
           letter: "a",
@@ -93,6 +94,7 @@ test("the variants of a component are one candidate, lettered in reading order, 
       kind: "instance",
       mustBeJudged: true,
       figmaName: "Button",
+      componentKey: "button-set",
       instances: [
         {
           letter: "a",

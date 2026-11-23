@@ -276,12 +276,19 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
     },
   )
 
-  // Outer components first, so that a nested component's outline stays on top.
+  // Outer ones first, so that the outline of what is inside stays on top. A frame with the
+  // same box as a Figma component is the wrapper around it.
   const outlines = candidatesOnScreen
     .flatMap((candidate) =>
       candidate.instances.map((instance) => ({ candidate, instance })),
     )
-    .toSorted((a, b) => a.instance.level - b.instance.level)
+    .toSorted(
+      (a, b) =>
+        measureArea(b.instance.box) - measureArea(a.instance.box) ||
+        Number(a.candidate.kind === "instance") -
+          Number(b.candidate.kind === "instance") ||
+        a.instance.level - b.instance.level,
+    )
     .map(({ candidate, instance }) => {
       const id = nameOutline(candidate, instance)
       const { width, height } = instance.box

@@ -181,6 +181,9 @@ and `Instance` types of `scripts/lib/collectCandidates.mjs`.
 - `kind`: `instance` for a Figma component, `frame` for a named frame that is not one.
   Frames with the same name, or siblings built the same way ("Day — Mon" … "Day — Sun"),
   are one candidate.
+- `componentKey`: for an `instance`, the id of its Figma component set (of the component
+  when it has no variants); null for a `frame`. Two Figma components with one name are two
+  candidates.
 - `mustBeJudged`: true for every `instance`, and for a `frame` used several times outside
   a nested component: a component the designer did not declare. Other frames are outlined
   only when the model gives them a verdict.
