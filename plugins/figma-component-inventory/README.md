@@ -216,6 +216,10 @@ the smallest outlined component around it is the screen's outermost one (the dia
 page), or there is none. It shows what the cut leaves loose: a label or a help text that
 may deserve a component, or be a prop of the component beside it.
 
+A click on a component, on its label or on its reason isolates it: everything else fades
+and the capture is veiled except where that component is drawn, on every screen. A second
+click, a click beside the images or the Escape key shows everything back.
+
 Labels are in French, since its images go into Jira tickets. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its
 number and its label but gets no outline, which would hide it.

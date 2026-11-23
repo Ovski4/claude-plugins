@@ -170,6 +170,28 @@
       .screens {
         margin-top: 16px;
       }
+      .page-hint {
+        margin: 0 0 8px;
+        color: var(--text-muted);
+        font-size: 12px;
+      }
+      [data-candidate] {
+        cursor: pointer;
+      }
+      .isolating [data-candidate]:not(.isolated),
+      .isolating .loose-text {
+        opacity: 0.12;
+      }
+      .isolation-mask {
+        display: none;
+        fill: var(--page-background);
+        fill-opacity: 0.82;
+        fill-rule: evenodd;
+        stroke: none;
+      }
+      .isolating .isolation-mask {
+        display: inline;
+      }
       .loose-text {
         display: none;
       }
@@ -210,6 +232,10 @@
       <input type="checkbox" id="differences-only" />
       Différences seulement : estomper ce qui est identique sur tous les écrans
     </label>
+    <p class="page-hint">
+      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler ; recliquer, cliquer à côté ou Échap pour
+      revenir.
+    </p>
     <div class="screens" id="screens"></div>
     <ul class="explanations" id="explanations"></ul>
     <p class="not-outlined" id="not-outlined"></p>
@@ -264,6 +290,7 @@
               verdictLabelsByKey.get(verdict),
             ]
             labels.push({
+              candidateNumber: candidate.number,
               className: classOfCandidate(candidate, verdict),
               anchor: instances[0].box,
               title: `${coversEveryInstance ? candidate.number : outlineIds.join(" ")}  ${codeComponent ?? "?"}`,
@@ -353,7 +380,10 @@
         const { x, y, width, height } = instance.box
         const outlineId = buildOutlineId(candidate, instance)
         const badgeWidth = outlineId.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
-        const group = createSvgElement("g", { class: classOfCandidate(candidate, instance.verdict) })
+        const group = createSvgElement("g", {
+          class: classOfCandidate(candidate, instance.verdict),
+          "data-candidate": candidate.number,
+        })
         if (Math.min(width, height) >= MIN_OUTLINED_THICKNESS) {
           group.append(
             createSvgElement("rect", { class: "outline-halo", x, y, width, height }),
@@ -379,7 +409,11 @@
           [leaderEnd.x, leaderEnd.y],
         ]
         const textAnchor = isLeft ? "end" : "start"
-        const group = createSvgElement("g", { class: label.className })
+        const group = createSvgElement("g", {
+          class: label.className,
+          "data-candidate": label.candidateNumber,
+          "data-label": "",
+        })
         group.append(
           createSvgElement("polyline", {
             class: "leader",
@@ -537,7 +571,11 @@
         const top = Math.min(screen.capture.y - BADGE_HEIGHT, highestTop - GAP_BETWEEN_LABELS)
         const height = Math.max(screen.capture.y + screen.capture.height, lowestBottom) - top + GAP_BETWEEN_LABELS
         showBox(svg, { left, top, width, height })
-        svg.replaceChildren(createSvgElement("image", { href: screen.captureDataUrl, ...pickBox(screen.capture) }))
+        const isolationMask = createSvgElement("path", { class: "isolation-mask" })
+        svg.replaceChildren(
+          createSvgElement("image", { href: screen.captureDataUrl, ...pickBox(screen.capture) }),
+          isolationMask,
+        )
         // Outer components first, so that a nested component's outline stays on top.
         const outlines = visibleCandidates
           .flatMap((candidate) => candidate.instances.map((instance) => ({ candidate, instance })))
@@ -545,7 +583,40 @@
         for (const { candidate, instance } of outlines) drawOutline(svg, candidate, instance)
         for (const label of labels) drawLabel(svg, label, screen)
         drawLooseTexts(svg, screen, outlines)
+        isolationMasks.push({ screen, outlines, isolationMask })
+        svg.addEventListener("click", (event) => {
+          const label = event.target.closest("[data-label]")
+          isolate(label ? Number(label.dataset.candidate) : findCandidateAt(svg, outlines, event))
+        })
         return { left, top, width, height }
+      }
+
+      // The candidate whose outline is the smallest one around the point clicked, or null.
+      function findCandidateAt(svg, outlines, event) {
+        const { x, y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(svg.getScreenCTM().inverse())
+        const area = ({ box }) => box.width * box.height
+        const [smallest] = outlines
+          .filter(({ instance: { box } }) => x >= box.x && x <= box.x + box.width && y >= box.y && y <= box.y + box.height)
+          .toSorted((a, b) => area(a.instance) - area(b.instance))
+        return smallest ? smallest.candidate.number : null
+      }
+
+      // Isolates one candidate on every screen: its outlines, labels and reason keep their
+      // colour, everything else fades, and the capture is veiled except where the candidate
+      // is drawn. Called with the same number again, or with null, shows everything back.
+      function isolate(candidateNumber) {
+        isolatedNumber = candidateNumber === isolatedNumber ? null : candidateNumber
+        document.body.classList.toggle("isolating", isolatedNumber !== null)
+        for (const element of document.querySelectorAll("[data-candidate]")) {
+          element.classList.toggle("isolated", Number(element.dataset.candidate) === isolatedNumber)
+        }
+        for (const { screen, outlines, isolationMask } of isolationMasks) {
+          const { x, y, width, height } = screen.capture
+          const holes = outlines
+            .filter(({ candidate }) => candidate.number === isolatedNumber)
+            .map(({ instance: { box } }) => `M${box.x},${box.y}h${box.width}v${box.height}h${-box.width}z`)
+          isolationMask.setAttribute("d", `M${x},${y}h${width}v${height}h${-width}z${holes.join("")}`)
+        }
       }
 
       function isBoxInside(inner, outer) {
@@ -644,6 +715,8 @@
             title.textContent = `${coversEveryInstance ? candidate.number : nameInstances(candidate, instances)} ${codeComponent ?? candidate.figmaName} — ${verdictLabelsByKey.get(verdict)}`
             const item = document.createElement("li")
             item.className = classOfCandidate(candidate, verdict)
+            item.dataset.candidate = candidate.number
+            item.addEventListener("click", () => isolate(candidate.number))
             item.append(title)
             if (reason) item.append(document.createElement("br"), reason)
             if (developerDecision !== null) {
@@ -671,6 +744,16 @@
           : instances.map((instance) => buildOutlineId(candidate, instance)).join(" ")
       }
 
+      let isolatedNumber = null
+      const isolationMasks = []
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && isolatedNumber !== null) isolate(null)
+      })
+      // A click beside the images and the reasons shows everything back; the page's own
+      // controls (tabs, switches, links) leave the isolation as it is.
+      document.addEventListener("click", (event) => {
+        if (!event.target.closest(".screens svg, [data-candidate], button, label, a")) isolate(null)
+      })
       const numbersSameOnEveryScreen = new Set(
         cut.screens.length > 1 ? cut.candidates.filter(isSameOnEveryScreen).map((candidate) => candidate.number) : [],
       )
