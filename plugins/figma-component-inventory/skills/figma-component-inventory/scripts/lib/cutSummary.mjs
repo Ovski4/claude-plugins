@@ -1,7 +1,9 @@
 // @ts-check
 // Writes cut.md: what the next steps of the workflow read instead of the page.
+import { nameOutlines, nameScreens, titleCut } from "./cutWording.mjs"
 import { buildFigmaNodeUrl } from "./figma.mjs"
-import { VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
+import { listScreenNumbers } from "./mergeScreens.mjs"
+import { groupByJudgement, VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
 
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /**
@@ -11,19 +13,6 @@ import { VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
  * @property {{ fileKey: string, version: string, lastModified: string }} figma
  * @property {string} gitCommit the short hash of the commit the code was read at
  */
-
-/**
- * "6" when the instances are the whole candidate, "6a 6b" otherwise.
- * @param {JudgedCandidate} candidate
- * @param {JudgedCandidate["instances"]} instances
- */
-function nameOutlines(candidate, instances) {
-  if (instances.length === candidate.instances.length)
-    return `${candidate.number}`
-  return instances
-    .map((instance) => `${candidate.number}${instance.letter}`)
-    .join(" ")
-}
 
 /**
  * One section per verdict, one item per component, with its reason, the developer's decision
@@ -49,7 +38,7 @@ export function buildCutSummary({
       : `[Figma](${buildFigmaNodeUrl(fileKey, nodeId)})`,
   )
   const lines = [
-    `# Découpage en composants — ${hasSeveralScreens ? `${screens.length} écrans d'un même design` : screens[0].name}`,
+    `# Découpage en composants — ${titleCut(screens)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Maquette : ${figmaLinks.join(", ")}, modifiée le ${lastModified.slice(0, 10)} (version ${version}). Code : commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
@@ -58,34 +47,37 @@ export function buildCutSummary({
     (candidate) => candidate.outlined,
   )
   for (const verdictKey of VERDICT_KEYS) {
-    const items = outlinedCandidates.flatMap((candidate) => {
+    const items = outlinedCandidates.flatMap((candidate) =>
       // A candidate that is several React components gets one item per component.
-      const instancesByComponent = Map.groupBy(
-        candidate.instances.filter(
-          (instance) => instance.verdict === verdictKey,
-        ),
-        (instance) => instance.codeComponent,
-      )
-      return [...instancesByComponent].flatMap(([codeComponent, instances]) => {
-        const [{ note, developerDecision, codePath, nodeId: firstNodeId }] =
-          instances
-        const screenNumbers = [
-          ...new Set(instances.map((instance) => instance.screen)),
-        ]
-        const where =
-          hasSeveralScreens && screenNumbers.length < screens.length
-            ? `, écran${screenNumbers.length > 1 ? "s" : ""} ${screenNumbers.join(" ")}`
-            : ""
-        const figmaLink = `[nœud](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
-        return [
-          `- **${nameOutlines(candidate, instances)} ${codeComponent ?? candidate.figmaName}**${codePath ? ` — \`${codePath}\`` : ""} — Figma « ${candidate.figmaName} » ×${instances.length}${where} (${figmaLink})`,
-          ...(note ? [`  - ${note}`] : []),
-          ...(developerDecision !== null
-            ? [`  - Développeur : ${developerDecision || "décision confirmée"}`]
-            : []),
-        ]
-      })
-    })
+      groupByJudgement(candidate.instances)
+        .filter(([{ verdict }]) => verdict === verdictKey)
+        .flatMap((instances) => {
+          const [
+            {
+              codeComponent,
+              note,
+              developerDecision,
+              codePath,
+              nodeId: firstNodeId,
+            },
+          ] = instances
+          const screenNumbers = listScreenNumbers(instances)
+          const where =
+            hasSeveralScreens && screenNumbers.length < screens.length
+              ? `, ${nameScreens(screenNumbers)}`
+              : ""
+          const figmaLink = `[nœud](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
+          return [
+            `- **${nameOutlines(candidate, instances)} ${codeComponent ?? candidate.figmaName}**${codePath ? ` — \`${codePath}\`` : ""} — Figma « ${candidate.figmaName} » ×${instances.length}${where} (${figmaLink})`,
+            ...(note ? [`  - ${note}`] : []),
+            ...(developerDecision !== null
+              ? [
+                  `  - Développeur : ${developerDecision || "décision confirmée"}`,
+                ]
+              : []),
+          ]
+        }),
+    )
     if (items.length)
       lines.push("", `## ${VERDICTS[verdictKey].label}`, "", ...items)
   }

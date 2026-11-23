@@ -1,6 +1,7 @@
 // @ts-check
 // Writes the brief the model reads before judging: for each candidate, what the scripts can
 // already find in the repo, so that the model opens a file only to settle a verdict.
+import { listScreenNumbers } from "./mergeScreens.mjs"
 
 /** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
 /**
@@ -31,7 +32,7 @@ const LAST_LINE_OF_A_DECLARATION = /^[}>]/
  * @param {string} sourceText the content of a .tsx file
  * @returns {string} the declarations as written in the file; "" when it declares none
  */
-export function extractPropsDeclarations(sourceText) {
+function extractPropsDeclarations(sourceText) {
   const lines = sourceText.split("\n")
   const declarations = []
   for (let index = 0; index < lines.length; index++) {
@@ -63,7 +64,7 @@ export function extractPropsDeclarations(sourceText) {
  * @param {string | null} designSystemFolder from the repo's root; null when the repo has none
  * @returns {string[]} at most 6 paths
  */
-export function findFilesWithACloseName(
+function findFilesWithACloseName(
   figmaName,
   componentFiles,
   designSystemFolder,
@@ -114,14 +115,6 @@ function titleCandidate(candidate) {
   const kind = candidate.kind === "instance" ? "component" : kindOfFrame
   const where = parents.length ? `, inside ${parents.join(" and ")}` : ""
   return `### ${candidate.number} — ${candidate.figmaName} ×${candidate.instances.length} (${kind}, level ${levels}${where})`
-}
-
-/**
- * @param {Candidate} candidate
- * @returns {number[]} the numbers of the screens the candidate is drawn on
- */
-function presentOnScreens(candidate) {
-  return [...new Set(candidate.instances.map((instance) => instance.screen))]
 }
 
 /**
@@ -206,11 +199,9 @@ export function buildBrief({
       (instance) => instance.variant,
     )
     const variants = [...screensByVariant].map(([variant, instances]) => {
-      const screenNumbers = [
-        ...new Set(instances.map((instance) => instance.screen)),
-      ]
+      const screenNumbers = listScreenNumbers(instances)
       return hasSeveralScreens &&
-        screenNumbers.length < presentOnScreens(candidate).length
+        screenNumbers.length < listScreenNumbers(candidate.instances).length
         ? `${variant} (${nameScreens(screenNumbers)})`
         : variant
     })
@@ -218,7 +209,7 @@ export function buildBrief({
       lookUpInFigmaToCodeMap(candidate.figmaName)
     lines.push(titleCandidate(candidate))
     if (hasSeveralScreens)
-      lines.push(`- On: ${nameScreens(presentOnScreens(candidate))}`)
+      lines.push(`- On: ${nameScreens(listScreenNumbers(candidate.instances))}`)
     if (variants.length) lines.push(`- Variants: ${variants.join(" | ")}`)
     lines.push(`- Size in the mock-up: ${describeSizes(candidate)}`)
     if (candidate.icons.length)
@@ -238,19 +229,23 @@ export function buildBrief({
       )
       lines.push(...mapNotes.map((note) => `  - Figma → props: ${note}`))
       const firstCandidateOfThatFile = candidateNumbersByCodePath.get(codePath)
-      const propsDeclarations = extractPropsDeclarations(readCodeFile(codePath))
       if (firstCandidateOfThatFile) {
         lines.push(
           `- Props declared in that file: see candidate ${firstCandidateOfThatFile}`,
         )
-      } else if (propsDeclarations) {
-        candidateNumbersByCodePath.set(codePath, candidate.number)
-        lines.push(
-          "- Props declared in that file:",
-          "```ts",
-          propsDeclarations,
-          "```",
+      } else {
+        const propsDeclarations = extractPropsDeclarations(
+          readCodeFile(codePath),
         )
+        if (propsDeclarations) {
+          candidateNumbersByCodePath.set(codePath, candidate.number)
+          lines.push(
+            "- Props declared in that file:",
+            "```ts",
+            propsDeclarations,
+            "```",
+          )
+        }
       }
     } else {
       if (mapLines.length) {

@@ -4,13 +4,21 @@
 // itself only draws these coordinates and answers clicks.
 // Every coordinate is in pixels at scale 1, from the top-left corner of its own screen.
 
+import { isBoxInside, measureArea, pickBox } from "./box.mjs"
+import {
+  nameOutline,
+  nameOutlines,
+  nameScreens,
+  titleCut,
+} from "./cutWording.mjs"
 import {
   GAP_BETWEEN_LABELS,
   LABEL_HEIGHT,
-  LEADER_OFFSET_Y,
   placeLabels,
   routeLeaders,
 } from "./labelPlacement.mjs"
+import { listScreenNumbers } from "./mergeScreens.mjs"
+import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 
 /** @typedef {import("./figma.mjs").Box} Box */
 /** @typedef {import("./collectCandidates.mjs").ScreenText} ScreenText */
@@ -72,7 +80,7 @@ import {
  * @property {number} tagWidth
  */
 /**
- * @typedef {Omit<ScreenToDraw, "texts" | "width"> & {
+ * @typedef {Pick<ScreenToDraw, "number" | "capture" | "figmaUrl" | "captureDataUrl"> & {
  *   linkText: string,
  *   tabName: string,
  *   ownBox: DrawingBox,
@@ -96,6 +104,7 @@ import {
 /**
  * @typedef {object} PageDrawing
  * @property {string} title
+ * @property {string} fingerprintLine when the cut was built, on which mock-up and which commit
  * @property {number} badgeHeight
  * @property {DrawnScreen[]} screens
  * @property {DrawingBox} commonBox what holds every screen's drawing: shown one at a time
@@ -115,49 +124,9 @@ const BADGE_PADDING_X = 4
 const MIN_OUTLINED_THICKNESS = 4
 const NAME_PART_SEPARATOR = " · "
 
-/** @param {Box} box */
-const areaOf = (box) => box.width * box.height
-
-/**
- * @param {Box} inner
- * @param {Box} outer
- */
-function isBoxInside(inner, outer) {
-  return (
-    inner.x >= outer.x &&
-    inner.y >= outer.y &&
-    inner.x + inner.width <= outer.x + outer.width &&
-    inner.y + inner.height <= outer.y + outer.height
-  )
-}
-
 /** @param {string} badgeText */
 const measureBadge = (badgeText) =>
   badgeText.length * BADGE_CHARACTER_WIDTH + BADGE_PADDING_X * 2
-
-/**
- * The instances of a candidate that share a verdict and a React component: several groups
- * when an exception judges some of them differently, or names another component.
- * @param {JudgedInstance[]} instances
- */
-function groupByJudgement(instances) {
-  return [
-    ...Map.groupBy(
-      instances,
-      (instance) => `${instance.verdict}\n${instance.codeComponent}`,
-    ).values(),
-  ]
-}
-
-/**
- * @param {JudgedCandidate} candidate
- * @param {JudgedInstance} instance
- */
-function buildOutlineId(candidate, instance) {
-  return candidate.instances.length > 1
-    ? `${candidate.number}${instance.letter}`
-    : `${candidate.number}`
-}
 
 /**
  * A candidate is the same on every screen when it is drawn on each of them, holds the same
@@ -166,7 +135,7 @@ function buildOutlineId(candidate, instance) {
  * @param {number[]} screenNumbers
  * @returns {Set<number>} the numbers of those candidates; empty with a single screen
  */
-export function listNumbersSameOnEveryScreen(judgedCandidates, screenNumbers) {
+function listNumbersSameOnEveryScreen(judgedCandidates, screenNumbers) {
   if (screenNumbers.length < 2) return new Set()
   /** @param {JudgedCandidate} candidate */
   const isSame = (candidate) => {
@@ -229,13 +198,13 @@ export function findLooseTexts(texts, outlines) {
     outlines.some(
       (other) =>
         other !== outline &&
-        areaOf(other.box) > areaOf(outline.box) &&
+        measureArea(other.box) > measureArea(outline.box) &&
         isBoxInside(outline.box, other.box),
     )
   return texts.flatMap((text) => {
     const [owner] = outlines
       .filter((outline) => isBoxInside(text.box, outline.box))
-      .toSorted((a, b) => areaOf(a.box) - areaOf(b.box))
+      .toSorted((a, b) => measureArea(a.box) - measureArea(b.box))
     if (owner && isInsideAnother(owner)) return []
     const tag = owner ? `→ ${owner.candidateNumber}` : "?"
     return [
@@ -253,14 +222,10 @@ export function findLooseTexts(texts, outlines) {
  * @param {ScreenToDraw} screen
  * @param {object} context
  * @param {JudgedCandidate[]} context.outlinedCandidates
- * @param {Set<number>} context.numbersSameOnEveryScreen
- * @param {Map<VerdictKey, string>} context.verdictLabelsByKey
+ * @param {(candidate: JudgedCandidate, verdict: VerdictKey) => DrawnCandidatePart} context.buildPart
  * @returns {Pick<DrawnScreen, "ownBox" | "outlines" | "labels" | "looseTexts">}
  */
-function drawScreen(
-  screen,
-  { outlinedCandidates, numbersSameOnEveryScreen, verdictLabelsByKey },
-) {
+function drawScreen(screen, { outlinedCandidates, buildPart }) {
   const candidatesOnScreen = outlinedCandidates
     .map((candidate) => ({
       ...candidate,
@@ -269,47 +234,29 @@ function drawScreen(
       ),
     }))
     .filter((candidate) => candidate.instances.length)
-  /**
-   * @param {JudgedCandidate} candidate
-   * @param {VerdictKey} verdict
-   * @returns {DrawnCandidatePart}
-   */
-  const buildPart = (candidate, verdict) => ({
-    candidateNumber: candidate.number,
-    verdict,
-    isSameOnEveryScreen: numbersSameOnEveryScreen.has(candidate.number),
-  })
-
   // One label per candidate and verdict: the instances that an exception judges
   // differently get a label of their own.
   const labelsToPlace = candidatesOnScreen.flatMap((candidate) =>
     groupByJudgement(candidate.instances).map((instances) => {
       const [{ verdict, codeComponent, box }] = instances
-      const outlineIds =
-        instances.length === candidate.instances.length
-          ? `${candidate.number}`
-          : instances
-              .map((instance) => buildOutlineId(candidate, instance))
-              .join(" ")
       const instanceCount = instances.length > 1 ? ` ×${instances.length}` : ""
       return {
         ...buildPart(candidate, verdict),
         anchor: box,
-        title: `${outlineIds}  ${codeComponent ?? "?"}`,
-        detail: `${candidate.figmaName}${instanceCount} · ${verdictLabelsByKey.get(verdict)}`,
+        title: `${nameOutlines(candidate, instances)}  ${codeComponent ?? "?"}`,
+        detail: `${candidate.figmaName}${instanceCount} · ${VERDICTS[verdict].label}`,
       }
     }),
   )
   const routedLabels = routeLeaders(placeLabels(labelsToPlace, screen.width))
   const labels = routedLabels.map(
-    ({ anchor, side, top, leaderCorner, leaderEnd, ...label }) => {
+    ({ anchor, side, top, lineY, leaderCorner, leaderEnd, ...label }) => {
       const isLeft = side === "left"
       const captureEdge = isLeft
         ? screen.capture.x
         : screen.capture.x + screen.capture.width
       const towardsLabels = isLeft ? -1 : 1
       const textX = captureEdge + towardsLabels * GAP_BETWEEN_CAPTURE_AND_LABELS
-      const lineY = top + LEADER_OFFSET_Y
       const titleY = lineY + LABEL_TITLE_OFFSET_Y
       return {
         ...label,
@@ -336,7 +283,7 @@ function drawScreen(
     )
     .toSorted((a, b) => a.instance.level - b.instance.level)
     .map(({ candidate, instance }) => {
-      const id = buildOutlineId(candidate, instance)
+      const id = nameOutline(candidate, instance)
       const { width, height } = instance.box
       return {
         ...buildPart(candidate, instance.verdict),
@@ -394,30 +341,25 @@ function findCommonBox(boxes) {
 function nameInstances(candidate, instances, hasSeveralScreens) {
   if (instances.length === candidate.instances.length)
     return `${candidate.number}`
-  const screenNumbers = [
-    ...new Set(instances.map((instance) => instance.screen)),
-  ]
+  const screenNumbers = listScreenNumbers(instances)
   const coversWholeScreens =
     candidate.instances.filter((instance) =>
       screenNumbers.includes(instance.screen),
     ).length === instances.length
   return hasSeveralScreens && coversWholeScreens
-    ? `${candidate.number} · écran${screenNumbers.length > 1 ? "s" : ""} ${screenNumbers.join(" ")}`
-    : instances.map((instance) => buildOutlineId(candidate, instance)).join(" ")
+    ? `${candidate.number} · ${nameScreens(screenNumbers)}`
+    : nameOutlines(candidate, instances)
 }
 
 /**
  * @param {object} cut
  * @param {ScreenToDraw[]} cut.screens
  * @param {JudgedCandidate[]} cut.judgedCandidates
- * @param {{ key: VerdictKey, label: string }[]} cut.verdicts
+ * @param {import("./cutSummary.mjs").Fingerprint} cut.fingerprint
  * @returns {PageDrawing} texts in French, as the page shows them
  */
-export function buildPageDrawing({ screens, judgedCandidates, verdicts }) {
+export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
   const hasSeveralScreens = screens.length > 1
-  const verdictLabelsByKey = new Map(
-    verdicts.map(({ key, label }) => [key, label]),
-  )
   const numbersSameOnEveryScreen = listNumbersSameOnEveryScreen(
     judgedCandidates,
     screens.map((screen) => screen.number),
@@ -425,20 +367,28 @@ export function buildPageDrawing({ screens, judgedCandidates, verdicts }) {
   const outlinedCandidates = judgedCandidates.filter(
     (candidate) => candidate.outlined,
   )
+  /**
+   * @param {JudgedCandidate} candidate
+   * @param {VerdictKey} verdict
+   * @returns {DrawnCandidatePart}
+   */
+  const buildPart = (candidate, verdict) => ({
+    candidateNumber: candidate.number,
+    verdict,
+    isSameOnEveryScreen: numbersSameOnEveryScreen.has(candidate.number),
+  })
   const shortNames = shortenScreenNames(screens.map((screen) => screen.name))
-  const drawnScreens = screens.map(
-    ({ texts, width, ...screen }, screenIndex) => ({
-      ...screen,
-      linkText: hasSeveralScreens
-        ? `Écran ${screen.number} — ${screen.name}`
-        : "Ouvrir dans Figma",
-      tabName: `${screen.number} · ${shortNames[screenIndex]}`,
-      ...drawScreen(
-        { texts, width, ...screen },
-        { outlinedCandidates, numbersSameOnEveryScreen, verdictLabelsByKey },
-      ),
-    }),
-  )
+  const drawnScreens = screens.map((screen, screenIndex) => ({
+    number: screen.number,
+    capture: pickBox(screen.capture),
+    figmaUrl: screen.figmaUrl,
+    captureDataUrl: screen.captureDataUrl,
+    linkText: hasSeveralScreens
+      ? `Écran ${screen.number} — ${screen.name}`
+      : "Ouvrir dans Figma",
+    tabName: `${screen.number} · ${shortNames[screenIndex]}`,
+    ...drawScreen(screen, { outlinedCandidates, buildPart }),
+  }))
 
   const explanations = outlinedCandidates.flatMap((candidate) =>
     groupByJudgement(candidate.instances).flatMap((instances) => {
@@ -448,10 +398,8 @@ export function buildPageDrawing({ screens, judgedCandidates, verdicts }) {
       const name = nameInstances(candidate, instances, hasSeveralScreens)
       return [
         {
-          candidateNumber: candidate.number,
-          verdict,
-          isSameOnEveryScreen: numbersSameOnEveryScreen.has(candidate.number),
-          title: `${name} ${codeComponent ?? candidate.figmaName} — ${verdictLabelsByKey.get(verdict)}`,
+          ...buildPart(candidate, verdict),
+          title: `${name} ${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].label}`,
           reason,
           developerDecision,
           question:
@@ -464,9 +412,8 @@ export function buildPageDrawing({ screens, judgedCandidates, verdicts }) {
   )
 
   return {
-    title: hasSeveralScreens
-      ? `${screens.length} écrans d'un même design`
-      : screens[0].name,
+    title: titleCut(screens),
+    fingerprintLine: `Construit le ${fingerprint.createdAt} · maquette modifiée le ${fingerprint.figma.lastModified.slice(0, 10)} · commit ${fingerprint.gitCommit}`,
     badgeHeight: BADGE_HEIGHT,
     screens: drawnScreens,
     commonBox: findCommonBox(drawnScreens.map((screen) => screen.ownBox)),

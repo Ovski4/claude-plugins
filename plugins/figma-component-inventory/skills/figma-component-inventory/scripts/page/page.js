@@ -11,7 +11,6 @@
  * What render.mjs writes into the page.
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
- *   fingerprint: import("../lib/cutSummary.mjs").Fingerprint,
  *   verdicts: { key: string, label: string, color: string }[],
  * }} Cut
  */
@@ -29,8 +28,11 @@ function getElement(id) {
   return element
 }
 
+const cutElement = getElement("cut")
 /** @type {Cut} */
-const cut = JSON.parse(getElement("cut").textContent ?? "")
+const cut = JSON.parse(cutElement.textContent ?? "")
+// Its text holds the captures a second time; the parsed copy is all the page needs.
+cutElement.remove()
 
 /**
  * @param {string} name
@@ -53,11 +55,6 @@ function createElement(name, text) {
   const element = document.createElement(name)
   if (text !== undefined) element.textContent = text
   return element
-}
-
-/** @param {Box} box */
-function pickBox({ x, y, width, height }) {
-  return { x, y, width, height }
 }
 
 /**
@@ -104,10 +101,9 @@ function createOutline(outline) {
     "data-candidate": outline.candidateNumber,
   })
   if (outline.isThickEnoughToOutline) {
-    const box = pickBox(outline.box)
     group.append(
-      createSvgElement("rect", { class: "outline-halo", ...box }),
-      createSvgElement("rect", { class: "outline", ...box }),
+      createSvgElement("rect", { class: "outline-halo", ...outline.box }),
+      createSvgElement("rect", { class: "outline", ...outline.box }),
     )
   }
   group.append(
@@ -156,7 +152,7 @@ function createLooseText(looseText) {
   const group = createSvgElement("g", { class: "loose-text" })
   group.append(
     createSvgElement("title", {}, looseText.characters),
-    createSvgElement("rect", pickBox(looseText.box)),
+    createSvgElement("rect", looseText.box),
     ...createBadge(looseText.box, looseText.tag, looseText.tagWidth, "beside"),
   )
   return group
@@ -174,7 +170,7 @@ function createVeilOverSameComponents(screen) {
   const mask = createSvgElement("mask", {
     id: maskId,
     maskUnits: "userSpaceOnUse",
-    ...pickBox(screen.capture),
+    ...screen.capture,
   })
   for (const outline of screen.outlines) {
     const fill = outline.isSameOnEveryScreen ? "white" : "black"
@@ -182,14 +178,14 @@ function createVeilOverSameComponents(screen) {
       createSvgElement("rect", {
         fill,
         stroke: "none",
-        ...pickBox(outline.box),
+        ...outline.box,
       }),
     )
   }
   const veil = createSvgElement("rect", {
     class: "veil-over-same-components",
     mask: `url(#${maskId})`,
-    ...pickBox(screen.capture),
+    ...screen.capture,
   })
   return [mask, veil]
 }
@@ -264,7 +260,7 @@ function drawScreen(screen) {
   svg.append(
     createSvgElement("image", {
       href: screen.captureDataUrl,
-      ...pickBox(screen.capture),
+      ...screen.capture,
     }),
     ...createVeilOverSameComponents(screen),
     isolationMask,
@@ -345,18 +341,18 @@ function drawTabs(drawnScreens) {
 }
 
 /**
+ * While the switch is on, the page's body carries a class named like the switch: the
+ * page's styles react to it.
  * @param {string} switchId
- * @param {string} classOnBody what the page's styles react to while the switch is on
  */
-function wireSwitch(switchId, classOnBody) {
+function wireSwitch(switchId) {
   getElement(switchId).addEventListener("change", (event) => {
     const isOn = /** @type {HTMLInputElement} */ (event.target).checked
-    document.body.classList.toggle(classOnBody, isOn)
+    document.body.classList.toggle(switchId, isOn)
   })
 }
 
 function drawHeader() {
-  const { fingerprint } = cut
   document.title = `Découpage — ${cut.title}`
   getElement("screen-name").textContent = cut.title
   const approval = getElement("approval")
@@ -364,8 +360,7 @@ function drawHeader() {
     ? `Validé par le développeur le ${cut.approvalDate}`
     : "Brouillon — pas encore validé par le développeur"
   approval.classList.toggle("approved", Boolean(cut.approvalDate))
-  getElement("fingerprint").textContent =
-    `Construit le ${fingerprint.createdAt} · maquette modifiée le ${fingerprint.figma.lastModified.slice(0, 10)} · commit ${fingerprint.gitCommit}`
+  getElement("fingerprint").textContent = cut.fingerprintLine
 
   // Each verdict's colour comes with the data: "--reused" for the page's own rules, and
   // "--verdict" on any element that carries the verdict as a class.
@@ -429,11 +424,11 @@ function drawExplanations() {
 
 drawHeader()
 const drawnScreens = cut.screens.map(drawScreen)
-wireSwitch("texts-outside-leaves", "texts-outside-leaves")
+wireSwitch("texts-outside-leaves")
 if (drawnScreens.length > 1) {
   drawTabs(drawnScreens)
   getElement("differences-switch").hidden = false
-  wireSwitch("differences-only", "differences-only")
+  wireSwitch("differences-only")
 }
 drawExplanations()
 

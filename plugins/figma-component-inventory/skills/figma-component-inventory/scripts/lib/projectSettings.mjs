@@ -19,7 +19,7 @@ import path from "node:path"
  *   close name.
  */
 
-export const PROJECT_SETTINGS_PATH = ".claude/figma-component-inventory.json"
+const PROJECT_SETTINGS_PATH = ".claude/figma-component-inventory.json"
 
 const EXAMPLE_OF_SETTINGS_FILE = JSON.stringify(
   {

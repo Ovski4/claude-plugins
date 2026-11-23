@@ -144,9 +144,11 @@ scripts/
     brief.mjs               the content of brief.md
     verdicts.mjs            the five verdicts (label, colour, required fields), the checks, the approval
     cutSummary.mjs          the content of cut.md
+    cutWording.mjs          the French names that cut.html and cut.md share: outlines, screens, title
     pageDrawing.mjs         everything cut.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     gitRepo.mjs             the repo's root, current commit and tracked files
+    box.mjs                 comparisons between boxes
 tests/                    one test file per module of scripts/lib
 ```
 
@@ -186,8 +188,6 @@ and `Instance` types of `scripts/lib/collectCandidates.mjs`.
   inside another. `parent` is the number of the candidate the instance sits in.
 - `box`: pixels at scale 1, from the top-left corner of the screen. `screens[].capture` uses
   the same coordinates: it starts above and left of the screen when the screen has a shadow.
-- `mapLines`: the lines of the Figma-to-code map that name this Figma component.
-  The name is pre-filled in `verdicts.json` only when they agree on one file.
 - `icons`: icon components (`ic/…`) found directly inside: listed, never outlined.
 - `fingerprint`: the Figma version and the commit the file was built on. `render.mjs`
   refuses verdicts filled for another Figma version.

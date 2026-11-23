@@ -51,7 +51,7 @@ const FILE_DEPTHS_TRIED_TO_FIND_A_SCREEN = [3, 5]
 // What a designer draws a screen with.
 const SCREEN_NODE_TYPES = ["FRAME", "INSTANCE", "COMPONENT"]
 // Pixels of the capture per pixel of the screen: 2 keeps small texts readable when zooming.
-export const CAPTURE_SCALE = 2
+const CAPTURE_SCALE = 2
 // A PNG file stores its width and height as two 4-byte integers at these positions.
 const PNG_WIDTH_BYTE_OFFSET = 16
 const PNG_HEIGHT_BYTE_OFFSET = 20
@@ -88,8 +88,7 @@ const buildNodeCacheFileName = (nodeId) =>
  * The name of a screen's capture in the output folder: "screen-87-91461.png".
  * @param {string} nodeId
  */
-export const buildCaptureFileName = (nodeId) =>
-  `screen-${toFileNamePart(nodeId)}.png`
+const buildCaptureFileName = (nodeId) => `screen-${toFileNamePart(nodeId)}.png`
 
 /**
  * @param {string} pathAndQuery what follows "/v1" in the API's address
@@ -226,7 +225,7 @@ export async function listNeighbourScreens(fileKey, referenceNodeId, token) {
  * @param {Buffer} png
  * @returns {PixelSize}
  */
-export function readPngSize(png) {
+function readPngSize(png) {
   return {
     widthPx: png.readUInt32BE(PNG_WIDTH_BYTE_OFFSET),
     heightPx: png.readUInt32BE(PNG_HEIGHT_BYTE_OFFSET),
@@ -246,18 +245,15 @@ export async function downloadCapture(
   { token, cacheDir, mustAskFigmaAgain },
 ) {
   const captureFile = path.join(cacheDir, buildCaptureFileName(nodeId))
-  if (mustAskFigmaAgain || !fs.existsSync(captureFile)) {
-    const query = `ids=${encodeURIComponent(nodeId)}&scale=${CAPTURE_SCALE}&format=png`
-    const { images } = await fetchFromFigma(
-      `/images/${fileKey}?${query}`,
-      token,
-    )
-    if (!images[nodeId])
-      throw new Error(`Figma drew no image for node ${nodeId}`)
-    const png = await fetch(images[nodeId])
-    fs.writeFileSync(captureFile, Buffer.from(await png.arrayBuffer()))
-  }
-  return readPngSize(fs.readFileSync(captureFile))
+  if (!mustAskFigmaAgain && fs.existsSync(captureFile))
+    return readPngSize(fs.readFileSync(captureFile))
+  const query = `ids=${encodeURIComponent(nodeId)}&scale=${CAPTURE_SCALE}&format=png`
+  const { images } = await fetchFromFigma(`/images/${fileKey}?${query}`, token)
+  if (!images[nodeId]) throw new Error(`Figma drew no image for node ${nodeId}`)
+  const response = await fetch(images[nodeId])
+  const png = Buffer.from(await response.arrayBuffer())
+  fs.writeFileSync(captureFile, png)
+  return readPngSize(png)
 }
 
 /**

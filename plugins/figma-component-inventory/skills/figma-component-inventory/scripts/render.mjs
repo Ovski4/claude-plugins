@@ -105,7 +105,6 @@ function main() {
     color: VERDICTS[key].color,
   }))
   const cut = {
-    fingerprint,
     approvalDate,
     verdicts,
     ...buildPageDrawing({
@@ -118,7 +117,7 @@ function main() {
         }),
       ),
       judgedCandidates,
-      verdicts,
+      fingerprint,
     }),
   }
   /** @param {string} fileName */

@@ -9,7 +9,7 @@
 export const LABEL_HEIGHT = 34
 export const GAP_BETWEEN_LABELS = 8
 // From a label's top down to the line that leaves it.
-export const LEADER_OFFSET_Y = 9
+const LEADER_OFFSET_Y = 9
 const LEADER_INSET = 12
 const GAP_BETWEEN_LEADERS = 10
 // A component wider than this share of the screen can have its label on either side.
@@ -81,7 +81,8 @@ export function placeLabels(labels, screenWidth) {
  * or bottom edge. Two vertical parts never share the same x.
  * @template {{ anchor: Box, side: "left" | "right", top: number }} Label
  * @param {Label[]} labels
- * @returns {(Label & { leaderCorner: Point | null, leaderEnd: Point })[]}
+ * @returns {(Label & { lineY: number, leaderCorner: Point | null, leaderEnd: Point })[]}
+ * `lineY`: the height at which the line leaves the label.
  */
 export function routeLeaders(labels) {
   /** @type {Record<"left" | "right", number[]>} */
@@ -94,7 +95,7 @@ export function routeLeaders(labels) {
       const lineY = label.top + LEADER_OFFSET_Y
       if (lineY >= y && lineY <= y + height) {
         const leaderEnd = { x: isLeft ? x : x + width, y: lineY }
-        return { ...label, leaderCorner: null, leaderEnd }
+        return { ...label, lineY, leaderCorner: null, leaderEnd }
       }
       const inset = Math.min(LEADER_INSET, width / 2)
       const towardsCenter = isLeft ? 1 : -1
@@ -113,6 +114,7 @@ export function routeLeaders(labels) {
       verticalXsBySide[label.side].push(verticalX)
       return {
         ...label,
+        lineY,
         leaderCorner: { x: verticalX, y: lineY },
         leaderEnd: { x: verticalX, y: lineY < y ? y : y + height },
       }

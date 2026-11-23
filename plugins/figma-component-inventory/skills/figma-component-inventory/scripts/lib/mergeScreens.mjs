@@ -2,9 +2,9 @@
 // Puts the candidates of several screens of one design together: a Figma component keeps one
 // number on every screen, and the areas whose content differs from one screen to the next
 // are pointed out. Reads no file and calls nothing.
+import { isBoxInside, measureArea } from "./box.mjs"
 import { toInstanceLetter } from "./collectCandidates.mjs"
 
-/** @typedef {import("./figma.mjs").Box} Box */
 /** @typedef {import("./collectCandidates.mjs").Candidate} Candidate */
 /** @typedef {import("./collectCandidates.mjs").Instance} Instance */
 /**
@@ -33,20 +33,12 @@ import { toInstanceLetter } from "./collectCandidates.mjs"
 const NAME_PART_SEPARATOR = " — "
 
 /**
- * @param {Box} inner
- * @param {Box} outer
+ * The screens some instances are drawn on, each once, in the order they come.
+ * @param {{ screen: number }[]} instances
  */
-function isBoxInside(inner, outer) {
-  return (
-    inner.x >= outer.x &&
-    inner.y >= outer.y &&
-    inner.x + inner.width <= outer.x + outer.width &&
-    inner.y + inner.height <= outer.y + outer.height
-  )
+export function listScreenNumbers(instances) {
+  return [...new Set(instances.map((instance) => instance.screen))]
 }
-
-/** @param {Box} box */
-const measureArea = (box) => box.width * box.height
 
 /**
  * An instance with what tells where it sits in its screen.
@@ -184,12 +176,12 @@ export function mergeScreenCandidates(candidatesByScreen) {
     (a, b) =>
       Number(a.merged.kind === "frame") - Number(b.merged.kind === "frame"),
   )
-  /** @type {Map<Candidate, number>} */
-  const newNumbersByScreenCandidate = new Map()
+  /** @type {Map<Candidate, MergedCandidate>} */
+  const mergedByScreenCandidate = new Map()
   groups.forEach(({ merged, origins }, index) => {
     merged.number = index + 1
     for (const candidate of origins)
-      newNumbersByScreenCandidate.set(candidate, merged.number)
+      mergedByScreenCandidate.set(candidate, merged)
   })
   /** @type {PlacedInstance[][]} */
   const placedByScreen = candidatesByScreen.map(() => [])
@@ -198,11 +190,9 @@ export function mergeScreenCandidates(candidatesByScreen) {
       candidates.map((candidate) => [candidate.number, candidate]),
     )
     for (const candidate of candidates) {
-      const group = groups.find(
-        ({ merged }) =>
-          merged.number === newNumbersByScreenCandidate.get(candidate),
+      const merged = /** @type {MergedCandidate} */ (
+        mergedByScreenCandidate.get(candidate)
       )
-      if (!group) continue
       for (const instance of candidate.instances) {
         const parentCandidate =
           instance.parent === null
@@ -214,18 +204,18 @@ export function mergeScreenCandidates(candidatesByScreen) {
           // frames grouped on one screen.
           variant:
             instance.variant ||
-            (candidate.figmaName === group.merged.figmaName
+            (candidate.figmaName === merged.figmaName
               ? ""
               : candidate.figmaName),
-          letter: toInstanceLetter(group.merged.instances.length),
+          letter: toInstanceLetter(merged.instances.length),
           parent: parentCandidate
-            ? (newNumbersByScreenCandidate.get(parentCandidate) ?? null)
+            ? (mergedByScreenCandidate.get(parentCandidate)?.number ?? null)
             : null,
           screen: screenIndex + 1,
         }
-        group.merged.instances.push(instanceOnTheScreen)
+        merged.instances.push(instanceOnTheScreen)
         placedByScreen[screenIndex].push({
-          candidate: group.merged,
+          candidate: merged,
           instance: instanceOnTheScreen,
           orderInTheScreen: candidate.number,
         })

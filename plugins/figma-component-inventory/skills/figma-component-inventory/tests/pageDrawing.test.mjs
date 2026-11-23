@@ -173,13 +173,22 @@ test("the page gets each screen's drawing, with what is the same on every screen
       buildScreen(2, "Editor · Continuous", 340),
     ],
     judgedCandidates: candidates,
-    verdicts: [
-      { key: "reused", label: "Réutilisé" },
-      { key: "to-create", label: "À créer" },
-    ],
+    fingerprint: {
+      createdAt: "2026-11-23",
+      figma: {
+        fileKey: "abc",
+        version: "1",
+        lastModified: "2026-11-20T10:00:00Z",
+      },
+      gitCommit: "34ee98aa6",
+    },
   })
 
   assert.equal(drawing.title, "2 écrans d'un même design")
+  assert.equal(
+    drawing.fingerprintLine,
+    "Construit le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
+  )
   assert.deepEqual(
     drawing.screens.map((screen) => [
       screen.tabName,

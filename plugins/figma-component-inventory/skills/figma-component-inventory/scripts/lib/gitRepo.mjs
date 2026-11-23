@@ -23,9 +23,5 @@ export function readCurrentCommit() {
  * @param {string} folder from the repo's root
  */
 export function listTrackedFiles(repoRoot, folder) {
-  return execFileSync("git", ["-C", repoRoot, "ls-files", folder], {
-    encoding: "utf8",
-  })
-    .trim()
-    .split("\n")
+  return runGit("-C", repoRoot, "ls-files", folder).split("\n")
 }

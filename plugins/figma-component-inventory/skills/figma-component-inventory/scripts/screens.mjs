@@ -2,7 +2,7 @@
 // Usage: node scripts/screens.mjs <figma-url>
 // Lists the frames drawn beside one screen in its Figma section, so that the screens of the
 // same design (other states, other sizes) can be judged together. Prints each with its size
-// and its node id; the ones that are variants of the same Figma component as the given screen
+// and its link; the ones that are variants of the same Figma component as the given screen
 // come first. Needs FIGMA_TOKEN; writes nothing.
 import {
   buildFigmaNodeUrl,
@@ -24,14 +24,12 @@ async function main() {
   )
   /** @param {import("./lib/figma.mjs").NeighbourScreen} screen */
   const describe = (screen) =>
-    `- ${screen.name} — ${screen.width} × ${screen.height} px — node-id=${screen.nodeId.replace(/:/g, "-")}`
+    `- ${screen.name} — ${screen.width} × ${screen.height} px — ${buildFigmaNodeUrl(fileKey, screen.nodeId)}`
   const variants = neighbours.filter((each) => each.isVariantOfTheReference)
   const others = neighbours.filter((each) => !each.isVariantOfTheReference)
   console.log(
     [
       `# Beside the screen, in "${containerName}"`,
-      "",
-      `The link of a screen is ${buildFigmaNodeUrl(fileKey, "")}<its node-id>`,
       "",
       "## The screen given",
       "",

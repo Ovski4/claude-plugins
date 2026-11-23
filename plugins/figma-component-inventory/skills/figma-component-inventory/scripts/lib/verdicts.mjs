@@ -2,6 +2,7 @@
 // The rules of verdicts.json, the file the model fills: the five verdicts, what each one
 // requires, the empty file given to the model, and the developer's approval.
 import { createHash } from "node:crypto"
+import { listScreenNumbers } from "./mergeScreens.mjs"
 
 /** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
 /** @typedef {import("./mergeScreens.mjs").InstanceOnAScreen} Instance */
@@ -213,9 +214,7 @@ export function listVerdictProblems({
     }
     problems.push(...listProblemsOfJudgement(entry, who, doesCodePathExist))
     const letters = candidate.instances.map((instance) => instance.letter)
-    const screenNumbers = [
-      ...new Set(candidate.instances.map((instance) => instance.screen)),
-    ]
+    const screenNumbers = listScreenNumbers(candidate.instances)
     for (const exception of entry.except ?? []) {
       const exceptedLetters = exception.instances ?? []
       const exceptedScreens = exception.screens ?? []
@@ -323,6 +322,21 @@ export function applyVerdictsToCandidates(candidates, entries) {
       }),
     }
   })
+}
+
+/**
+ * The instances of a candidate that share a verdict and a React component: several groups
+ * when an exception judges some of them differently, or names another component. The page
+ * and cut.md show one item per group.
+ * @param {JudgedInstance[]} instances
+ */
+export function groupByJudgement(instances) {
+  return [
+    ...Map.groupBy(
+      instances,
+      (instance) => `${instance.verdict}\n${instance.codeComponent}`,
+    ).values(),
+  ]
 }
 
 /**

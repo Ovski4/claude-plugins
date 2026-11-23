@@ -31,8 +31,6 @@ import { isComponentFile, readProjectSettings } from "./lib/projectSettings.mjs"
 import { mergeScreenCandidates } from "./lib/mergeScreens.mjs"
 import { buildVerdictsSkeleton } from "./lib/verdicts.mjs"
 
-/** @typedef {import("./lib/mergeScreens.mjs").MergedCandidate & { mapLines: string[] }} CandidateWithMapLines */
-
 const EXIT_CODE_FAILED = 1
 const USAGE =
   "Usage: node scripts/candidates.mjs <out-dir> <figma-url>... [--refresh] [--reset-verdicts]"
@@ -62,40 +60,38 @@ async function main() {
   )
 
   fs.mkdirSync(outDir, { recursive: true })
-  const screens = []
-  const candidatesByScreen = []
-  let figmaFile = { version: "", lastModified: "" }
-  for (const [screenIndex, { nodeId }] of screenAddresses.entries()) {
-    const figmaScreen = await readFigmaScreen(fileKey, nodeId, figmaAccess)
-    const { screenNode } = figmaScreen
-    const collected = collectCandidates(
-      screenNode,
-      figmaScreen.componentsById,
-      figmaScreen.componentSetsById,
-    )
-    figmaFile = figmaScreen
-    candidatesByScreen.push(collected.candidates)
-    screens.push({
-      number: screenIndex + 1,
-      nodeId,
-      name: screenNode.name,
-      width: Math.round(screenNode.absoluteBoundingBox?.width ?? 0),
-      height: Math.round(screenNode.absoluteBoundingBox?.height ?? 0),
-      capture: locateCapture(
+  // Each screen's tree and capture are asked of Figma at the same time.
+  const readings = await Promise.all(
+    screenAddresses.map(async ({ nodeId }, screenIndex) => {
+      const [figmaScreen, captureSize] = await Promise.all([
+        readFigmaScreen(fileKey, nodeId, figmaAccess),
+        downloadCapture(fileKey, nodeId, figmaAccess),
+      ])
+      const { screenNode } = figmaScreen
+      const collected = collectCandidates(
         screenNode,
-        await downloadCapture(fileKey, nodeId, figmaAccess),
-      ),
-      backdrop: collected.backdrop,
-      texts: collected.texts,
-    })
-  }
-  /** @type {CandidateWithMapLines[]} */
-  const candidates = mergeScreenCandidates(candidatesByScreen).map(
-    (candidate) => ({
-      ...candidate,
-      mapLines: lookUpInFigmaToCodeMap(candidate.figmaName).mapLines,
+        figmaScreen.componentsById,
+        figmaScreen.componentSetsById,
+      )
+      const screen = {
+        number: screenIndex + 1,
+        nodeId,
+        name: screenNode.name,
+        width: Math.round(screenNode.absoluteBoundingBox?.width ?? 0),
+        height: Math.round(screenNode.absoluteBoundingBox?.height ?? 0),
+        capture: locateCapture(screenNode, captureSize),
+        backdrop: collected.backdrop,
+        texts: collected.texts,
+      }
+      return { figmaScreen, screen, candidates: collected.candidates }
     }),
   )
+  const screens = readings.map((reading) => reading.screen)
+  const candidates = mergeScreenCandidates(
+    readings.map((reading) => reading.candidates),
+  )
+  // Every screen's answer carries the file's version; the last one is kept.
+  const figmaFile = readings[readings.length - 1].figmaScreen
 
   const candidatesFile = {
     fingerprint: {
