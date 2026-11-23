@@ -51,6 +51,8 @@ function buildJudgedCandidate(
       codeComponent: codeComponentByScreen[screen] ?? figmaName,
       codePath: null,
       note: judgement.note ?? null,
+      question: null,
+      options: null,
       developerDecision: null,
     })),
   }

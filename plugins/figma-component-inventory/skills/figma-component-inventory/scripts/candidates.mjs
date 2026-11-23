@@ -114,16 +114,27 @@ async function main() {
   const verdictsFile = path.join(outDir, "verdicts.json")
   const hasVerdictsFile = fs.existsSync(verdictsFile)
   const isVerdictsFileKept = hasVerdictsFile && !mustResetVerdicts
+  /** @type {string[]} */
+  let namesOfLostDeveloperDecisions = []
   if (!isVerdictsFileKept) {
+    /** @type {import("./lib/verdicts.mjs").VerdictEntry[]} */
+    const previousEntries = hasVerdictsFile
+      ? JSON.parse(fs.readFileSync(verdictsFile, "utf8")).verdicts
+      : []
     const skeleton = buildVerdictsSkeleton({
       candidates,
       figmaVersion: figmaFile.version,
       lookUpInFigmaToCodeMap,
-      previousEntries: hasVerdictsFile
-        ? JSON.parse(fs.readFileSync(verdictsFile, "utf8")).verdicts
-        : [],
+      previousEntries,
     })
     fs.writeFileSync(verdictsFile, JSON.stringify(skeleton, null, 2))
+    namesOfLostDeveloperDecisions = previousEntries
+      .filter((entry) => entry.decidedBy === "developer")
+      .map((entry) => entry.figmaName)
+      .filter(
+        (figmaName) =>
+          !candidates.some((candidate) => candidate.figmaName === figmaName),
+      )
   }
 
   const brief = buildBrief({
@@ -152,6 +163,10 @@ async function main() {
       ? "verdicts.json kept as it was"
       : "verdicts.json written: fill every verdict",
   )
+  if (namesOfLostDeveloperDecisions.length)
+    console.log(
+      `Developer decisions dropped, their Figma name is no longer on the screens: ${namesOfLostDeveloperDecisions.join(", ")}`,
+    )
 }
 
 try {

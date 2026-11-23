@@ -392,7 +392,9 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
 
   const explanations = outlinedCandidates.flatMap((candidate) =>
     groupByJudgement(candidate.instances).flatMap((instances) => {
-      const [{ verdict, codeComponent, developerDecision, note }] = instances
+      const [
+        { verdict, codeComponent, developerDecision, note, question, options },
+      ] = instances
       const reason = verdict === "reused" ? null : note
       if (!reason && developerDecision === null) return []
       const name = nameInstances(candidate, instances, hasSeveralScreens)
@@ -404,7 +406,7 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           developerDecision,
           question:
             verdict === "to-decide"
-              ? `${candidate.question} ${(candidate.options ?? []).join(" / ")}`
+              ? `${question} ${(options ?? []).join(" / ")}`
               : null,
         },
       ]

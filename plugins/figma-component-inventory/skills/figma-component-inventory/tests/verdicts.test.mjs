@@ -108,6 +108,13 @@ test("valid verdicts have no problem; every broken rule is listed", () => {
           question: "Un composant ?",
           options: ["Oui"],
         },
+        // Names another component: the entry's note and file do not come with it.
+        {
+          instances: ["a"],
+          verdict: "to-create",
+          codeComponent: "FancyButton",
+        },
+        { instances: ["a", "b"], verdict: "out-of-scope", note: "À part." },
       ],
     },
     { number: 2, figmaName: "Tag", verdict: "maybe" },
@@ -128,8 +135,10 @@ test("valid verdicts have no problem; every broken rule is listed", () => {
     '1 Button — icon: codePath "services/frontend/src/missing.tsx" does not exist in the repo',
     '1 Button — icon: "note" is 338 characters, the limit is 330 (2 or 3 lines)',
     '1 Button — icon: "note" leaves a point to verify; check it in the code, or use "to-decide"',
+    '1 Button — icon: instance(s) a are named by several "except"',
     "1 Button — icon, except d: the candidate's instances are a b c",
     '1 Button — icon, except d: "options" needs 2 to 4 choices',
+    '1 Button — icon, except a: verdict "to-create" needs "note"',
     '2 Tag: candidate 2 is "Tag — status"',
     '2 Tag: verdict "maybe" is not one of reused, to-adapt, to-create, out-of-scope, to-decide',
     '2 Tag — status: verdict "to-create" needs "codeComponent"',
@@ -168,12 +177,26 @@ test("each instance takes its exception's verdict; a developer's decision and a 
         .map((instance) => `${instance.letter}:${instance.verdict}`)
         .join(" "),
       candidate.instances[0].developerDecision,
+      candidate.instances[0].note,
     ]),
     [
-      [1, true, "a:out-of-scope b:out-of-scope c:reused", null],
-      [2, true, "a:to-create", "Le composant s'appelle StatusTag."],
-      [3, false, "a:undefined", null],
-      [4, true, "a:to-decide", null],
+      // Instance a takes its exception's note, not the entry's height sum.
+      [
+        1,
+        true,
+        "a:out-of-scope b:out-of-scope c:reused",
+        null,
+        "Traités à part.",
+      ],
+      [
+        2,
+        true,
+        "a:to-create",
+        "Le composant s'appelle StatusTag.",
+        "Aucun composant ne dessine cette pastille.",
+      ],
+      [3, false, "a:undefined", null, "Dessiné par StatusTag."],
+      [4, true, "a:to-decide", null, "Le code ne le dit pas."],
     ],
   )
   assert.deepEqual(listNumbersStillToDecide(judgedCandidates), [4])
@@ -209,6 +232,14 @@ test("the file given to the model has one empty entry per candidate to judge and
         verdict: "to-create",
         note: "Avis du modèle.",
       },
+      // "Body" is a plain frame, not to judge: the developer's decision on it stays.
+      {
+        number: 4,
+        figmaName: "Body",
+        note: "Pas un composant à part.",
+        outlined: false,
+        decidedBy: "developer",
+      },
     ],
   })
 
@@ -236,6 +267,13 @@ test("the file given to the model has one empty entry per candidate to judge and
         codeComponent: null,
         codePath: null,
         verdict: null,
+      },
+      {
+        number: 4,
+        figmaName: "Body",
+        note: "Pas un composant à part.",
+        outlined: false,
+        decidedBy: "developer",
       },
     ],
   })

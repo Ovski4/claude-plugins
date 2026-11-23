@@ -89,6 +89,8 @@ test("at approval, the map gets the Figma components that existing code draws an
         codeComponent: codePath ? "MonthDayPicker" : "FlowEditor",
         codePath,
         note: null,
+        question: null,
+        options: null,
         developerDecision: null,
       },
     ],

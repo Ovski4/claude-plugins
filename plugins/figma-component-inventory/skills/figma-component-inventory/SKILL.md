@@ -102,8 +102,10 @@ reading order (top to bottom, then left to right).
 | `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`, in French                                                                                       |
 
 - `except`: the uses whose judgement differs from the candidate's, named by letter
-  (`"instances": ["a", "b"]`) or by screen (`"screens": [1, 4]`). An exception can change
-  the verdict, name another component (`codeComponent`, `codePath`) and give its own `note`.
+  (`"instances": ["a", "b"]`) or by screen (`"screens": [1, 4]`). An exception keeps the
+  entry's verdict and component unless it gives its own (`verdict`, `codeComponent` with
+  its `codePath`). It always writes its own `note`, and its own `question` and `options`
+  for `to-decide`: nothing else comes from the entry. A use is named by one exception only.
 - `"outlined": false` with a `note`: a Figma component that is not a React component of its
   own (one option of a tab group, a dot drawn by its parent). No verdict.
 - A plain frame of the brief's last list gets an entry only when it is a React component of

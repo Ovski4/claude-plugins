@@ -30,7 +30,8 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  * `outlined: false`: a Figma component that is not a React component of its own.
  * `except`: the instances whose judgement differs from the entry's, named by letter
  * (`instances`) or by the screens they are on (`screens`): another verdict, or another
- * React component when the candidate is several components in the code.
+ * React component when the candidate is several components in the code. An exception takes
+ * the entry's verdict and component when it gives none, and writes its own note.
  */
 /**
  * @typedef {object} Approval
@@ -44,6 +45,8 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  *   codeComponent: string | null,
  *   codePath: string | null,
  *   note: string | null,
+ *   question: string | null,
+ *   options: string[] | null,
  *   developerDecision: string | null,
  * }} JudgedInstance
  * `developerDecision`: null when the model judged; "" when the developer decided without a sentence.
@@ -173,6 +176,44 @@ function listProblemsOfJudgement(judgement, who, doesCodePathExist) {
 }
 
 /**
+ * What is said of the instances an exception names. The exception takes the entry's verdict
+ * and React component when it gives none, and that component's file with it. Everything
+ * else is its own: a reason, a question or a developer's decision written for the entry
+ * says nothing of these instances.
+ * @param {Judgement} entry
+ * @param {Judgement} exception
+ * @returns {Judgement}
+ */
+function applyException(entry, exception) {
+  const namesItsOwnComponent = exception.codeComponent !== undefined
+  return {
+    verdict: exception.verdict ?? entry.verdict,
+    codeComponent: namesItsOwnComponent
+      ? exception.codeComponent
+      : entry.codeComponent,
+    codePath: namesItsOwnComponent
+      ? exception.codePath
+      : (exception.codePath ?? entry.codePath),
+    note: exception.note,
+    question: exception.question,
+    options: exception.options,
+    decidedBy: exception.decidedBy,
+    developerDecision: exception.developerDecision,
+  }
+}
+
+/**
+ * @param {NonNullable<VerdictEntry["except"]>[number]} exception
+ * @param {Instance} instance
+ */
+function doesExceptionName(exception, instance) {
+  return Boolean(
+    exception.instances?.includes(instance.letter) ||
+    exception.screens?.includes(instance.screen),
+  )
+}
+
+/**
  * Everything that keeps verdicts.json from being drawn. An empty list means it is valid.
  * @param {object} inventory
  * @param {Candidate[]} inventory.candidates
@@ -226,7 +267,19 @@ export function listVerdictProblems({
     problems.push(...listProblemsOfJudgement(entry, who, doesCodePathExist))
     const letters = candidate.instances.map((instance) => instance.letter)
     const screenNumbers = listScreenNumbers(candidate.instances)
-    for (const exception of entry.except ?? []) {
+    const exceptions = entry.except ?? []
+    const lettersNamedTwice = candidate.instances
+      .filter(
+        (instance) =>
+          exceptions.filter((each) => doesExceptionName(each, instance))
+            .length > 1,
+      )
+      .map((instance) => instance.letter)
+    if (lettersNamedTwice.length)
+      problems.push(
+        `${who}: instance(s) ${lettersNamedTwice.join(" ")} are named by several "except"`,
+      )
+    for (const exception of exceptions) {
       const exceptedLetters = exception.instances ?? []
       const exceptedScreens = exception.screens ?? []
       const unknownLetters = exceptedLetters.filter(
@@ -252,7 +305,7 @@ export function listVerdictProblems({
         )
       problems.push(
         ...listProblemsOfJudgement(
-          { ...entry, ...exception },
+          applyException(entry, exception),
           exceptionWho,
           doesCodePathExist,
         ),
@@ -263,7 +316,8 @@ export function listVerdictProblems({
 }
 
 /**
- * The verdicts.json given to the model: one entry to fill per candidate that must be judged.
+ * The verdicts.json given to the model: one entry to fill per candidate that must be judged,
+ * and the entries the developer decided, whatever their candidate.
  * @param {object} inventory
  * @param {Candidate[]} inventory.candidates
  * @param {string} inventory.figmaVersion
@@ -284,7 +338,11 @@ export function buildVerdictsSkeleton({
       .map((entry) => [entry.figmaName, entry]),
   )
   const verdicts = candidates
-    .filter((candidate) => candidate.mustBeJudged)
+    .filter(
+      (candidate) =>
+        candidate.mustBeJudged ||
+        developerEntriesByFigmaName.has(candidate.figmaName),
+    )
     .map(({ number, figmaName }) => {
       const developerEntry = developerEntriesByFigmaName.get(figmaName)
       if (developerEntry) return { ...developerEntry, number }
@@ -311,23 +369,21 @@ export function applyVerdictsToCandidates(candidates, entries) {
       ...entry,
       outlined: entry.outlined !== false,
       instances: candidate.instances.map((instance) => {
-        const exception = exceptions.find(
-          (each) =>
-            each.instances?.includes(instance.letter) ||
-            each.screens?.includes(instance.screen),
+        const exception = exceptions.find((each) =>
+          doesExceptionName(each, instance),
         )
-        const judgement = { ...entry, ...exception }
-        // A developer's decision covers what he named: the entry, or one exception.
-        const decided = exception ?? entry
+        const judgement = exception ? applyException(entry, exception) : entry
         return {
           ...instance,
           verdict: /** @type {VerdictKey} */ (judgement.verdict),
           codeComponent: judgement.codeComponent ?? null,
           codePath: judgement.codePath ?? null,
           note: judgement.note ?? null,
+          question: judgement.question ?? null,
+          options: judgement.options ?? null,
           developerDecision:
-            decided.decidedBy === "developer"
-              ? (decided.developerDecision ?? "")
+            judgement.decidedBy === "developer"
+              ? (judgement.developerDecision ?? "")
               : null,
         }
       }),
