@@ -2,6 +2,7 @@
 // Writes inventory.md: what the next steps of the workflow read instead of the page.
 import {
   nameOutlines,
+  namePartNotOutlined,
   nameScreens,
   titleInventory,
 } from "./inventoryWording.mjs"
@@ -85,14 +86,14 @@ export function buildInventorySummary({
     if (items.length)
       lines.push("", `## ${VERDICTS[verdictKey].label}`, "", ...items)
   }
-  const notOutlined = judgedCandidates.filter(
-    (candidate) => !candidate.outlined,
+  const items = judgedCandidates.flatMap((candidate) =>
+    candidate.outlined
+      ? candidate.partsNotOutlined.map(
+          (part) => `- ${namePartNotOutlined(candidate, part)} — ${part.note}`,
+        )
+      : [`- ${candidate.number} ${candidate.figmaName} — ${candidate.note}`],
   )
-  if (notOutlined.length) {
-    const items = notOutlined.map(
-      (candidate) =>
-        `- ${candidate.number} ${candidate.figmaName} — ${candidate.note}`,
-    )
+  if (items.length) {
     lines.push("", "## Pas un composant à part", "", ...items)
   }
   return `${lines.join("\n")}\n`

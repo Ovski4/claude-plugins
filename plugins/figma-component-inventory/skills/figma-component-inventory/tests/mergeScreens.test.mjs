@@ -1,6 +1,7 @@
 // @ts-check
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { namePartNotOutlined } from "../scripts/lib/inventoryWording.mjs"
 import { mergeScreenCandidates } from "../scripts/lib/mergeScreens.mjs"
 import { applyVerdictsToCandidates } from "../scripts/lib/verdicts.mjs"
 
@@ -138,5 +139,30 @@ test("a component keeps one number on every screen, and a frame whose content di
   assert.deepEqual(
     judgedSettings.instances.map((instance) => instance.codeComponent),
     ["OrderOffNotice", "OrderSettings"],
+  )
+
+  // On the first screen the frame is a plain paragraph of the editor: no outline there.
+  const [settingsWithAParagraph] = applyVerdictsToCandidates(merged, [
+    {
+      number: 5,
+      figmaName: "Settings",
+      verdict: "to-create",
+      codeComponent: "OrderSettings",
+      note: "Un composant pour les réglages.",
+      except: [
+        { screens: [1], outlined: false, note: "Un paragraphe de l'éditeur." },
+      ],
+    },
+  ])
+  assert.deepEqual(
+    settingsWithAParagraph.instances.map((instance) => instance.screen),
+    [2],
+  )
+  assert.deepEqual(
+    settingsWithAParagraph.partsNotOutlined.map((part) => [
+      namePartNotOutlined(settingsWithAParagraph, part),
+      part.note,
+    ]),
+    [["5 · écran 1 Settings", "Un paragraphe de l'éditeur."]],
   )
 })

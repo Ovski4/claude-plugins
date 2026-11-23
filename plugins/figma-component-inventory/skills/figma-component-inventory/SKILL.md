@@ -106,6 +106,9 @@ reading order (top to bottom, then left to right).
   entry's verdict and component unless it gives its own (`verdict`, `codeComponent` with
   its `codePath`). It always writes its own `note`, and its own `question` and `options`
   for `to-decide`: nothing else comes from the entry. A use is named by one exception only.
+  An exception with `"outlined": false` and a `note` says that on these uses the candidate
+  is not a component of its own (a plain paragraph its parent draws): no outline, no
+  verdict, the note names what draws it.
 - `"outlined": false` with a `note`: a Figma component that is not a React component of its
   own (one option of a tab group, a dot drawn by its parent). No verdict.
 - A plain frame of the brief's last list gets an entry only when it is a React component of

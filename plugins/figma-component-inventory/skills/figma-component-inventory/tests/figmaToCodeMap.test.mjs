@@ -76,6 +76,7 @@ test("at approval, the map gets the Figma components that existing code draws an
     icons: [],
     contentsThatDiffer: [],
     outlined: true,
+    partsNotOutlined: [],
     verdict,
     instances: [
       {

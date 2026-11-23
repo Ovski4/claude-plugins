@@ -8,6 +8,7 @@ import { isBoxInside, measureArea, pickBox } from "./box.mjs"
 import {
   nameOutline,
   nameOutlines,
+  namePartNotOutlined,
   nameScreens,
   titleInventory,
 } from "./inventoryWording.mjs"
@@ -449,11 +450,12 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     screens: drawnScreens,
     commonBox: findCommonBox(drawnScreens.map((screen) => screen.ownBox)),
     explanations,
-    notOutlined: judgedCandidates
-      .filter((candidate) => !candidate.outlined)
-      .map(
-        (candidate) =>
-          `${candidate.number} ${candidate.figmaName} (${candidate.note})`,
-      ),
+    notOutlined: judgedCandidates.flatMap((candidate) =>
+      candidate.outlined
+        ? candidate.partsNotOutlined.map(
+            (part) => `${namePartNotOutlined(candidate, part)} (${part.note})`,
+          )
+        : [`${candidate.number} ${candidate.figmaName} (${candidate.note})`],
+    ),
   }
 }

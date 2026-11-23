@@ -25,13 +25,30 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  *   number: number,
  *   figmaName: string,
  *   outlined?: boolean,
- *   except?: (Judgement & { instances?: string[], screens?: number[] })[],
+ *   except?: VerdictException[],
  * }} VerdictEntry
  * `outlined: false`: a Figma component that is not a React component of its own.
- * `except`: the instances whose judgement differs from the entry's, named by letter
- * (`instances`) or by the screens they are on (`screens`): another verdict, or another
- * React component when the candidate is several components in the code. An exception takes
- * the entry's verdict and component when it gives none, and writes its own note.
+ * `except`: the instances whose judgement differs from the entry's.
+ */
+/**
+ * What differs for some instances of a candidate, named by letter (`instances`) or by the
+ * screens they are on (`screens`): another verdict, or another React component when the
+ * candidate is several components in the code. An exception takes the entry's verdict and
+ * component when it gives none, and writes its own note.
+ * @typedef {Judgement & {
+ *   instances?: string[],
+ *   screens?: number[],
+ *   outlined?: boolean,
+ * }} VerdictException
+ * `outlined: false`: on these instances the candidate is not a React component of its own
+ * (a plain paragraph of its parent); the note says what draws them. No verdict.
+ */
+/**
+ * The instances of an outlined candidate that an exception leaves without an outline.
+ * @typedef {object} PartNotOutlined
+ * @property {Instance[]} instances
+ * @property {boolean} isNamedByScreens true when the exception names screens, false when it names letters
+ * @property {string} note what draws these instances, in French
  */
 /**
  * @typedef {object} Approval
@@ -56,7 +73,9 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  * @typedef {Omit<Candidate, "instances"> & Omit<VerdictEntry, "except" | "outlined"> & {
  *   outlined: boolean,
  *   instances: JudgedInstance[],
+ *   partsNotOutlined: PartNotOutlined[],
  * }} JudgedCandidate
+ * `instances`: without those of `partsNotOutlined`.
  */
 
 /**
@@ -203,7 +222,7 @@ function applyException(entry, exception) {
 }
 
 /**
- * @param {NonNullable<VerdictEntry["except"]>[number]} exception
+ * @param {VerdictException} exception
  * @param {Instance} instance
  */
 function doesExceptionName(exception, instance) {
@@ -303,6 +322,13 @@ export function listVerdictProblems({
         problems.push(
           `${exceptionWho}: the candidate is on screens ${screenNumbers.join(" ")}`,
         )
+      if (exception.outlined === false) {
+        if (!exception.note)
+          problems.push(
+            `${exceptionWho}: "outlined": false needs a "note" saying what draws it`,
+          )
+        continue
+      }
       problems.push(
         ...listProblemsOfJudgement(
           applyException(entry, exception),
@@ -363,12 +389,32 @@ export function applyVerdictsToCandidates(candidates, entries) {
   return candidates.flatMap((candidate) => {
     const candidateEntry = entriesByNumber.get(candidate.number)
     if (!candidateEntry) return []
-    const { except: exceptions = [], ...entry } = candidateEntry
+    const { except: allExceptions = [], ...entry } = candidateEntry
+    const [exceptionsNotOutlined = [], exceptions = []] = [true, false].map(
+      (isNotOutlined) =>
+        allExceptions.filter(
+          (each) => (each.outlined === false) === isNotOutlined,
+        ),
+    )
+    const partsNotOutlined = exceptionsNotOutlined.map((exception) => ({
+      instances: candidate.instances.filter((instance) =>
+        doesExceptionName(exception, instance),
+      ),
+      isNamedByScreens: Boolean(exception.screens?.length),
+      note: exception.note ?? "",
+    }))
+    const instancesNotOutlined = new Set(
+      partsNotOutlined.flatMap((part) => part.instances),
+    )
+    const outlinedInstances = candidate.instances.filter(
+      (instance) => !instancesNotOutlined.has(instance),
+    )
     return {
       ...candidate,
       ...entry,
       outlined: entry.outlined !== false,
-      instances: candidate.instances.map((instance) => {
+      partsNotOutlined,
+      instances: outlinedInstances.map((instance) => {
         const exception = exceptions.find((each) =>
           doesExceptionName(each, instance),
         )

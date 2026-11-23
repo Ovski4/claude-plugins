@@ -38,6 +38,7 @@ function buildJudgedCandidate(
     icons: [],
     contentsThatDiffer: [],
     outlined: true,
+    partsNotOutlined: [],
     verdict: "reused",
     ...judgement,
     instances: instances.map(({ screen, level, box }, index) => ({
