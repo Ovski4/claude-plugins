@@ -8,5 +8,10 @@
     "module": "nodenext",
     "types": ["node"]
   },
-  "include": ["scripts/**/*.mjs", "scripts/page/*.js", "tests/*.mjs"]
+  "include": [
+    "scripts/**/*.mjs",
+    "scripts/page/*.js",
+    "scripts/page/*.d.ts",
+    "tests/*.mjs"
+  ]
 }

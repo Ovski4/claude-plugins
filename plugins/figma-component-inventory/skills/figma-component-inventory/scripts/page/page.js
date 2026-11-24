@@ -1,12 +1,14 @@
 // @ts-check
-// The script of inventory.html: draws what lib/pageDrawing.mjs worked out, and answers the tabs,
-// the switches and the clicks. render.mjs pastes it into the page, so it imports nothing.
+// The script of inventory.html: draws what lib/pageDrawing.mjs worked out, answers the tabs,
+// the switches and the clicks, and turns the developer's corrections into text for the chat.
+// render.mjs pastes it into the page, so it imports nothing.
 
 /** @typedef {import("../lib/pageDrawing.mjs").PageDrawing} PageDrawing */
 /** @typedef {import("../lib/pageDrawing.mjs").DrawnScreen} DrawnScreen */
 /** @typedef {import("../lib/pageDrawing.mjs").DrawnCandidatePart} DrawnCandidatePart */
 /** @typedef {import("../lib/pageDrawing.mjs").DrawingBox} DrawingBox */
 /** @typedef {import("../lib/figma.mjs").Box} Box */
+/** @typedef {import("../lib/feedbackText.mjs").PageCorrection} PageCorrection */
 /**
  * What render.mjs writes into the page.
  * @typedef {PageDrawing & {
@@ -226,6 +228,11 @@ function findCandidateAt(svg, screen, event) {
 let isolatedNumber = null
 /** @type {{ screen: DrawnScreen, isolationMask: Element }[]} */
 const isolationMasks = []
+/**
+ * Shows one screen's tab; null on a page of one screen, which has no tabs.
+ * @type {((screenNumber: number) => void) | null}
+ */
+let showTabOfScreen = null
 
 /**
  * Isolates one candidate on every screen: its outlines, labels and reason keep their
@@ -250,6 +257,7 @@ function isolate(candidateNumber) {
       .map((outline) => tracePath(outline.box))
     isolationMask.setAttribute("d", tracePath(screen.capture) + holes.join(""))
   }
+  showCorrectionForm(isolatedNumber)
 }
 
 /** @param {DrawnScreen} screen */
@@ -340,11 +348,12 @@ function drawTabs(drawnScreens, drawnExplanations) {
 
   document.addEventListener("keydown", (event) => {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
-    if (!step) return
+    if (!step || isTypingInAField(event)) return
     const index = choices.findIndex((choice) => choice.shown === shownNow)
     show(choices[(index + step + choices.length) % choices.length].shown)
   })
   show(choices[0].shown)
+  showTabOfScreen = show
 }
 
 /**
@@ -430,6 +439,339 @@ function drawExplanations() {
   })
 }
 
+/** @param {Event} event */
+function isTypingInAField(event) {
+  return (
+    event.target instanceof Element &&
+    Boolean(event.target.closest("input, select, textarea"))
+  )
+}
+
+// The developer's corrections, by what they apply to: "7" for every use, "7b" or
+// "7 · écran 2" for one outline.
+// They are kept in the browser, so that reloading the page loses nothing; a page drawn from
+// other verdicts starts empty, as the corrections may already be applied.
+/** @type {Map<string, PageCorrection>} */
+const corrections = new Map()
+const correctionsStorageKey = `inventory-corrections ${inventory.fingerprintLine} ${inventory.correctableCandidates
+  .map(({ number, judgement }) => `${number} ${judgement}`)
+  .join(" | ")}`
+const correctionForm = /** @type {HTMLFormElement} */ (getElement("correction"))
+// What the form is correcting: the whole candidate ("7") or one of its outlines ("7b",
+// "7 · écran 2"), picked with the tabs above the fields.
+let pickedTarget = ""
+const componentInput = /** @type {HTMLInputElement} */ (
+  getElement("correction-component")
+)
+const sameAsSelect = /** @type {HTMLSelectElement} */ (
+  getElement("correction-same-as")
+)
+const noteInput = /** @type {HTMLInputElement} */ (
+  getElement("correction-note")
+)
+const feedbackTextArea = /** @type {HTMLTextAreaElement} */ (
+  getElement("feedback-text")
+)
+
+/**
+ * @param {HTMLSelectElement} select
+ * @param {{ value: string, text: string }[]} options
+ */
+function fillSelect(select, options) {
+  select.replaceChildren(
+    ...options.map(({ value, text }) => new Option(text, value)),
+  )
+}
+
+// What the developer can say of an outline: one of the inventory's verdicts, or that it is no
+// React component of its own (a plain paragraph of its parent, say).
+const verdictChoices = [
+  ...inventory.verdicts.map(({ key, label }) => ({ key, label })),
+  { key: "not-a-component", label: "Pas un composant" },
+]
+
+/**
+ * A choice among others of the same group, drawn as a pill.
+ * @param {"correction-verdict" | "correction-answer"} group
+ * @param {string} value
+ * @param {string} label
+ */
+function createChoice(group, value, label) {
+  const choice = createElement("label")
+  const radio = createElement("input")
+  radio.setAttribute("type", "radio")
+  radio.setAttribute("name", group)
+  radio.setAttribute("value", value)
+  choice.append(radio, label)
+  return choice
+}
+
+function drawCorrectionForm() {
+  for (const { key, label } of verdictChoices) {
+    const choice = createChoice("correction-verdict", key, label)
+    choice.className = key
+    getElement("correction-verdicts").append(choice)
+  }
+  const componentsNamedInInventory = new Set(
+    inventory.correctableCandidates.flatMap(({ targets }) =>
+      targets.flatMap(({ codeComponent }) => codeComponent ?? []),
+    ),
+  )
+  getElement("components-named-in-inventory").append(
+    ...[...componentsNamedInInventory]
+      .toSorted()
+      .map((componentName) => new Option(componentName)),
+  )
+  correctionForm.addEventListener("submit", (event) => event.preventDefault())
+  correctionForm.addEventListener("input", (event) => {
+    saveCorrectionFields()
+  })
+  getElement("correction-clear").addEventListener("click", () => {
+    corrections.delete(pickedTarget)
+    fillCorrectionFields()
+    showCorrections()
+  })
+  getElement("feedback-copy").addEventListener("click", copyFeedbackText)
+  getElement("feedback-reset").addEventListener("click", () => {
+    if (!window.confirm("Effacer toutes les corrections ?")) return
+    corrections.clear()
+    fillCorrectionFields()
+    showCorrections()
+  })
+}
+
+/**
+ * Opens the form on a candidate, or closes it with null.
+ * @param {number | null} candidateNumber
+ */
+function showCorrectionForm(candidateNumber) {
+  const candidate = inventory.correctableCandidates.find(
+    ({ number }) => number === candidateNumber,
+  )
+  correctionForm.hidden = !candidate
+  if (candidate) {
+    getElement("correction-title").textContent =
+      `${candidate.number} · ${candidate.figmaName} — ${candidate.judgement}`
+    const [wholeCandidate, ...outlines] = candidate.targets
+    const targetTabs = getElement("correction-targets")
+    targetTabs.hidden = !outlines.length
+    targetTabs.replaceChildren(
+      ...candidate.targets.map(({ id }) => {
+        const tab = createElement(
+          "button",
+          id === wholeCandidate.id ? "Toutes ses utilisations" : id,
+        )
+        tab.setAttribute("type", "button")
+        tab.setAttribute("role", "tab")
+        tab.setAttribute("data-target", id)
+        tab.addEventListener("click", () => {
+          pickedTarget = id
+          fillCorrectionFields()
+        })
+        return tab
+      }),
+    )
+    pickedTarget = wholeCandidate.id
+    fillSelect(sameAsSelect, [
+      { value: "", text: "—" },
+      ...inventory.correctableCandidates
+        .filter(({ number }) => number !== candidate.number)
+        .map(({ number, figmaName }) => ({
+          value: String(number),
+          text: `${number} · ${figmaName}`,
+        })),
+    ])
+    fillCorrectionFields()
+  }
+  fitPageAboveFeedbackBar()
+}
+
+/** What the inventory says of the picked target, before any correction. */
+function findJudgementOfPickedTarget() {
+  const judgement = inventory.correctableCandidates
+    .flatMap(({ targets }) => targets)
+    .find(({ id }) => id === pickedTarget)
+  if (!judgement) throw new Error(`No target "${pickedTarget}"`)
+  return judgement
+}
+
+/**
+ * Shows the picked target as the inventory judges it, with the developer's
+ * correction over it. No verdict is picked for a whole candidate whose outlines differ.
+ */
+function fillCorrectionFields() {
+  const correction = corrections.get(pickedTarget)
+  const judgement = findJudgementOfPickedTarget()
+  const verdictKey = correction?.verdictLabel
+    ? verdictChoices.find(({ label }) => label === correction.verdictLabel)?.key
+    : judgement.verdict
+  for (const radio of correctionForm.querySelectorAll(
+    "input[name=correction-verdict]",
+  )) {
+    const verdictRadio = /** @type {HTMLInputElement} */ (radio)
+    verdictRadio.checked = verdictRadio.value === verdictKey
+  }
+  const answers = getElement("correction-answers")
+  answers.hidden = !judgement.question
+  answers.replaceChildren(
+    createElement("legend", `À trancher : ${judgement.question}`),
+    ...judgement.options.map((option) => {
+      const choice = createChoice("correction-answer", option, option)
+      choice.className = "to-decide"
+      const radio = /** @type {HTMLInputElement} */ (choice.firstChild)
+      radio.checked = option === correction?.answer
+      return choice
+    }),
+  )
+  componentInput.value =
+    correction?.codeComponent ?? judgement.codeComponent ?? ""
+  sameAsSelect.value = correction?.sameAs ?? ""
+  noteInput.value = correction?.note ?? ""
+  showWhichTargetsAreCorrected()
+}
+
+/** On the tabs: which target is picked, and a dot on those that have a correction. */
+function showWhichTargetsAreCorrected() {
+  for (const tab of getElement("correction-targets").children) {
+    const target = tab.getAttribute("data-target") ?? ""
+    tab.setAttribute("aria-selected", String(target === pickedTarget))
+    tab.classList.toggle("has-correction", corrections.has(target))
+  }
+  getElement("correction-clear").hidden = !corrections.has(pickedTarget)
+}
+
+/** Keeps as a correction only the fields that differ from what the inventory says. */
+function saveCorrectionFields() {
+  const judgement = findJudgementOfPickedTarget()
+  const pickedChoices = new FormData(correctionForm)
+  const verdictKey = pickedChoices.get("correction-verdict")
+  const answer = pickedChoices.get("correction-answer")
+  /** @param {string} value */
+  const valueOrNull = (value) => value.trim() || null
+  const typedComponent = valueOrNull(componentInput.value)
+  const correction = {
+    target: pickedTarget,
+    verdictLabel:
+      verdictChoices.find(
+        ({ key }) => key === verdictKey && key !== judgement.verdict,
+      )?.label ?? null,
+    codeComponent:
+      typedComponent === judgement.codeComponent ? null : typedComponent,
+    answer: typeof answer === "string" ? answer : null,
+    sameAs: valueOrNull(sameAsSelect.value),
+    note: valueOrNull(noteInput.value),
+  }
+  const { target, ...changes } = correction
+  if (Object.values(changes).some((value) => value !== null))
+    corrections.set(target, correction)
+  else corrections.delete(target)
+  showWhichTargetsAreCorrected()
+  showCorrections()
+}
+
+/**
+ * Opens the form on a correction already made, on a screen that draws its outline.
+ * @param {string} target "7", "7b" or "7 · écran 2"
+ */
+function openCorrection(target) {
+  const candidateNumber = Number.parseInt(target, 10)
+  if (isolatedNumber !== candidateNumber) isolate(candidateNumber)
+  pickedTarget = target
+  const screensDrawingTarget = findJudgementOfPickedTarget().screens
+  const isTargetOnAShownScreen = drawnScreens.some(
+    ({ screen, section }) =>
+      !section.hidden && screensDrawingTarget.includes(screen.number),
+  )
+  if (!isTargetOnAShownScreen) showTabOfScreen?.(screensDrawingTarget[0])
+  fillCorrectionFields()
+}
+
+/**
+ * Marks the corrected candidates, and updates the count, the list of corrections, the text
+ * to copy and the saved copy.
+ */
+function showCorrections() {
+  const correctedNumbers = new Set(
+    [...corrections.keys()].map((target) => Number.parseInt(target, 10)),
+  )
+  for (const element of document.querySelectorAll("[data-candidate]")) {
+    const number = Number(element.getAttribute("data-candidate"))
+    element.classList.toggle("corrected", correctedNumbers.has(number))
+  }
+  const count = corrections.size
+  getElement("feedback-lines").replaceChildren(
+    ...[...corrections.values()]
+      .toSorted((a, b) =>
+        a.target.localeCompare(b.target, undefined, { numeric: true }),
+      )
+      .map((correction) => {
+        const line = createElement(
+          "button",
+          `${correction.target} — ${listCorrectionFields(correction).join(" · ")}`,
+        )
+        line.setAttribute("type", "button")
+        line.setAttribute("title", "Rouvrir cette correction")
+        line.addEventListener("click", () => openCorrection(correction.target))
+        const item = createElement("li")
+        item.append(line)
+        return item
+      }),
+  )
+  getElement("feedback-count").textContent = count
+    ? `${count} correction${count > 1 ? "s" : ""} à coller dans la conversation`
+    : "Aucune correction : cliquer sur un composant pour le corriger"
+  feedbackTextArea.value = buildFeedbackText(inventory.title, [
+    ...corrections.values(),
+  ])
+  feedbackTextArea.hidden = true
+  for (const id of ["feedback-copy", "feedback-reset"])
+    getElement(id).hidden = !count
+  try {
+    if (count)
+      localStorage.setItem(
+        correctionsStorageKey,
+        JSON.stringify([...corrections.values()]),
+      )
+    else localStorage.removeItem(correctionsStorageKey)
+  } catch {
+    // The browser keeps nothing for this page: the corrections last until it is closed.
+  }
+  fitPageAboveFeedbackBar()
+}
+
+function restoreCorrections() {
+  try {
+    /** @type {PageCorrection[]} */
+    const saved = JSON.parse(
+      localStorage.getItem(correctionsStorageKey) ?? "[]",
+    )
+    for (const correction of saved)
+      corrections.set(correction.target, correction)
+  } catch {
+    // Nothing kept, or unreadable: the page starts without corrections.
+  }
+}
+
+async function copyFeedbackText() {
+  const copyButton = getElement("feedback-copy")
+  try {
+    await navigator.clipboard.writeText(feedbackTextArea.value)
+    copyButton.textContent = "Copié"
+    setTimeout(() => (copyButton.textContent = "Copier les corrections"), 1500)
+  } catch {
+    // The browser refuses the clipboard: the text is shown, selected for a manual copy.
+    feedbackTextArea.hidden = false
+    feedbackTextArea.select()
+    fitPageAboveFeedbackBar()
+  }
+}
+
+/** The feedback bar stays at the bottom of the window: the page ends above it. */
+function fitPageAboveFeedbackBar() {
+  const GAP_ABOVE_FEEDBACK_BAR = 24
+  document.body.style.paddingBottom = `${getElement("feedback").offsetHeight + GAP_ABOVE_FEEDBACK_BAR}px`
+}
+
 drawHeader()
 const drawnScreens = inventory.screens.map(drawScreen)
 wireSwitch("texts-outside-leaves")
@@ -439,15 +781,20 @@ if (drawnScreens.length > 1) {
   getElement("differences-switch").hidden = false
   wireSwitch("differences-only")
 }
+drawCorrectionForm()
+restoreCorrections()
+showCorrections()
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && isolatedNumber !== null) isolate(null)
 })
 // A click beside the images and the reasons shows everything back; the page's own
-// controls (tabs, switches, links) leave the isolation as it is.
+// controls (tabs, switches, links, the correction form) leave the isolation as it is.
 document.addEventListener("click", (event) => {
   const isOnTheDrawingOrAControl =
     event.target instanceof Element &&
-    event.target.closest(".screens svg, [data-candidate], button, label, a")
+    event.target.closest(
+      ".screens svg, [data-candidate], .feedback, button, label, a",
+    )
   if (!isOnTheDrawingOrAControl) isolate(null)
 })

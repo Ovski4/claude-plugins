@@ -46,7 +46,8 @@ a file only when a verdict depends on it.
 6. Run `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir>` from the repo's root. Fix every
    problem it lists and run it again until it writes `inventory.html`.
 7. Report: the path of `<out-dir>/inventory.html`, then one line per candidate (number, React component, verdict, and the file that
-   decided it).
+   decided it). End with one line telling the developer that a click on a component opens a
+   form to correct it, and that « Copier les corrections » gives the text to paste here.
 
 ## `verdicts.json`
 
@@ -234,8 +235,14 @@ someone else's answers for the same screen.
 ## Steps — apply the developer's corrections
 
 The developer looked at the page and answered by outline number ("7: Select", "27: to
-create, OrderDayRow", "8 and 11 are one component"). His answer is a decision, not
-an opinion to weigh.
+create, OrderDayRow", "8 and 11 are one component"), in his own words or with the text the
+page's form builds: « Corrections de l'inventaire … », then per outline its name ("7" for
+every use, "7b" or "7 · écran 2" for one outline) and one indented line per field he changed:
+`verdict`, `composant React`, `réponse`, `même composant que`, `note`. A field that is not
+written keeps the entry's value. `réponse` is the option he picked for a `to-decide`.
+`même composant que : 8` under 11 means 8 and 11 are one component. `verdict : Pas un
+composant` means the outline is no React component of its own: `"outlined": false`, with
+his note saying what draws it. His answer is a decision, not an opinion to weigh.
 
 1. For each correction, change the entry (or the `except` of the instances he named) to what
    he said, and add `"decidedBy": "developer"` and `"developerDecision"`: one short French

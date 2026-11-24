@@ -12,6 +12,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
+import { listCorrectionFields, buildFeedbackText } from "./lib/feedbackText.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
@@ -32,10 +33,12 @@ const EXIT_CODE_INVALID_VERDICTS = 3
 const EXIT_CODE_NOT_READY_TO_APPROVE = 4
 const USAGE = "Usage: node scripts/render.mjs <out-dir> [--approve]"
 // inventory.html is page/page.html with each of these comments replaced: by the page's styles,
-// by its script, and by what the script draws. One file, which opens without a server.
+// by the functions that write the developer's corrections, by the page's script, and by what
+// the script draws. One file, which opens without a server.
 const PAGE_FOLDER = path.join(import.meta.dirname, "page")
 const PLACEHOLDERS_IN_PAGE = {
   styles: "/*PAGE_STYLES*/",
+  feedbackText: "/*FEEDBACK_TEXT_FUNCTIONS*/",
   script: "/*PAGE_SCRIPT*/",
   inventory: "/*INVENTORY*/",
 }
@@ -134,6 +137,9 @@ function main() {
     pageFile,
     readPageFile("page.html")
       .replace(PLACEHOLDERS_IN_PAGE.styles, () => readPageFile("page.css"))
+      .replace(PLACEHOLDERS_IN_PAGE.feedbackText, () =>
+        [listCorrectionFields, buildFeedbackText].join("\n"),
+      )
       .replace(PLACEHOLDERS_IN_PAGE.script, () => readPageFile("page.js"))
       .replace(PLACEHOLDERS_IN_PAGE.inventory, () => inventoryAsJson),
   )

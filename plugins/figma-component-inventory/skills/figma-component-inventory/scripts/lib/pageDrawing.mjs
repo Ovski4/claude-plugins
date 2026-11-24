@@ -114,6 +114,30 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  *   in this box, the screens' top-left corners coincide
  * @property {DrawnExplanation[]} explanations
  * @property {string[]} notOutlined one sentence per Figma component that is not a React component of its own
+ * @property {CorrectableCandidate[]} correctableCandidates what the correction form offers, by outline number
+ */
+/**
+ * An outlined candidate as the page's correction form shows it.
+ * @typedef {object} CorrectableCandidate
+ * @property {number} number
+ * @property {string} figmaName
+ * @property {CorrectableTarget[]} targets what a correction can apply to: the whole candidate first,
+ *   then each of its outlines when it has several, named as the page shows them
+ * @property {string} judgement what the page says now: "OrderSettings · À créer", one per verdict and component
+ */
+/**
+ * What the correction form starts from for one target, so that only what the developer
+ * changes becomes a correction.
+ * @typedef {object} CorrectableTarget
+ * @property {string} id "6" for the whole candidate; for one outline, "6b", or "6 · écran 2" when
+ *   it is the only one on its screen, where its badge says "6"
+ * @property {number[]} screens the numbers of the screens that draw it
+ * @property {VerdictKey | null} verdict null for a whole candidate whose outlines have different verdicts
+ * @property {string | null} codeComponent null when no component is named, or when the outlines of a
+ *   whole candidate name different ones
+ * @property {string | null} question what the developer has to decide, for a "to-decide" verdict;
+ *   null too for a whole candidate whose outlines ask different questions
+ * @property {string[]} options the answers the question offers
  */
 
 // Wider than the page's fonts draw an average character (13 px semi-bold title, 11 px
@@ -381,6 +405,20 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
 }
 
 /**
+ * The value every instance has for a field, or null when they differ.
+ * @template {"verdict" | "codeComponent" | "question"} Field
+ * @param {JudgedInstance[]} instances
+ * @param {Field} field
+ * @returns {JudgedInstance[Field] | null}
+ */
+function findSharedValue(instances, field) {
+  const [first, ...others] = instances
+  return others.every((instance) => instance[field] === first[field])
+    ? first[field]
+    : null
+}
+
+/**
  * @param {object} inventory
  * @param {ScreenToDraw[]} inventory.screens
  * @param {JudgedCandidate[]} inventory.judgedCandidates
@@ -457,5 +495,37 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           )
         : [`${candidate.number} ${candidate.figmaName} (${candidate.note})`],
     ),
+    correctableCandidates: outlinedCandidates.map((candidate) => ({
+      number: candidate.number,
+      figmaName: candidate.figmaName,
+      targets: [
+        {
+          id: `${candidate.number}`,
+          screens: listScreenNumbers(candidate.instances),
+          verdict: findSharedValue(candidate.instances, "verdict"),
+          codeComponent: findSharedValue(candidate.instances, "codeComponent"),
+          question: findSharedValue(candidate.instances, "question"),
+          options: candidate.instances[0].options ?? [],
+        },
+        ...(candidate.instances.length > 1
+          ? candidate.instances.map((instance) => ({
+              id: nameInstances(candidate, [instance], hasSeveralScreens),
+              screens: [instance.screen],
+              verdict: instance.verdict,
+              codeComponent: instance.codeComponent,
+              question: instance.question,
+              options: instance.options ?? [],
+            }))
+          : []),
+      ],
+      judgement: [
+        ...new Set(
+          candidate.instances.map(
+            ({ verdict, codeComponent }) =>
+              `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].label}`,
+          ),
+        ),
+      ].join(" / "),
+    })),
   }
 }

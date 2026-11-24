@@ -24,17 +24,66 @@
       Différences seulement : estomper ce qui est identique sur tous les écrans
     </label>
     <p class="page-hint">
-      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler ;
-      recliquer, cliquer à côté ou Échap pour revenir.
+      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le
+      corriger ; recliquer, cliquer à côté ou Échap pour revenir.
     </p>
     <div class="screens-and-explanations">
       <div class="screens" id="screens"></div>
       <ul class="explanations" id="explanations"></ul>
     </div>
     <p class="not-outlined" id="not-outlined"></p>
+    <aside class="feedback" id="feedback">
+      <form class="correction" id="correction" hidden>
+        <p class="correction-title" id="correction-title"></p>
+        <div
+          class="tabs correction-targets"
+          id="correction-targets"
+          role="tablist"
+          aria-label="Ce que la correction concerne"
+        ></div>
+        <fieldset class="correction-choices" id="correction-verdicts">
+          <legend>Verdict</legend>
+        </fieldset>
+        <fieldset class="correction-choices" id="correction-answers" hidden>
+          <legend id="correction-question"></legend>
+        </fieldset>
+        <label>
+          Composant React
+          <input
+            id="correction-component"
+            list="components-named-in-inventory"
+            autocomplete="off"
+          />
+          <datalist id="components-named-in-inventory"></datalist>
+        </label>
+        <label>
+          Même composant que
+          <select id="correction-same-as"></select>
+        </label>
+        <label class="correction-note">
+          Note
+          <input id="correction-note" autocomplete="off" />
+        </label>
+        <button type="button" id="correction-clear">
+          Annuler cette correction
+        </button>
+      </form>
+      <div class="feedback-summary">
+        <p class="feedback-count" id="feedback-count"></p>
+        <button type="button" id="feedback-copy" hidden>
+          Copier les corrections
+        </button>
+        <button type="button" id="feedback-reset" hidden>Tout effacer</button>
+        <ul class="feedback-lines" id="feedback-lines"></ul>
+        <textarea id="feedback-text" rows="4" readonly hidden></textarea>
+      </div>
+    </aside>
     <!-- Written by render.mjs: everything the page draws, worked out by lib/pageDrawing.mjs. -->
     <script type="application/json" id="inventory">
       /*INVENTORY*/
+    </script>
+    <script>
+      /*FEEDBACK_TEXT_FUNCTIONS*/
     </script>
     <script>
       /*PAGE_SCRIPT*/

@@ -104,7 +104,7 @@ node scripts/screens.mjs <figma-url>                # 0. script: lists the scree
 node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, writes the files below
 #                                                     2. model: fills verdicts.json
 node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes inventory.html
-#                                                     4. developer: corrections by outline number; the model applies them
+#                                                     4. developer: corrections made on the page, pasted in the chat; the model applies them
 node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + inventory.md + map lines
 ```
 
@@ -118,7 +118,7 @@ it.
 | `candidates.json`        | script     | every component of the screen with its boxes; never edited                                                                              |
 | `brief.md`               | script     | what the model reads: per candidate, the map's lines, the props of the component found, the files with a close name, the texts it holds |
 | `verdicts.json`          | model      | one entry per component; the only file the model writes                                                                                 |
-| `inventory.html`         | script     | the deliverable: capture, outlines, legend, reasons                                                                                     |
+| `inventory.html`         | script     | the deliverable: capture, outlines, legend, reasons, and a form that writes the corrections to paste in the chat                        |
 | `inventory.md`           | script     | written at approval: the list of components the next steps read                                                                         |
 
 ## Code
@@ -131,10 +131,11 @@ scripts/
   screens.mjs             command: lists the frames drawn beside a screen in Figma
   candidates.mjs          command: reads Figma, writes candidates.json, brief.md and the verdicts.json to fill
   render.mjs              command: checks verdicts.json, writes inventory.html, approves
-  page/                   the three parts of inventory.html, which render.mjs pastes into one file
+  page/                   the parts of inventory.html, which render.mjs pastes into one file with lib/feedbackText.mjs
     page.html               its structure
     page.css                its styles
-    page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches and clicks
+    page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches, clicks and the correction form
+    feedbackTextFunctions.d.ts tells the type check that page.js finds the functions of feedbackText.mjs in the page
   lib/                    one module per job, used by the two commands
     figma.mjs               Figma links, API calls, answers kept on disk, where the capture sits
     collectCandidates.mjs   Figma tree of one screen → candidates; reads no file
@@ -147,6 +148,7 @@ scripts/
     inventoryWording.mjs    the French names that inventory.html and inventory.md share: outlines, screens, title
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
+    feedbackText.mjs        the text the page builds from the developer's corrections, pasted into the page
     gitRepo.mjs             the repo's root, current commit and tracked files
     box.mjs                 comparisons between boxes
 tests/                    one test file per module of scripts/lib

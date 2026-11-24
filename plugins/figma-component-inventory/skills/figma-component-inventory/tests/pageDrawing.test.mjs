@@ -252,4 +252,35 @@ test("the page gets each screen's drawing, with what is the same on every screen
     ],
   )
   assert.deepEqual(drawing.notOutlined, ["3 Divider (Un trait du conteneur.)"])
+  assert.deepEqual(
+    drawing.correctableCandidates.map(({ number, targets, judgement }) => [
+      number,
+      targets.map(
+        ({ id, screens, verdict, codeComponent }) =>
+          `${id} [${screens}] ${verdict} ${codeComponent}`,
+      ),
+      judgement,
+    ]),
+    [
+      [
+        1,
+        [
+          "1 [1,2] reused Editor",
+          "1 · écran 1 [1] reused Editor",
+          "1 · écran 2 [2] reused Editor",
+        ],
+        "Editor · Réutilisé",
+      ],
+      [
+        2,
+        [
+          "2 [1,2] to-create null",
+          "2 · écran 1 [1] to-create OrderOffNotice",
+          "2 · écran 2 [2] to-create OrderSettings",
+        ],
+        "OrderOffNotice · À créer / OrderSettings · À créer",
+      ],
+      [4, ["4 [2] to-create Body"], "Body · À créer"],
+    ],
+  )
 })
