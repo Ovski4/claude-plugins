@@ -1,31 +1,25 @@
 // @ts-check
-// Usage: node scripts/apply.mjs <owner/repo> <pr-number>
-// Writes the description prepared by prepare.mjs to the pull request. Run it only after the user
-// approved the screenshots block prepare.mjs printed.
-// Exit codes: 1 nothing prepared for this pull request, 2 the description changed on GitHub since
-// the preparation (run prepare.mjs again so that the change is kept).
-import { execFileSync } from "node:child_process"
+// Usage: node scripts/apply.mjs <owner/repo> <pr-number> [--comment <id>]
+// Writes the change prepared by prepare.mjs with the same arguments: the description, the review
+// comment, or the reply. Run it only after the user approved the screenshots block prepare.mjs
+// printed.
+// Exit codes: 1 nothing prepared, 2 the description or comment changed on GitHub since the
+// preparation (run prepare.mjs again so that the change is kept).
 import fs from "node:fs"
-import { buildPendingDescriptionFile, readPullRequestDescription } from "./lib/pendingDescription.mjs"
+import { buildPendingChangeFile, writePendingChange } from "./lib/pullRequestText.mjs"
 
-const [repository, pullRequestNumber] = process.argv.slice(2)
-const pendingDescriptionFile = buildPendingDescriptionFile(repository ?? "", pullRequestNumber ?? "")
-if (!fs.existsSync(pendingDescriptionFile)) {
+const [repository, pullRequestNumber, commentOption, commentIdArgument] = process.argv.slice(2)
+const commentId = commentOption === "--comment" ? (commentIdArgument ?? null) : null
+const pendingChangeFile = buildPendingChangeFile(repository ?? "", pullRequestNumber ?? "", commentId)
+if (!fs.existsSync(pendingChangeFile)) {
   console.error(`Nothing prepared for ${repository} #${pullRequestNumber}: run scripts/prepare.mjs first.`)
   process.exit(1)
 }
-const { descriptionBeforeScreenshots, descriptionWithScreenshots } = JSON.parse(
-  fs.readFileSync(pendingDescriptionFile, "utf8"),
-)
+const pendingChange = JSON.parse(fs.readFileSync(pendingChangeFile, "utf8"))
 
-if (readPullRequestDescription(repository, pullRequestNumber) !== descriptionBeforeScreenshots) {
-  console.error("The description changed on GitHub since the preparation: run scripts/prepare.mjs again.")
+if (!writePendingChange(repository, pullRequestNumber, commentId, pendingChange)) {
+  console.error("The text changed on GitHub since the preparation: run scripts/prepare.mjs again.")
   process.exit(2)
 }
-
-execFileSync("gh", ["pr", "edit", pullRequestNumber, "--repo", repository, "--body-file", "-"], {
-  input: descriptionWithScreenshots,
-  stdio: ["pipe", "inherit", "inherit"],
-})
-fs.rmSync(pendingDescriptionFile)
-console.log(`Screenshots written in the description of ${repository} #${pullRequestNumber}.`)
+fs.rmSync(pendingChangeFile)
+console.log(`Screenshots written (${pendingChange.kind}) on ${repository} #${pullRequestNumber}.`)

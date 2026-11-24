@@ -1,7 +1,7 @@
 ---
 name: github-pr-screenshots
-description: Put validation screenshots (PNG captures of the work, taken with Playwright or by hand) in the description of a GitHub pull request, uploaded from a browser signed in to the user's GitHub account. Use when the user asks to put screenshots, captures or visual proof on a PR. The description is changed only after the user's OK.
-argument-hint: <owner/repo> <pr-number> <png-file>...
+description: Put validation screenshots (PNG captures of the work, taken with Playwright or by hand) in the description of a GitHub pull request or in one of its review comments, uploaded from a browser signed in to the user's GitHub account. Use when the user asks to put screenshots, captures or visual proof on a PR or a review comment. Nothing is written before the user's OK.
+argument-hint: <owner/repo> <pr-number> [--comment <id>] <png-file>...
 model: haiku
 ---
 
@@ -30,8 +30,8 @@ print its contents, or put it in a repo.
 
 ## Putting the screenshots in the description
 
-1. Write one short caption per image: what it shows, in the language of the pull request
-   description (`Éditeur, mode Continu`).
+1. Write one short caption per image: what it shows, in the language of the text it goes into,
+   the description or the comment (`Éditeur, mode Continu`).
 2. From the root of the pull request's repo, run `node ${CLAUDE_SKILL_DIR}/scripts/prepare.mjs <owner/repo> <pr-number> <png-file> "<caption>" [<png-file> "<caption>"...]`,
    in the order the images should appear.
    - It uploads the images and prints the screenshots block and where it goes. The script
@@ -41,6 +41,16 @@ print its contents, or put it in a repo.
 4. On their yes, run `node ${CLAUDE_SKILL_DIR}/scripts/apply.mjs <owner/repo> <pr-number>`.
    Exit code 2: someone changed the description in between. Run `prepare.mjs` again, and ask
    again.
+
+## Adding screenshots to a review comment
+
+A review comment is a comment on a line of the changes; its link ends with `#r<id>`. Same steps,
+with `--comment <id>` right after the pull request number, in both scripts:
+
+- `prepare.mjs <owner/repo> <pr-number> --comment <id> <png-file> "<caption>"...` puts the block
+  at the end of the comment when the signed-in user wrote it, else in a reply in its thread. It
+  prints which one.
+- `apply.mjs <owner/repo> <pr-number> --comment <id>` on the user's yes.
 
 To choose the place in advance, the description holds a `<!-- screenshots -->` line where the
 block goes, or the placeholder the repo names in `.claude/github-pr-screenshots.json`. Running

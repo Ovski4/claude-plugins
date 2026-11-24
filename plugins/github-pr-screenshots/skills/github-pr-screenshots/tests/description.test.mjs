@@ -1,7 +1,11 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { buildScreenshotsBlock, placeScreenshotsInDescription } from "../scripts/lib/description.mjs"
+import {
+  buildScreenshotsBlock,
+  placeScreenshotsInComment,
+  placeScreenshotsInDescription,
+} from "../scripts/lib/description.mjs"
 
 const TEMPLATE_PLACEHOLDER = "- <!-- SCREENSHOT PLACEHOLDER -->\n  ![screenshot](<!-- url -->)"
 
@@ -60,4 +64,10 @@ test("a configured placeholder missing from the description leads to the end sec
     placeScreenshotsInDescription("## Summary", SCREENSHOTS_BLOCK, TEMPLATE_PLACEHOLDER),
     `## Summary\n\n## Screenshots\n\n${SCREENSHOTS_BLOCK}\n`,
   )
+})
+
+test("a review comment gets the block at its end without heading, and only once over two runs", () => {
+  const commentWithScreenshots = placeScreenshotsInComment("Labels are cut on a phone.\n", SCREENSHOTS_BLOCK)
+  assert.equal(commentWithScreenshots, `Labels are cut on a phone.\n\n${SCREENSHOTS_BLOCK}`)
+  assert.equal(placeScreenshotsInComment(commentWithScreenshots, SCREENSHOTS_BLOCK), commentWithScreenshots)
 })

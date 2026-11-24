@@ -51,3 +51,16 @@ export function placeScreenshotsInDescription(description, screenshotsBlock, con
       return `${description.trimEnd()}\n\n## Screenshots\n\n${screenshotsBlock}\n`
   }
 }
+
+/**
+ * A review comment the user wrote gets the block at its end, without a heading, or in place of
+ * the block of an earlier run.
+ * @param {string} commentBody
+ * @param {string} screenshotsBlock from buildScreenshotsBlock
+ */
+export function placeScreenshotsInComment(commentBody, screenshotsBlock) {
+  if (findScreenshotsPlace(commentBody, null) === "earlier block") {
+    return placeScreenshotsInDescription(commentBody, screenshotsBlock, null)
+  }
+  return `${commentBody.trimEnd()}\n\n${screenshotsBlock}`
+}

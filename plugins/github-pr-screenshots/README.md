@@ -17,6 +17,10 @@ earlier screenshots.
 Call it with `/github-pr-screenshots <owner/repo> <pr-number> <png-file>...`, or ask Claude to put
 screenshots on a pull request.
 
+Review comments (on a line of the changes) can get images too, so that a remark about a layout
+or a cut label shows what it talks about: added at the end of the comment when you wrote it,
+else as a reply in its thread.
+
 It runs on Claude Haiku: the scripts do the work, the model only runs them and relays the block to approve.
 In Claude Code, the `model` field of `SKILL.md` selects it; a tool that ignores that field runs
 the skill on its current model.
