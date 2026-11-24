@@ -11,6 +11,11 @@
       "name": "figma-component-inventory",
       "source": "./plugins/figma-component-inventory",
       "description": "/figma-component-inventory draws the annotated component cut of a Figma screen: one outline per component, coloured by its frontend verdict, for the developer to approve"
+    },
+    {
+      "name": "github-pr-screenshots",
+      "source": "./plugins/github-pr-screenshots",
+      "description": "/github-pr-screenshots posts validation screenshots in a GitHub pull request comment, from a browser signed in to your account, after you approve the comment"
     }
   ]
 }

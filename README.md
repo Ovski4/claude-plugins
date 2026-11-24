@@ -6,6 +6,7 @@ Claude Code plugins by [@ovski4](https://github.com/ovski4).
 | ------ | ------------ |
 | [todo](plugins/todo) | Claude works top-down, in steps small enough to review, and keeps the remaining work in a tree you open with `/todo`. |
 | [figma-component-inventory](plugins/figma-component-inventory) | `/figma-component-inventory <figma-url>` draws the component cut of a Figma screen: one outline per component, coloured by its frontend verdict (reused, to adapt, to create), for the developer to approve. |
+| [github-pr-screenshots](plugins/github-pr-screenshots) | Claude posts its validation screenshots in a GitHub pull request comment, from a browser signed in to your account, after you approve the comment. |
 
 ## Install
 
