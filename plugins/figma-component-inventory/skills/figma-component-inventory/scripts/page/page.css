@@ -282,12 +282,33 @@ h1 {
 .feedback [hidden] {
   display: none;
 }
+/* A tab strip: a line under the tabs, which the picked tab opens onto the fields below. */
 .correction-targets {
+  display: flex;
   flex-basis: 100%;
-  margin: 0;
+  flex-wrap: wrap;
+  gap: 0 2px;
+  border-bottom: 1px solid var(--text-muted);
 }
 .correction-targets[hidden] {
   display: none;
+}
+.correction .correction-targets button {
+  margin-bottom: -1px;
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  background: none;
+  color: var(--text-muted);
+}
+.correction .correction-targets button:hover {
+  color: var(--text);
+}
+.correction .correction-targets button[aria-selected="true"] {
+  border-color: var(--text-muted) var(--text-muted) var(--page-background);
+  background: var(--page-background);
+  color: var(--text);
+  font-weight: 600;
 }
 .correction-targets .has-correction::after {
   content: " ●";

@@ -557,9 +557,12 @@ function showCorrectionForm(candidateNumber) {
     targetTabs.hidden = !outlines.length
     targetTabs.replaceChildren(
       ...candidate.targets.map(({ id }) => {
+        // The title above already says the number: "écran 2" for "16 · écran 2".
         const tab = createElement(
           "button",
-          id === wholeCandidate.id ? "Toutes ses utilisations" : id,
+          id === wholeCandidate.id
+            ? "Toutes ses utilisations"
+            : id.replace(`${wholeCandidate.id} · `, ""),
         )
         tab.setAttribute("type", "button")
         tab.setAttribute("role", "tab")
