@@ -2,14 +2,16 @@
 // Usage: node scripts/prepare.mjs <owner/repo> <pr-number> <png-file> <caption> [<png-file> <caption>...]
 // Uploads the images to GitHub through the pull request's comment box, without sending any comment,
 // to get their links. Then writes the description with the screenshots placed (rule in
-// lib/description.mjs) to a pending file, and prints the screenshots block and where it goes.
+// lib/description.mjs, placeholder from the repo's settings) to a pending file, and prints the screenshots block and where it goes.
+// Run from inside the repo whose settings apply.
 // Nothing changes on the pull request: apply.mjs writes the description once the user approves.
 // Exit codes: 1 wrong arguments, 2 the browser is signed out (run login.mjs), 3 an upload failed.
 import fs from "node:fs"
 import path from "node:path"
 import { openSignedInBrowser, readSignedInGitHubLogin } from "./lib/browser.mjs"
-import { buildScreenshotsBlock, placeScreenshotsInDescription, SCREENSHOTS_START } from "./lib/description.mjs"
+import { buildScreenshotsBlock, findScreenshotsPlace, placeScreenshotsInDescription } from "./lib/description.mjs"
 import { buildPendingDescriptionFile, readPullRequestDescription } from "./lib/pendingDescription.mjs"
+import { readRepositorySettings, REPOSITORY_SETTINGS_FILE } from "./lib/repositorySettings.mjs"
 
 const UPLOAD_TIME_LIMIT_MS = 60_000
 const UPLOADED_IMAGE_URL_PATTERN = /https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]+/g
@@ -31,6 +33,7 @@ if (imagesToShow.length === 0 || missingImageFiles.length > 0) {
   process.exit(1)
 }
 
+const { screenshotsPlaceholder } = readRepositorySettings()
 const descriptionBeforeScreenshots = readPullRequestDescription(repository, pullRequestNumber)
 
 const browser = await openSignedInBrowser({ visibleWindow: false })
@@ -78,15 +81,22 @@ try {
   const screenshotsBlock = buildScreenshotsBlock(
     imagesToShow.map(({ caption }, index) => ({ caption, imageUrl: uploadedImageUrls[index] })),
   )
-  const descriptionWithScreenshots = placeScreenshotsInDescription(descriptionBeforeScreenshots, screenshotsBlock)
+  const descriptionWithScreenshots = placeScreenshotsInDescription(
+    descriptionBeforeScreenshots,
+    screenshotsBlock,
+    screenshotsPlaceholder,
+  )
   const pendingDescriptionFile = buildPendingDescriptionFile(repository, pullRequestNumber)
   fs.mkdirSync(path.dirname(pendingDescriptionFile), { recursive: true })
   fs.writeFileSync(pendingDescriptionFile, JSON.stringify({ descriptionBeforeScreenshots, descriptionWithScreenshots }))
 
-  const placement = descriptionBeforeScreenshots.includes(SCREENSHOTS_START)
-    ? `in place of the ${SCREENSHOTS_START} marker`
-    : "in a new « Screenshots » section at the end"
-  console.log(`Screenshots block, to be written ${placement} of the description:\n\n${screenshotsBlock}`)
+  const placement = {
+    "earlier block": "in place of the screenshots of an earlier run",
+    "configured placeholder": `in place of the placeholder named in ${REPOSITORY_SETTINGS_FILE}`,
+    "start marker": "in place of the <!-- screenshots --> line",
+    "end section": "in a new « Screenshots » section at the end",
+  }[findScreenshotsPlace(descriptionBeforeScreenshots, screenshotsPlaceholder)]
+  console.log(`Screenshots block, to be written in the description ${placement}:\n\n${screenshotsBlock}`)
 } finally {
   await browser.close()
 }

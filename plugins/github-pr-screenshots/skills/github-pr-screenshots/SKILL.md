@@ -32,7 +32,7 @@ print its contents, or put it in a repo.
 
 1. Write one short caption per image: what it shows, in the language of the pull request
    description (`Éditeur, mode Continu`).
-2. Run `node ${CLAUDE_SKILL_DIR}/scripts/prepare.mjs <owner/repo> <pr-number> <png-file> "<caption>" [<png-file> "<caption>"...]`,
+2. From the root of the pull request's repo, run `node ${CLAUDE_SKILL_DIR}/scripts/prepare.mjs <owner/repo> <pr-number> <png-file> "<caption>" [<png-file> "<caption>"...]`,
    in the order the images should appear.
    - It uploads the images and prints the screenshots block and where it goes. The script
      decides the place: don't move the block, don't edit the description yourself.
@@ -43,5 +43,5 @@ print its contents, or put it in a repo.
    again.
 
 To choose the place in advance, the description holds a `<!-- screenshots -->` line where the
-block goes. Running the skill again on the same pull request replaces the block of the earlier
-run.
+block goes, or the placeholder the repo names in `.claude/github-pr-screenshots.json`. Running
+the skill again on the same pull request replaces the block of the earlier run.

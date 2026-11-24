@@ -9,9 +9,10 @@ them in a comment box (no comment is sent): nothing is committed to the repo, an
 visible only to people who can see the pull request. The description is then written with
 GitHub's `gh` command.
 
-The place is fixed by the scripts, not chosen by the model: a `<!-- screenshots -->` line in the
-description if there is one, else a « Screenshots » section at the end. Running it again on the
-same pull request replaces the earlier screenshots.
+The place is fixed by the scripts, not chosen by the model: the placeholder your pull request
+template leaves (see Settings), else a `<!-- screenshots -->` line in the description, else a
+« Screenshots » section at the end. Running it again on the same pull request replaces the
+earlier screenshots.
 
 Call it with `/github-pr-screenshots <owner/repo> <pr-number> <png-file>...`, or ask Claude to put
 screenshots on a pull request.
@@ -43,3 +44,17 @@ few weeks; Claude asks you to sign in again then.
 | npm and network access | The first run installs Playwright and its Chromium (about 150 MB) in the data folder. |
 | A GitHub account       | Signed in once in the window the plugin opens.                                        |
 | The `gh` command       | Signed in to the same account, to read and write the description.                     |
+
+## Settings
+
+Optional. A repo whose pull request template leaves a placeholder for screenshots names it in
+`.claude/github-pr-screenshots.json`, at the root of the repo; the screenshots replace it. The
+text must match the description exactly, line breaks and indentation included:
+
+```json
+{
+  "screenshotsPlaceholder": "- <!-- SCREENSHOT PLACEHOLDER -->\n  ![screenshot](<!-- url -->)"
+}
+```
+
+The scripts read the settings of the repo they are run from.
