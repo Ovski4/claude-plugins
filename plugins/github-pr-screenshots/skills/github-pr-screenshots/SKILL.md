@@ -1,18 +1,18 @@
 ---
 name: github-pr-screenshots
-description: Post validation screenshots (PNG captures of the work, taken with Playwright or by hand) in a comment of a GitHub pull request, from a browser signed in to the user's GitHub account. Use when the user asks to put screenshots, captures or visual proof on a PR. The comment is shown to the user and sent only after their OK.
+description: Put validation screenshots (PNG captures of the work, taken with Playwright or by hand) in the description of a GitHub pull request, uploaded from a browser signed in to the user's GitHub account. Use when the user asks to put screenshots, captures or visual proof on a PR. The description is changed only after the user's OK.
 argument-hint: <owner/repo> <pr-number> <png-file>...
 model: haiku
 ---
 
-# Screenshots in a GitHub pull request comment
+# Screenshots in a GitHub pull request description
 
-GitHub's API cannot attach an image to a comment: only its web page can. The scripts drive a
-Chromium browser signed in to the user's GitHub account, and the images go through the page's
-own upload, as if the user had dropped them in the comment box. Nothing is added to the repo.
+GitHub's API cannot upload an image: only its web page can. The scripts drive a Chromium browser
+signed in to the user's GitHub account, and the images go through the page's own upload, as if
+the user had dropped them in a comment box. Nothing is added to the repo.
 
-The comment is posted under the user's name: it is sent only after the user has seen it and said
-yes, for this comment. An earlier yes doesn't cover the next one.
+The description is changed under the user's name: only after the user has seen the screenshots
+block and said yes, for this pull request. An earlier yes doesn't cover the next one.
 
 ## First use: sign in
 
@@ -25,14 +25,23 @@ Run `node ${CLAUDE_SKILL_DIR}/scripts/login.mjs`.
 - Exit code 1: the window was closed, or 10 minutes passed, before signing in. Ask the user
   whether to try again.
 
-Run it again whenever a later step says the browser is signed out: GitHub ends sessions after a
-few weeks.
-
 The data folder holds the GitHub session: whoever copies it can act as the user. Never copy it,
 print its contents, or put it in a repo.
 
-## Posting the screenshots
+## Putting the screenshots in the description
 
-TODO: the posting script (open the pull request, attach the PNG files, fill the text, capture the
-preview for the user, send after their OK) is not written yet. Until it is, give the user the
-paths of the PNG files to drop in the comment themselves.
+1. Write one short caption per image: what it shows, in the language of the pull request
+   description (`Éditeur, mode Continu`).
+2. Run `node ${CLAUDE_SKILL_DIR}/scripts/prepare.mjs <owner/repo> <pr-number> <png-file> "<caption>" [<png-file> "<caption>"...]`,
+   in the order the images should appear.
+   - It uploads the images and prints the screenshots block and where it goes. The script
+     decides the place: don't move the block, don't edit the description yourself.
+   - Exit code 2: the browser is signed out. Run `login.mjs` as above, then `prepare.mjs` again.
+3. Show the user the printed block and the paths of the PNG files, and ask whether to write it.
+4. On their yes, run `node ${CLAUDE_SKILL_DIR}/scripts/apply.mjs <owner/repo> <pr-number>`.
+   Exit code 2: someone changed the description in between. Run `prepare.mjs` again, and ask
+   again.
+
+To choose the place in advance, the description holds a `<!-- screenshots -->` line where the
+block goes. Running the skill again on the same pull request replaces the block of the earlier
+run.

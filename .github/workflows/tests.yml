@@ -30,3 +30,15 @@ jobs:
         with:
           node-version: 24
       - run: node --test
+
+  github-pr-screenshots:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/github-pr-screenshots/skills/github-pr-screenshots
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node --test

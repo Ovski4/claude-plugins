@@ -1,7 +1,7 @@
 {
   "name": "github-pr-screenshots",
   "version": "0.1.0",
-  "description": "/github-pr-screenshots posts validation screenshots in a GitHub pull request comment, from a browser signed in to your account, after you approve the comment",
+  "description": "/github-pr-screenshots puts validation screenshots in a GitHub pull request description, uploaded from a browser signed in to your account, after you approve them",
   "author": { "name": "Baptiste Bouchereau", "url": "https://github.com/ovski4" },
   "license": "MIT"
 }
