@@ -5,7 +5,7 @@ import {
   buildScreenshotsBlock,
   placeScreenshotsInComment,
   placeScreenshotsInDescription,
-} from "../scripts/lib/description.mjs"
+} from "../scripts/lib/screenshotsBlock.mjs"
 
 const TEMPLATE_PLACEHOLDER = "- <!-- SCREENSHOT PLACEHOLDER -->\n  ![screenshot](<!-- url -->)"
 
@@ -25,44 +25,47 @@ test("the block shows each caption above its image, in order, between the marker
 })
 
 test("a description without marker gets a Screenshots section at the end", () => {
-  assert.equal(
-    placeScreenshotsInDescription("## Summary\n\nText.\n\n", SCREENSHOTS_BLOCK, null),
-    `## Summary\n\nText.\n\n## Screenshots\n\n${SCREENSHOTS_BLOCK}\n`,
-  )
+  assert.deepEqual(placeScreenshotsInDescription("## Summary\n\nText.\n\n", SCREENSHOTS_BLOCK, null), {
+    text: `## Summary\n\nText.\n\n## Screenshots\n\n${SCREENSHOTS_BLOCK}\n`,
+    place: "end section",
+  })
 })
 
 test("a lone start marker is replaced where it stands", () => {
-  assert.equal(
+  assert.deepEqual(
     placeScreenshotsInDescription("## Tests\n\n<!-- screenshots -->\n\n## Notes", SCREENSHOTS_BLOCK, null),
-    `## Tests\n\n${SCREENSHOTS_BLOCK}\n\n## Notes`,
+    {
+      text: `## Tests\n\n${SCREENSHOTS_BLOCK}\n\n## Notes`,
+      place: "start marker",
+    },
   )
 })
 
 test("the block of an earlier run is replaced, not added to", () => {
   const earlierBlock =
     "<!-- screenshots -->\n\n![old](https://github.com/user-attachments/assets/old)\n\n<!-- /screenshots -->"
-  assert.equal(
+  assert.deepEqual(
     placeScreenshotsInDescription(`## Tests\n\n${earlierBlock}\n\n## Notes`, SCREENSHOTS_BLOCK, TEMPLATE_PLACEHOLDER),
-    `## Tests\n\n${SCREENSHOTS_BLOCK}\n\n## Notes`,
+    { text: `## Tests\n\n${SCREENSHOTS_BLOCK}\n\n## Notes`, place: "earlier block" },
   )
 })
 
 test("the placeholder named in the repo's settings is replaced, and the block keeps its $ signs", () => {
   const blockWithDollar = "<!-- screenshots -->\n\n**Price in $**\n\n<!-- /screenshots -->"
-  assert.equal(
+  assert.deepEqual(
     placeScreenshotsInDescription(
       `## Changes\n\n${TEMPLATE_PLACEHOLDER}\n\n## Impacts`,
       blockWithDollar,
       TEMPLATE_PLACEHOLDER,
     ),
-    `## Changes\n\n${blockWithDollar}\n\n## Impacts`,
+    { text: `## Changes\n\n${blockWithDollar}\n\n## Impacts`, place: "configured placeholder" },
   )
 })
 
 test("a configured placeholder missing from the description leads to the end section", () => {
   assert.equal(
-    placeScreenshotsInDescription("## Summary", SCREENSHOTS_BLOCK, TEMPLATE_PLACEHOLDER),
-    `## Summary\n\n## Screenshots\n\n${SCREENSHOTS_BLOCK}\n`,
+    placeScreenshotsInDescription("## Summary", SCREENSHOTS_BLOCK, TEMPLATE_PLACEHOLDER).place,
+    "end section",
   )
 })
 

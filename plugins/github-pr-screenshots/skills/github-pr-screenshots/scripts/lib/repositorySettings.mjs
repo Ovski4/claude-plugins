@@ -10,20 +10,20 @@ import path from "node:path"
 
 export const REPOSITORY_SETTINGS_FILE = path.join(".claude", "github-pr-screenshots.json")
 
-/** @returns {{ screenshotsPlaceholder: string | null }} */
-export function readRepositorySettings() {
+/** @returns {string | null} the placeholder the settings name, or null without settings or placeholder */
+export function readConfiguredScreenshotsPlaceholder() {
   let repositoryRoot
   try {
     repositoryRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim()
   } catch {
-    return { screenshotsPlaceholder: null }
+    return null
   }
   const settingsFile = path.join(repositoryRoot, REPOSITORY_SETTINGS_FILE)
-  if (!fs.existsSync(settingsFile)) return { screenshotsPlaceholder: null }
+  if (!fs.existsSync(settingsFile)) return null
 
   const { screenshotsPlaceholder } = JSON.parse(fs.readFileSync(settingsFile, "utf8"))
   if (screenshotsPlaceholder !== undefined && (typeof screenshotsPlaceholder !== "string" || !screenshotsPlaceholder)) {
     throw new Error(`${settingsFile}: screenshotsPlaceholder must be a non-empty string.`)
   }
-  return { screenshotsPlaceholder: screenshotsPlaceholder ?? null }
+  return screenshotsPlaceholder ?? null
 }

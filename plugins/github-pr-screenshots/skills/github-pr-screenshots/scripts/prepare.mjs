@@ -3,8 +3,8 @@
 // Uploads the images to GitHub through the pull request's comment box, without sending any comment,
 // to get their links. Then prepares the change, kept in a pending file, and prints the screenshots
 // block and where it goes:
-// - without --comment, the description with the screenshots placed (rule in lib/description.mjs,
-//   placeholder from the settings of the repo the script runs from);
+// - without --comment, the description with the screenshots placed (rules in
+//   lib/screenshotsBlock.mjs, placeholder from the settings of the repo the script runs from);
 // - with --comment <id> (the number after `#r` in a review comment's link), the comment with the
 //   screenshots at its end when the signed-in user wrote it, else a reply in its thread.
 // Nothing changes on the pull request: apply.mjs writes the change once the user approves.
@@ -13,54 +13,60 @@ import fs from "node:fs"
 import path from "node:path"
 import { openSignedInBrowser, readSignedInGitHubLogin } from "./lib/browser.mjs"
 import {
+  buildPendingChangeFile,
+  parsePullRequestTarget,
+  readPullRequestDescription,
+  readReviewComment,
+} from "./lib/pullRequestText.mjs"
+import { readConfiguredScreenshotsPlaceholder, REPOSITORY_SETTINGS_FILE } from "./lib/repositorySettings.mjs"
+import {
   buildScreenshotsBlock,
-  findScreenshotsPlace,
   placeScreenshotsInComment,
   placeScreenshotsInDescription,
-} from "./lib/description.mjs"
-import { buildPendingChangeFile, readPullRequestDescription, readReviewComment } from "./lib/pullRequestText.mjs"
-import { readRepositorySettings, REPOSITORY_SETTINGS_FILE } from "./lib/repositorySettings.mjs"
+} from "./lib/screenshotsBlock.mjs"
 import { uploadImagesThroughCommentBox } from "./lib/uploadImages.mjs"
 
-const [repository, pullRequestNumber, ...otherArguments] = process.argv.slice(2)
-const commentId = otherArguments[0] === "--comment" ? otherArguments[1] : null
-const imagesAndCaptions = commentId ? otherArguments.slice(2) : otherArguments
-if (
-  !repository?.includes("/") ||
-  !/^\d+$/.test(pullRequestNumber ?? "") ||
-  (otherArguments[0] === "--comment" && !/^\d+$/.test(commentId ?? "")) ||
-  imagesAndCaptions.length % 2 !== 0
-) {
+const parsedArguments = parsePullRequestTarget(process.argv.slice(2))
+const imagesAndCaptionsCount = parsedArguments?.otherArguments.length ?? 0
+if (!parsedArguments || imagesAndCaptionsCount === 0 || imagesAndCaptionsCount % 2 !== 0) {
   console.error(
     "Usage: node scripts/prepare.mjs <owner/repo> <pr-number> [--comment <id>] <png-file> <caption> [<png-file> <caption>...]",
   )
   process.exit(1)
 }
-const imagesToShow = []
-for (let index = 0; index < imagesAndCaptions.length; index += 2) {
-  imagesToShow.push({ imageFile: path.resolve(imagesAndCaptions[index]), caption: imagesAndCaptions[index + 1] })
-}
+const { otherArguments: imagesAndCaptions, ...target } = parsedArguments
+const imagesToShow = Array.from({ length: imagesAndCaptions.length / 2 }, (_, index) => ({
+  imageFile: path.resolve(imagesAndCaptions[2 * index]),
+  caption: imagesAndCaptions[2 * index + 1],
+}))
 const missingImageFiles = imagesToShow.filter(({ imageFile }) => !fs.existsSync(imageFile))
-if (imagesToShow.length === 0 || missingImageFiles.length > 0) {
-  console.error(`No image given, or missing files: ${missingImageFiles.map(({ imageFile }) => imageFile).join(", ")}`)
+if (missingImageFiles.length > 0) {
+  console.error(`Missing files: ${missingImageFiles.map(({ imageFile }) => imageFile).join(", ")}`)
   process.exit(1)
 }
 
+// Read before uploading, so that a wrong pull request, comment or settings file fails before any
+// image is sent.
+const configuredPlaceholder = target.commentId ? null : readConfiguredScreenshotsPlaceholder()
+const description = target.commentId ? null : readPullRequestDescription(target)
+const reviewComment = target.commentId ? readReviewComment(target) : null
+
 const browser = await openSignedInBrowser({ visibleWindow: false })
-const page = await browser.newPage()
-await page.goto(`https://github.com/${repository}/pull/${pullRequestNumber}`)
+const page = browser.pages()[0] ?? (await browser.newPage())
+await page.goto(`https://github.com/${target.repository}/pull/${target.pullRequestNumber}`, {
+  waitUntil: "domcontentloaded",
+})
 const signedInLogin = await readSignedInGitHubLogin(page)
-const uploadResult = signedInLogin
-  ? await uploadImagesThroughCommentBox(
-      page,
-      imagesToShow.map(({ imageFile }) => imageFile),
-    )
-  : null
-await browser.close()
-if (!uploadResult) {
+if (!signedInLogin) {
+  await browser.close()
   console.error("The browser is signed out of GitHub: run scripts/login.mjs, then this script again.")
   process.exit(2)
 }
+const uploadResult = await uploadImagesThroughCommentBox(
+  page,
+  imagesToShow.map(({ imageFile }) => imageFile),
+)
+await browser.close()
 if ("imageFileNotUploaded" in uploadResult) {
   console.error(`Upload of ${uploadResult.imageFileNotUploaded} didn't finish within a minute.`)
   process.exit(3)
@@ -72,33 +78,25 @@ const screenshotsBlock = buildScreenshotsBlock(
 /** @type {import("./lib/pullRequestText.mjs").PendingChange} */
 let pendingChange
 let placement
-if (!commentId) {
-  const { screenshotsPlaceholder } = readRepositorySettings()
-  const description = readPullRequestDescription(repository, pullRequestNumber)
-  const textAfter = placeScreenshotsInDescription(description, screenshotsBlock, screenshotsPlaceholder)
-  pendingChange = { kind: "description", textBefore: description, textAfter }
+if (description !== null) {
+  const { text, place } = placeScreenshotsInDescription(description, screenshotsBlock, configuredPlaceholder)
+  pendingChange = { ...target, kind: "description", textBefore: description, textAfter: text }
   placement = {
     "earlier block": "in the description, in place of the screenshots of an earlier run",
     "configured placeholder": `in the description, in place of the placeholder named in ${REPOSITORY_SETTINGS_FILE}`,
     "start marker": "in the description, in place of the <!-- screenshots --> line",
     "end section": "in the description, in a new « Screenshots » section at the end",
-  }[findScreenshotsPlace(description, screenshotsPlaceholder)]
+  }[place]
+} else if (reviewComment?.authorLogin === signedInLogin) {
+  const textAfter = placeScreenshotsInComment(reviewComment.body, screenshotsBlock)
+  pendingChange = { ...target, kind: "comment edit", textBefore: reviewComment.body, textAfter }
+  placement = `at the end of review comment ${target.commentId}, which ${signedInLogin} wrote`
 } else {
-  const comment = readReviewComment(repository, commentId)
-  if (comment.authorLogin === signedInLogin) {
-    pendingChange = {
-      kind: "comment edit",
-      textBefore: comment.body,
-      textAfter: placeScreenshotsInComment(comment.body, screenshotsBlock),
-    }
-    placement = `at the end of review comment ${commentId}, which ${signedInLogin} wrote`
-  } else {
-    pendingChange = { kind: "comment reply", textBefore: null, textAfter: screenshotsBlock }
-    placement = `as a reply to review comment ${commentId}, written by ${comment.authorLogin}`
-  }
+  pendingChange = { ...target, kind: "comment reply", textBefore: null, textAfter: screenshotsBlock }
+  placement = `as a reply to review comment ${target.commentId}, written by ${reviewComment?.authorLogin}`
 }
 
-const pendingChangeFile = buildPendingChangeFile(repository, pullRequestNumber, commentId)
+const pendingChangeFile = buildPendingChangeFile(target)
 fs.mkdirSync(path.dirname(pendingChangeFile), { recursive: true })
 fs.writeFileSync(pendingChangeFile, JSON.stringify(pendingChange))
 console.log(`Screenshots block, to be written ${placement}:\n\n${screenshotsBlock}`)
