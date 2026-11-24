@@ -1,6 +1,6 @@
 {
   "name": "figma-component-inventory",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "/figma-component-inventory draws the annotated component inventory of a Figma screen: one outline per component, coloured by its frontend verdict, for the developer to approve",
   "author": {
     "name": "Baptiste Bouchereau",
