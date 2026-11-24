@@ -161,7 +161,9 @@ h1 {
 .tabs:empty {
   display: none;
 }
-.tabs button {
+.tabs button,
+.feedback-summary button,
+.correction button {
   padding: 4px 12px;
   border: 1px solid var(--text-muted);
   border-radius: 999px;
@@ -278,7 +280,6 @@ h1 {
   align-items: flex-end;
   gap: 8px 16px;
 }
-.correction[hidden],
 .feedback [hidden] {
   display: none;
 }
@@ -289,9 +290,6 @@ h1 {
   flex-wrap: wrap;
   gap: 0 2px;
   border-bottom: 1px solid var(--text-muted);
-}
-.correction-targets[hidden] {
-  display: none;
 }
 .correction .correction-targets button {
   margin-bottom: -1px;
@@ -379,16 +377,6 @@ h1 {
 .feedback-count {
   margin: 0;
   color: var(--text-muted);
-}
-.feedback-summary button,
-.correction button {
-  padding: 4px 12px;
-  border: 1px solid var(--text-muted);
-  border-radius: 999px;
-  background: var(--page-background);
-  color: var(--text);
-  font: inherit;
-  cursor: pointer;
 }
 .feedback-lines {
   flex-basis: 100%;

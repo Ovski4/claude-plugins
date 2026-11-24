@@ -148,7 +148,7 @@ scripts/
     inventoryWording.mjs    the French names that inventory.html and inventory.md share: outlines, screens, title
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
-    feedbackText.mjs        the text the page builds from the developer's corrections, pasted into the page
+    feedbackText.mjs        the developer's corrections on the page: what differs from the inventory, the text to paste; pasted whole into the page
     gitRepo.mjs             the repo's root, current commit and tracked files
     box.mjs                 comparisons between boxes
 tests/                    one test file per module of scripts/lib

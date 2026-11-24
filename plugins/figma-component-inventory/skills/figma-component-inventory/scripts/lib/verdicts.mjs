@@ -118,6 +118,13 @@ export const VERDICTS = {
   },
 }
 export const VERDICT_KEYS = /** @type {VerdictKey[]} */ (Object.keys(VERDICTS))
+
+// What the developer picks on the page for an outline that is no React component of its own
+// (a plain paragraph of its parent, say): the model then writes `"outlined": false`.
+export const NOT_A_COMPONENT = {
+  key: "not-a-component",
+  label: "Pas un composant",
+}
 const VERDICT_WAITING_FOR_THE_DEVELOPER = "to-decide"
 const MIN_QUIZ_OPTIONS = 2
 const MAX_QUIZ_OPTIONS = 4
@@ -468,8 +475,11 @@ export function listNumbersStillToDecide(judgedCandidates) {
     .map((candidate) => candidate.number)
 }
 
-/** @param {VerdictEntry[]} entries */
-function hashVerdicts(entries) {
+/**
+ * Changes as soon as any verdict, note, question or option changes.
+ * @param {VerdictEntry[]} entries
+ */
+export function hashVerdicts(entries) {
   return createHash("sha256").update(JSON.stringify(entries)).digest("hex")
 }
 

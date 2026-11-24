@@ -256,8 +256,8 @@ test("the page gets each screen's drawing, with what is the same on every screen
     drawing.correctableCandidates.map(({ number, targets, judgement }) => [
       number,
       targets.map(
-        ({ id, screens, verdict, codeComponent }) =>
-          `${id} [${screens}] ${verdict} ${codeComponent}`,
+        ({ id, tabName, screens, verdict, codeComponent }) =>
+          `${id} (${tabName}) [${screens}] ${verdict} ${codeComponent}`,
       ),
       judgement,
     ]),
@@ -265,22 +265,22 @@ test("the page gets each screen's drawing, with what is the same on every screen
       [
         1,
         [
-          "1 [1,2] reused Editor",
-          "1 · écran 1 [1] reused Editor",
-          "1 · écran 2 [2] reused Editor",
+          "1 (Toutes ses utilisations) [1,2] reused Editor",
+          "1 · écran 1 (écran 1) [1] reused Editor",
+          "1 · écran 2 (écran 2) [2] reused Editor",
         ],
         "Editor · Réutilisé",
       ],
       [
         2,
         [
-          "2 [1,2] to-create null",
-          "2 · écran 1 [1] to-create OrderOffNotice",
-          "2 · écran 2 [2] to-create OrderSettings",
+          "2 (Toutes ses utilisations) [1,2] to-create null",
+          "2 · écran 1 (écran 1) [1] to-create OrderOffNotice",
+          "2 · écran 2 (écran 2) [2] to-create OrderSettings",
         ],
         "OrderOffNotice · À créer / OrderSettings · À créer",
       ],
-      [4, ["4 [2] to-create Body"], "Body · À créer"],
+      [4, ["4 (Toutes ses utilisations) [2] to-create Body"], "Body · À créer"],
     ],
   )
 })

@@ -131,6 +131,8 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * @typedef {object} CorrectableTarget
  * @property {string} id "6" for the whole candidate; for one outline, "6b", or "6 · écran 2" when
  *   it is the only one on its screen, where its badge says "6"
+ * @property {number} candidateNumber
+ * @property {string} tabName "Toutes ses utilisations", "6b" or "écran 2": the form's title gives the number
  * @property {number[]} screens the numbers of the screens that draw it
  * @property {VerdictKey | null} verdict null for a whole candidate whose outlines have different verdicts
  * @property {string | null} codeComponent null when no component is named, or when the outlines of a
@@ -405,6 +407,27 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
 }
 
 /**
+ * What the correction form starts from for some instances of a candidate: all of them, or one.
+ * @param {JudgedCandidate} candidate
+ * @param {JudgedInstance[]} instances
+ * @param {string} id
+ * @param {string} tabName
+ * @returns {CorrectableTarget}
+ */
+function describeTarget(candidate, instances, id, tabName) {
+  return {
+    id,
+    candidateNumber: candidate.number,
+    tabName,
+    screens: listScreenNumbers(instances),
+    verdict: findSharedValue(instances, "verdict"),
+    codeComponent: findSharedValue(instances, "codeComponent"),
+    question: findSharedValue(instances, "question"),
+    options: instances[0].options ?? [],
+  }
+}
+
+/**
  * The value every instance has for a field, or null when they differ.
  * @template {"verdict" | "codeComponent" | "question"} Field
  * @param {JudgedInstance[]} instances
@@ -499,33 +522,28 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
       number: candidate.number,
       figmaName: candidate.figmaName,
       targets: [
-        {
-          id: `${candidate.number}`,
-          screens: listScreenNumbers(candidate.instances),
-          verdict: findSharedValue(candidate.instances, "verdict"),
-          codeComponent: findSharedValue(candidate.instances, "codeComponent"),
-          question: findSharedValue(candidate.instances, "question"),
-          options: candidate.instances[0].options ?? [],
-        },
+        describeTarget(
+          candidate,
+          candidate.instances,
+          `${candidate.number}`,
+          "Toutes ses utilisations",
+        ),
         ...(candidate.instances.length > 1
-          ? candidate.instances.map((instance) => ({
-              id: nameInstances(candidate, [instance], hasSeveralScreens),
-              screens: [instance.screen],
-              verdict: instance.verdict,
-              codeComponent: instance.codeComponent,
-              question: instance.question,
-              options: instance.options ?? [],
-            }))
+          ? candidate.instances.map((instance) => {
+              const id = nameInstances(candidate, [instance], hasSeveralScreens)
+              const badge = nameOutline(candidate, instance)
+              const tabName =
+                id === badge ? badge : nameScreens([instance.screen])
+              return describeTarget(candidate, [instance], id, tabName)
+            })
           : []),
       ],
-      judgement: [
-        ...new Set(
-          candidate.instances.map(
-            ({ verdict, codeComponent }) =>
-              `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].label}`,
-          ),
-        ),
-      ].join(" / "),
+      judgement: groupByJudgement(candidate.instances)
+        .map(
+          ([{ verdict, codeComponent }]) =>
+            `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].label}`,
+        )
+        .join(" / "),
     })),
   }
 }

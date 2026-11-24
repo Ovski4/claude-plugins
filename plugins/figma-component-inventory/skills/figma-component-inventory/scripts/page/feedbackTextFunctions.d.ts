@@ -1,4 +1,7 @@
-// render.mjs pastes lib/feedbackText.mjs's functions into inventory.html before page.js, as a
-// plain script: page.js calls them as globals.
-declare const buildFeedbackText: typeof import("../lib/feedbackText.mjs").buildFeedbackText
-declare const listCorrectionFields: typeof import("../lib/feedbackText.mjs").listCorrectionFields
+// render.mjs pastes lib/feedbackText.mjs into inventory.html before page.js, as a plain
+// script: page.js calls its functions as globals.
+type FeedbackText = typeof import("../lib/feedbackText.mjs")
+declare const buildCorrection: FeedbackText["buildCorrection"]
+declare const sortCorrections: FeedbackText["sortCorrections"]
+declare const listCorrectionFields: FeedbackText["listCorrectionFields"]
+declare const buildFeedbackText: FeedbackText["buildFeedbackText"]

@@ -12,7 +12,6 @@
 import fs from "node:fs"
 import path from "node:path"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
-import { listCorrectionFields, buildFeedbackText } from "./lib/feedbackText.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
@@ -21,9 +20,11 @@ import { readProjectSettings } from "./lib/projectSettings.mjs"
 import {
   applyVerdictsToCandidates,
   buildApproval,
+  hashVerdicts,
   isApprovalStillValid,
   listNumbersStillToDecide,
   listVerdictProblems,
+  NOT_A_COMPONENT,
   VERDICTS,
   VERDICT_KEYS,
 } from "./lib/verdicts.mjs"
@@ -33,12 +34,17 @@ const EXIT_CODE_INVALID_VERDICTS = 3
 const EXIT_CODE_NOT_READY_TO_APPROVE = 4
 const USAGE = "Usage: node scripts/render.mjs <out-dir> [--approve]"
 // inventory.html is page/page.html with each of these comments replaced: by the page's styles,
-// by the functions that write the developer's corrections, by the page's script, and by what
-// the script draws. One file, which opens without a server.
+// by lib/feedbackText.mjs (the developer's corrections), by the page's script, and by what the
+// script draws. One file, which opens without a server.
 const PAGE_FOLDER = path.join(import.meta.dirname, "page")
+const FEEDBACK_TEXT_MODULE = path.join(
+  import.meta.dirname,
+  "lib",
+  "feedbackText.mjs",
+)
 const PLACEHOLDERS_IN_PAGE = {
   styles: "/*PAGE_STYLES*/",
-  feedbackText: "/*FEEDBACK_TEXT_FUNCTIONS*/",
+  feedbackText: "/*FEEDBACK_TEXT_MODULE*/",
   script: "/*PAGE_SCRIPT*/",
   inventory: "/*INVENTORY*/",
 }
@@ -114,6 +120,13 @@ function main() {
   const inventory = {
     approvalDate,
     verdicts,
+    // The correction form offers every verdict, and one more for what is no component.
+    correctionVerdicts: [
+      ...verdicts.map(({ key, label }) => ({ key, label })),
+      NOT_A_COMPONENT,
+    ],
+    // Corrections kept in the browser are dropped once the verdicts change.
+    verdictsHash: hashVerdicts(verdictsFile.verdicts),
     ...buildPageDrawing({
       screens: screens.map(
         /** @param {import("./lib/pageDrawing.mjs").ScreenToDraw & { nodeId: string, capture: { file: string } }} screen */
@@ -138,7 +151,8 @@ function main() {
     readPageFile("page.html")
       .replace(PLACEHOLDERS_IN_PAGE.styles, () => readPageFile("page.css"))
       .replace(PLACEHOLDERS_IN_PAGE.feedbackText, () =>
-        [listCorrectionFields, buildFeedbackText].join("\n"),
+        // A plain script cannot export: its functions become the page's globals.
+        fs.readFileSync(FEEDBACK_TEXT_MODULE, "utf8").replace(/^export /gm, ""),
       )
       .replace(PLACEHOLDERS_IN_PAGE.script, () => readPageFile("page.js"))
       .replace(PLACEHOLDERS_IN_PAGE.inventory, () => inventoryAsJson),
