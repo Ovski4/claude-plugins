@@ -49,12 +49,70 @@ export function nameScreens(screenNumbers) {
   return `écran${screenNumbers.length > 1 ? "s" : ""} ${screenNumbers.join(" ")}`
 }
 
+const NAME_PART_SEPARATOR = " · "
+
 /**
+ * The names of the screens of one design, cut where they stop saying the same thing:
+ * "Editor · Off" and "Editor · Period" share "Editor" and end with "Off" and "Period".
+ * Each name keeps at least its last part for itself.
+ * @param {string[]} names
+ * @returns {{ sharedStart: string, ownEnds: string[] }} `sharedStart`: "" when the names share nothing
+ */
+function splitNamesAtSharedStart(names) {
+  const partsOfNames = names.map((name) => name.split(NAME_PART_SEPARATOR))
+  let sharedPartCount = 0
+  while (
+    partsOfNames.every((parts) => parts.length > sharedPartCount + 1) &&
+    partsOfNames.every(
+      (parts) => parts[sharedPartCount] === partsOfNames[0][sharedPartCount],
+    )
+  ) {
+    sharedPartCount += 1
+  }
+  return {
+    sharedStart: partsOfNames[0]
+      .slice(0, sharedPartCount)
+      .join(NAME_PART_SEPARATOR),
+    ownEnds: partsOfNames.map((parts) =>
+      parts.slice(sharedPartCount).join(NAME_PART_SEPARATOR),
+    ),
+  }
+}
+
+/**
+ * The tab of each screen: its number, then what its name does not share with the others',
+ * "1 · Off · Default" and "3 · Period · Default" for "Editor · Off · Default" and
+ * "Editor · Period · Default".
+ * @param {{ number: number, name: string }[]} screens
+ * @returns {string[]} in the screens' order
+ */
+export function nameScreenTabs(screens) {
+  const { ownEnds } = splitNamesAtSharedStart(
+    screens.map((screen) => screen.name),
+  )
+  return screens.map((screen, index) => `${screen.number} · ${ownEnds[index]}`)
+}
+
+/**
+ * The end of the line that says what a page is built on: the mock-up and the code.
+ * @param {{ figma: { lastModified: string }, gitCommit: string }} fingerprint
+ * @returns {string} "maquette modifiée le 2026-11-20 · commit 34ee98aa6"
+ */
+export const tellMockupAndCommit = ({ figma, gitCommit }) =>
+  `maquette modifiée le ${figma.lastModified.slice(0, 10)} · commit ${gitCommit}`
+
+/**
+ * What the inventory is about, from its screens' names alone.
  * @param {{ name: string }[]} screens
- * @returns {string} the screen's name, or "3 écrans d'un même design"
+ * @returns {string} the screen's name; for several screens what their names share,
+ *   "Editor — regulation (6 écrans)", or "3 écrans d'un même design" when they share nothing
  */
 export function titleInventory(screens) {
-  return screens.length > 1
-    ? `${screens.length} écrans d'un même design`
-    : screens[0].name
+  if (screens.length === 1) return screens[0].name
+  const { sharedStart } = splitNamesAtSharedStart(
+    screens.map((screen) => screen.name),
+  )
+  return sharedStart
+    ? `${sharedStart} (${screens.length} écrans)`
+    : `${screens.length} écrans d'un même design`
 }

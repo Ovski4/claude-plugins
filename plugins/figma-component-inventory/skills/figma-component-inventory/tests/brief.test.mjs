@@ -11,6 +11,12 @@ interface ButtonProps extends HTMLProps<HTMLButtonElement> {
   btn_icon?: "true"
   children?: ReactNode
 }
+type ButtonLinkProps = Pick<
+  HTMLProps<HTMLAnchorElement>,
+  "href"
+> & {
+  external?: boolean
+}
 type Size = "small" | "large"
 
 export function Button(props: ButtonProps) {
@@ -133,6 +139,12 @@ interface ButtonProps extends HTMLProps<HTMLButtonElement> {
   /** Icon-only button. */
   btn_icon?: "true"
   children?: ReactNode
+}
+type ButtonLinkProps = Pick<
+  HTMLProps<HTMLAnchorElement>,
+  "href"
+> & {
+  external?: boolean
 }
 \`\`\`
 

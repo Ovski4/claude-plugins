@@ -9,9 +9,24 @@
     </style>
   </head>
   <body>
-    <h1 id="screen-name"></h1>
-    <p class="approval" id="approval"></p>
-    <p class="fingerprint" id="fingerprint"></p>
+    <header class="page-header">
+      <div>
+        <h1>Inventaire des composants</h1>
+        <p class="page-subject" id="screen-name"></p>
+      </div>
+      <div class="page-status">
+        <p class="approval" id="approval"></p>
+        <button
+          type="button"
+          class="info-bubble"
+          aria-label="Sur quoi la page est construite"
+          aria-describedby="fingerprint"
+        >
+          i
+        </button>
+        <p class="fingerprint" id="fingerprint" role="tooltip"></p>
+      </div>
+    </header>
     <ul class="legend" id="legend"></ul>
     <div class="tabs" id="tabs" role="tablist"></div>
     <label class="page-switch">
@@ -27,11 +42,15 @@
       Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le
       corriger ; recliquer, cliquer à côté ou Échap pour revenir.
     </p>
-    <div class="screens-and-explanations">
+    <div class="capture-beside-panel">
       <div class="screens" id="screens"></div>
-      <ul class="explanations" id="explanations"></ul>
+      <aside class="side-panel card">
+        <h3>Composants</h3>
+        <ul class="panel-items" id="explanations"></ul>
+        <h3 id="not-outlined-heading" hidden>Non entourés</h3>
+        <ul class="panel-items not-outlined" id="not-outlined"></ul>
+      </aside>
     </div>
-    <p class="not-outlined" id="not-outlined"></p>
     <aside class="feedback" id="feedback">
       <form class="correction" id="correction" hidden>
         <p class="correction-title" id="correction-title"></p>
@@ -75,14 +94,16 @@
         <button type="button" id="feedback-copy" hidden>
           Copier les corrections
         </button>
-        <button type="button" id="feedback-reset" hidden>Tout effacer</button>
+        <button type="button" id="feedback-reset" class="quiet-action" hidden>
+          Tout effacer
+        </button>
         <ul class="feedback-lines" id="feedback-lines"></ul>
         <textarea id="feedback-text" rows="4" readonly hidden></textarea>
       </div>
     </aside>
     <!-- Written by render.mjs: everything the page draws, worked out by lib/pageDrawing.mjs. -->
     <script type="application/json" id="inventory">
-      /*INVENTORY*/
+      /*PAGE_DATA*/
     </script>
     <script>
       /*FEEDBACK_TEXT_MODULE*/

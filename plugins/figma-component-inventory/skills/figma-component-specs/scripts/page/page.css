@@ -1,0 +1,321 @@
+/* The specs page's own styles, pasted after the inventory skill's pageBase.css. */
+h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 16px;
+}
+code {
+  font-size: 12px;
+}
+/* A dotted line like the outlines on the capture, in the kind's colour. */
+.legend li {
+  color: var(--kind);
+}
+.legend li::before {
+  width: 36px;
+  border-top: 2px dotted var(--kind);
+  content: "";
+}
+/* Three columns: the tree, the capture, the panel. On a window too narrow for the three,
+   the tree goes above the capture first, then the panel under it: the capture and its
+   zones stay side by side as long as they can. Laid out from the right and wrapping
+   upwards, which is what sends the tree, not the panel, to a line of its own; in that
+   direction "flex-end" is the left of a line and its top. */
+.capture-beside-panel {
+  flex-direction: row-reverse;
+  flex-wrap: wrap-reverse;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 20px;
+}
+.side-panel {
+  order: 1;
+  flex-basis: 290px;
+  min-width: 290px;
+}
+figure {
+  order: 2;
+}
+/* The components, nested as in the code: the page's navigation, drawn on the page itself
+   and not on a card, which is kept for what is read. */
+.component-tree {
+  box-sizing: border-box;
+  flex: none;
+  order: 3;
+  max-width: 100%;
+  /* Level with the first line of the capture's card. */
+  padding-top: 12px;
+  overflow-x: auto;
+}
+/* While the tree is a column beside the capture, it stays in view as the capture scrolls. */
+.component-tree.beside-capture {
+  position: sticky;
+  top: 16px;
+}
+.component-tree ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+/* A level under a component: a line down from the parent, and a dash to each child. */
+.component-tree ul ul {
+  margin-left: 10px;
+  border-left: 1px solid var(--text-muted);
+}
+.component-tree ul ul > li {
+  position: relative;
+  padding-left: 10px;
+}
+.component-tree ul ul > li::before {
+  position: absolute;
+  top: 13px;
+  left: 0;
+  width: 8px;
+  border-top: 1px solid var(--text-muted);
+  content: "";
+}
+/* A component of the tree is a line of text, as in the file tree of a code editor: its
+   name, then a square in its verdict's colour. The shown one is filled like a picked tab
+   (pageBase.css). */
+.component-tree button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+  width: 100%;
+  margin: 1px 0;
+  padding: 3px 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.component-tree button:hover:not([aria-current="true"]) {
+  background: var(--border);
+}
+.component-tree button span {
+  flex: 1;
+}
+/* Every line keeps room for the « ✓ » of a checked component (pageBase.css), so that the
+   squares stay in one column. */
+.component-tree button::after {
+  flex: none;
+  width: 10px;
+  content: "";
+}
+/* A component's verdict, as a small square in its colour. */
+.verdict-mark {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--verdict);
+}
+.tree-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 14px 0 0;
+  padding: 0 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  list-style: none;
+}
+.tree-legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+#screen-review .review-check {
+  margin-top: 12px;
+}
+/* One screen of the shown component: its tabs, its title and its capture, on a card as
+   wide as the capture. */
+figure {
+  flex: none;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 12px 16px 16px;
+  overflow-x: auto;
+}
+/* The texts above and under the capture take its width and wrap: a long title never
+   makes the card wider than the capture. */
+figure .tabs,
+figcaption,
+#screen-review {
+  width: 0;
+  min-width: 100%;
+}
+figcaption {
+  margin-bottom: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+figcaption a,
+figcaption span {
+  display: block;
+}
+figcaption a {
+  font-size: 14px;
+  font-weight: 700;
+}
+.cut {
+  position: relative;
+  overflow: hidden;
+}
+.cut img {
+  position: absolute;
+  max-width: none;
+}
+/* Lets the clicks through to the outlines; its shadow veils the rest of the container. */
+.component-frame {
+  position: absolute;
+  border-radius: 4px;
+  box-shadow: 0 0 0 9999px
+    color-mix(
+      in srgb,
+      var(--surface) calc(var(--veil-opacity) * 100%),
+      transparent
+    );
+  pointer-events: none;
+}
+/* Every outline is dotted, with a light halo to stay readable on a dark capture; only the
+   colour tells the kind. */
+.outline {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 0;
+  border: 2px dotted var(--kind);
+  border-radius: 2px;
+  background: none;
+  box-shadow:
+    0 0 0 1px rgb(255 255 255 / 0.85),
+    inset 0 0 0 1px rgb(255 255 255 / 0.85);
+  cursor: pointer;
+}
+.outline:hover,
+.outline.selected {
+  background: color-mix(in srgb, var(--kind) 8%, transparent);
+}
+.outline.selected {
+  border-style: solid;
+}
+.cut.has-selection .outline:not(.selected) {
+  opacity: var(--faded-opacity);
+}
+/* On the outline's top-left corner, as the numbers of the inventory. */
+.outline .item-badge {
+  position: absolute;
+  top: -9px;
+  left: -2px;
+}
+.prop {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.prop-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+.prop-tag {
+  margin-left: 8px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #f1f5f9;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.changes {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.changes th,
+.changes td {
+  padding: 4px 8px 4px 0;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+.changes thead th {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+.changes tbody th {
+  font-weight: 600;
+}
+.change-before {
+  color: var(--text-muted);
+}
+.change-after {
+  font-weight: 600;
+}
+.prop-change {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 12px;
+  margin: 6px 0 0;
+}
+dt {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+dd {
+  margin: 0;
+}
+.side-panel ol {
+  margin: 0;
+  padding-left: 18px;
+}
+/* A zone's title is a button, for the keyboard; it looks like the inventory's titles. */
+button.item-title {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.panel-items p {
+  margin: 2px 0 0;
+}
+/* In a zone that outlines a component of the tree: the way to that component's specs. */
+.open-component {
+  margin-top: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--item-color);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.prop-zones {
+  display: flex;
+  gap: 4px;
+}
+.prop.drives-selected-zone {
+  border-left: 3px solid var(--kind);
+  background: color-mix(in srgb, var(--kind) 10%, transparent);
+}
+.prop.outside-selected-zone {
+  opacity: var(--unpicked-opacity);
+}

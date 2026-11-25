@@ -6,7 +6,8 @@
     "target": "esnext",
     "lib": ["esnext", "dom", "dom.iterable"],
     "module": "nodenext",
-    "types": ["node"]
+    "types": ["node"],
+    "maxNodeModuleJsDepth": 0
   },
   "include": [
     "scripts/**/*.mjs",

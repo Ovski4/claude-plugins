@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Props des composants</title>
+    <style>
+      /*PAGE_STYLES*/
+    </style>
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <h1>Props des composants à créer ou à adapter</h1>
+        <p class="page-subject" id="screen-name"></p>
+      </div>
+      <div class="page-status">
+        <p class="approval" id="approval"></p>
+        <button
+          type="button"
+          class="info-bubble"
+          aria-label="Sur quoi la page est construite"
+          aria-describedby="fingerprint"
+        >
+          i
+        </button>
+        <p class="fingerprint" id="fingerprint" role="tooltip"></p>
+      </div>
+    </header>
+    <ul class="legend" id="legend"></ul>
+    <p class="page-hint">
+      Cliquer sur un encadré pour voir ses règles dans le panneau « Zones »,
+      faire ressortir ses props et le corriger ; recliquer, cliquer à côté ou
+      Échap pour revenir.
+    </p>
+    <div class="capture-beside-panel">
+      <nav class="component-tree" aria-label="Composants">
+        <h3>Composants</h3>
+        <div id="component-tree"></div>
+        <ul class="tree-legend" id="tree-legend"></ul>
+      </nav>
+      <figure class="card">
+        <div
+          class="tabs"
+          id="screen-tabs"
+          role="tablist"
+          aria-label="Écran"
+        ></div>
+        <figcaption id="screen-caption"></figcaption>
+        <div class="cut" id="cut"></div>
+        <div id="screen-review"></div>
+      </figure>
+      <section class="side-panel card" id="panel" aria-live="polite"></section>
+    </div>
+    <aside class="feedback" id="feedback">
+      <form class="correction" id="correction">
+        <p class="correction-title" id="correction-title"></p>
+        <fieldset
+          class="correction-choices"
+          id="correction-answers"
+          hidden
+        ></fieldset>
+        <label class="correction-note">
+          Note
+          <input id="correction-note" autocomplete="off" />
+        </label>
+        <button type="button" id="correction-clear" hidden>
+          Annuler cette correction
+        </button>
+      </form>
+      <div class="feedback-summary">
+        <p class="feedback-count" id="feedback-count"></p>
+        <button type="button" id="feedback-copy" hidden>
+          Copier les corrections
+        </button>
+        <button type="button" id="feedback-reset" class="quiet-action" hidden>
+          Tout effacer
+        </button>
+        <ul class="feedback-lines" id="feedback-lines"></ul>
+        <textarea id="feedback-text" rows="4" readonly hidden></textarea>
+      </div>
+    </aside>
+    <!-- Written by render.mjs: everything the page draws, worked out by lib/specsPageDrawing.mjs. -->
+    <script type="application/json" id="specs">
+      /*PAGE_DATA*/
+    </script>
+    <script>
+      /*FEEDBACK_TEXT_MODULE*/
+    </script>
+    <script>
+      /*PAGE_SCRIPT*/
+    </script>
+  </body>
+</html>

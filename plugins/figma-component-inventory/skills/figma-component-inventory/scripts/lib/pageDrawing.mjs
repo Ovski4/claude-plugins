@@ -4,12 +4,15 @@
 // itself only draws these coordinates and answers clicks.
 // Every coordinate is in pixels at scale 1, from the top-left corner of its own screen.
 
+import { hashWhatIsReviewed } from "./approval.mjs"
 import { isBoxInside, measureArea, pickBox } from "./box.mjs"
 import {
   nameOutline,
   nameOutlines,
   namePartNotOutlined,
   nameScreens,
+  nameScreenTabs,
+  tellMockupAndCommit,
   titleInventory,
 } from "./inventoryWording.mjs"
 import {
@@ -88,21 +91,38 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  *   outlines: DrawnOutline[],
  *   labels: DrawnLabel[],
  *   looseTexts: DrawnLooseText[],
+ *   reviewHash: string,
  * }} DrawnScreen
  * `ownBox`: what holds the capture and its labels.
  * `outlines`: from the outermost component to the innermost.
+ * `reviewHash`: changes when the developer has to check the screen again: a use gets or
+ *   loses its outline, or a component that has no explanation of its own is judged another
+ *   way. A change of wording or of place on the page leaves it as it is.
  */
 /**
  * Under the images: why a component is not simply reused.
  * @typedef {DrawnCandidatePart & {
+ *   badgeText: string,
  *   title: string,
  *   screens: number[],
  *   reason: string | null,
  *   developerDecision: string | null,
  *   question: string | null,
+ *   reviewHash: string,
  * }} DrawnExplanation
+ * `badgeText`: the outlines it explains, as their badges name them: "7", "6a 6b", "2 · écran 1".
+ * `title`: the React component and the verdict, "OrderSettings — À créer".
  * `screens`: the numbers of the screens where what it explains is drawn.
  * `developerDecision`: null when the model judged; "" when the developer decided without a sentence.
+ * `reviewHash`: changes when the developer has to check the explanation again: the verdict,
+ *   the component, the reason, his decision or the question changed, or the uses it is about.
+ */
+/**
+ * A Figma component the page draws no outline for, on all or some of its uses.
+ * @typedef {object} NotOutlined
+ * @property {string} name its number and Figma name, with the uses concerned: "6 Segment", "17 · écrans 1 4 Mode settings"
+ * @property {string} reason what draws it instead, in French
+ * @property {string} reviewHash changes when the developer has to check it again: its uses, its reason
  */
 /**
  * @typedef {object} PageDrawing
@@ -113,8 +133,10 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * @property {DrawingBox} commonBox what holds every screen's drawing: shown one at a time
  *   in this box, the screens' top-left corners coincide
  * @property {DrawnExplanation[]} explanations
- * @property {string[]} notOutlined one sentence per Figma component that is not a React component of its own
+ * @property {NotOutlined[]} notOutlined the Figma components that are no React component of their own
  * @property {CorrectableCandidate[]} correctableCandidates what the correction form offers, by outline number
+ * @property {string} reviewKey names the mock-up's screens: the same from one build of the
+ *   page to the next, so that the browser finds back what the developer already checked
  */
 /**
  * An outlined candidate as the page's correction form shows it.
@@ -154,7 +176,6 @@ const BADGE_HEIGHT = 13
 const BADGE_CHARACTER_WIDTH = 6.5
 const BADGE_PADDING_X = 4
 const MIN_OUTLINED_THICKNESS = 4
-const NAME_PART_SEPARATOR = " · "
 
 /** @param {string} badgeText */
 const measureBadge = (badgeText) =>
@@ -191,27 +212,6 @@ function listNumbersSameOnEveryScreen(judgedCandidates, screenNumbers) {
   }
   return new Set(
     judgedCandidates.filter(isSame).map((candidate) => candidate.number),
-  )
-}
-
-/**
- * What the screens' names share is left out of the tabs: "Editor · Off" and
- * "Editor · Period" give "Off" and "Period".
- * @param {string[]} names
- */
-export function shortenScreenNames(names) {
-  const partsOfNames = names.map((name) => name.split(NAME_PART_SEPARATOR))
-  let sharedPartCount = 0
-  while (
-    partsOfNames.every((parts) => parts.length > sharedPartCount + 1) &&
-    partsOfNames.every(
-      (parts) => parts[sharedPartCount] === partsOfNames[0][sharedPartCount],
-    )
-  ) {
-    sharedPartCount += 1
-  }
-  return partsOfNames.map((parts) =>
-    parts.slice(sharedPartCount).join(NAME_PART_SEPARATOR),
   )
 }
 
@@ -467,7 +467,7 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     verdict,
     isSameOnEveryScreen: numbersSameOnEveryScreen.has(candidate.number),
   })
-  const shortNames = shortenScreenNames(screens.map((screen) => screen.name))
+  const tabNames = nameScreenTabs(screens)
   const drawnScreens = screens.map((screen, screenIndex) => ({
     number: screen.number,
     capture: pickBox(screen.capture),
@@ -476,7 +476,7 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     linkText: hasSeveralScreens
       ? `Écran ${screen.number} — ${screen.name}`
       : "Ouvrir dans Figma",
-    tabName: `${screen.number} · ${shortNames[screenIndex]}`,
+    tabName: tabNames[screenIndex],
     ...drawScreen(screen, { outlinedCandidates, buildPart }),
   }))
 
@@ -490,8 +490,19 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
       const name = nameInstances(candidate, instances, hasSeveralScreens)
       return [
         {
+          reviewHash: hashWhatIsReviewed({
+            figmaName: candidate.figmaName,
+            nodeIds: instances.map((instance) => instance.nodeId),
+            verdict,
+            codeComponent,
+            reason,
+            developerDecision,
+            question,
+            options,
+          }),
           ...buildPart(candidate, verdict),
-          title: `${name} ${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].label}`,
+          badgeText: name,
+          title: `${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].label}`,
           screens: listScreenNumbers(instances),
           reason,
           developerDecision,
@@ -503,21 +514,63 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
       ]
     }),
   )
+  const explainedNumbers = new Set(
+    explanations.map((explanation) => explanation.candidateNumber),
+  )
+  /**
+   * What the developer checks on a screen besides the explanations: which uses are
+   * outlined, and how those that have no explanation are judged.
+   * @param {number} screenNumber
+   */
+  const hashWhatIsReviewedOnScreen = (screenNumber) =>
+    hashWhatIsReviewed(
+      outlinedCandidates.flatMap((candidate) =>
+        candidate.instances
+          .filter((instance) => instance.screen === screenNumber)
+          .map(({ nodeId, verdict, codeComponent }) =>
+            explainedNumbers.has(candidate.number)
+              ? { nodeId }
+              : { nodeId, verdict, codeComponent },
+          ),
+      ),
+    )
 
   return {
     title: titleInventory(screens),
-    fingerprintLine: `Construit le ${fingerprint.createdAt} · maquette modifiée le ${fingerprint.figma.lastModified.slice(0, 10)} · commit ${fingerprint.gitCommit}`,
+    fingerprintLine: `Construit le ${fingerprint.createdAt} · ${tellMockupAndCommit(fingerprint)}`,
     badgeHeight: BADGE_HEIGHT,
-    screens: drawnScreens,
+    screens: drawnScreens.map((screen) => ({
+      ...screen,
+      reviewHash: hashWhatIsReviewedOnScreen(screen.number),
+    })),
+    reviewKey: hashWhatIsReviewed(screens.map((screen) => screen.figmaUrl)),
     commonBox: findCommonBox(drawnScreens.map((screen) => screen.ownBox)),
     explanations,
-    notOutlined: judgedCandidates.flatMap((candidate) =>
-      candidate.outlined
-        ? candidate.partsNotOutlined.map(
-            (part) => `${namePartNotOutlined(candidate, part)} (${part.note})`,
-          )
-        : [`${candidate.number} ${candidate.figmaName} (${candidate.note})`],
-    ),
+    notOutlined: judgedCandidates
+      .flatMap((candidate) =>
+        candidate.outlined
+          ? candidate.partsNotOutlined.map((part) => ({
+              name: namePartNotOutlined(candidate, part),
+              reason: part.note,
+              instances: part.instances,
+            }))
+          : [
+              {
+                name: `${candidate.number} ${candidate.figmaName}`,
+                // render.mjs refuses a candidate without an outline that has no note.
+                reason: candidate.note ?? "",
+                instances: candidate.instances,
+              },
+            ],
+      )
+      .map(({ name, reason, instances }) => ({
+        name,
+        reason,
+        reviewHash: hashWhatIsReviewed({
+          nodeIds: instances.map((instance) => instance.nodeId),
+          reason,
+        }),
+      })),
     correctableCandidates: outlinedCandidates.map((candidate) => ({
       number: candidate.number,
       figmaName: candidate.figmaName,

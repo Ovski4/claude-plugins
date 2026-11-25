@@ -44,13 +44,19 @@ export function parsePullRequestTarget(commandLineArguments) {
   })
   const [repository, pullRequestNumber, ...otherArguments] = positionals
   const commentId = typeof values.comment === "string" ? values.comment : null
-  if (!repository?.includes("/") || !/^\d+$/.test(pullRequestNumber ?? "")) return null
-  if (values.comment !== undefined && !/^\d+$/.test(commentId ?? "")) return null
+  if (!repository?.includes("/") || !/^\d+$/.test(pullRequestNumber ?? ""))
+    return null
+  if (values.comment !== undefined && !/^\d+$/.test(commentId ?? ""))
+    return null
   return { repository, pullRequestNumber, commentId, otherArguments }
 }
 
 /** @param {PullRequestTarget} target */
-export function buildPendingChangeFile({ repository, pullRequestNumber, commentId }) {
+export function buildPendingChangeFile({
+  repository,
+  pullRequestNumber,
+  commentId,
+}) {
   const textName = commentId ? `comment-${commentId}` : "description"
   return path.join(
     PLUGIN_DATA_FOLDER,
@@ -64,12 +70,25 @@ export function buildPendingChangeFile({ repository, pullRequestNumber, commentI
  * @param {string} [standardInput]
  */
 function runGh(ghArguments, standardInput) {
-  return execFileSync("gh", ghArguments, { encoding: "utf8", input: standardInput })
+  return execFileSync("gh", ghArguments, {
+    encoding: "utf8",
+    input: standardInput,
+  })
 }
 
 /** @param {PullRequestTarget} target */
 export function readPullRequestDescription({ repository, pullRequestNumber }) {
-  const description = runGh(["pr", "view", pullRequestNumber, "--repo", repository, "--json", "body", "--jq", ".body"])
+  const description = runGh([
+    "pr",
+    "view",
+    pullRequestNumber,
+    "--repo",
+    repository,
+    "--json",
+    "body",
+    "--jq",
+    ".body",
+  ])
   return description.replace(/\n$/, "")
 }
 
@@ -78,7 +97,9 @@ export function readPullRequestDescription({ repository, pullRequestNumber }) {
  * @returns {{ body: string, authorLogin: string }}
  */
 export function readReviewComment({ repository, commentId }) {
-  const comment = JSON.parse(runGh(["api", `repos/${repository}/pulls/comments/${commentId}`]))
+  const comment = JSON.parse(
+    runGh(["api", `repos/${repository}/pulls/comments/${commentId}`]),
+  )
   return { body: comment.body, authorLogin: comment.user.login }
 }
 
@@ -87,13 +108,31 @@ const WRITERS_BY_KIND = {
   description: {
     readCurrentText: readPullRequestDescription,
     write: ({ repository, pullRequestNumber, textAfter }) =>
-      runGh(["pr", "edit", pullRequestNumber, "--repo", repository, "--body-file", "-"], textAfter),
+      runGh(
+        [
+          "pr",
+          "edit",
+          pullRequestNumber,
+          "--repo",
+          repository,
+          "--body-file",
+          "-",
+        ],
+        textAfter,
+      ),
   },
   "comment edit": {
     readCurrentText: (target) => readReviewComment(target).body,
     write: ({ repository, commentId, textAfter }) =>
       runGh(
-        ["api", "--method", "PATCH", `repos/${repository}/pulls/comments/${commentId}`, "--input", "-"],
+        [
+          "api",
+          "--method",
+          "PATCH",
+          `repos/${repository}/pulls/comments/${commentId}`,
+          "--input",
+          "-",
+        ],
         JSON.stringify({ body: textAfter }),
       ),
   },
@@ -119,7 +158,11 @@ const WRITERS_BY_KIND = {
  */
 export function writePendingChange(pendingChange) {
   const { readCurrentText, write } = WRITERS_BY_KIND[pendingChange.kind]
-  if (readCurrentText && readCurrentText(pendingChange) !== pendingChange.textBefore) return false
+  if (
+    readCurrentText &&
+    readCurrentText(pendingChange) !== pendingChange.textBefore
+  )
+    return false
   write(pendingChange)
   return true
 }

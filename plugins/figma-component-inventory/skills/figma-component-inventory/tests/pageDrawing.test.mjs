@@ -1,11 +1,11 @@
 // @ts-check
 import assert from "node:assert/strict"
 import { test } from "node:test"
+import { nameScreenTabs } from "../scripts/lib/inventoryWording.mjs"
 import { placeLabels } from "../scripts/lib/labelPlacement.mjs"
 import {
   buildPageDrawing,
   findLooseTexts,
-  shortenScreenNames,
 } from "../scripts/lib/pageDrawing.mjs"
 
 /** @typedef {import("../scripts/lib/verdicts.mjs").JudgedCandidate} JudgedCandidate */
@@ -124,15 +124,21 @@ test("labels go to the side of their component and never overlap", () => {
   assert.ok(topsOnTheRight[1] - topsOnTheRight[0] >= LABEL_HEIGHT)
 })
 
-test("the tabs leave out what the screens' names share", () => {
+test("a tab is the screen's number, then what its name does not share with the others'", () => {
   assert.deepEqual(
-    shortenScreenNames(["Editor · Off · Default", "Editor · Period · Default"]),
-    ["Off · Default", "Period · Default"],
+    nameScreenTabs([
+      { number: 1, name: "Editor · Off · Default" },
+      { number: 2, name: "Editor · Period · Default" },
+    ]),
+    ["1 · Off · Default", "2 · Period · Default"],
   )
-  assert.deepEqual(shortenScreenNames(["Editor", "Editor"]), [
-    "Editor",
-    "Editor",
-  ])
+  assert.deepEqual(
+    nameScreenTabs([
+      { number: 1, name: "Editor" },
+      { number: 2, name: "Editor" },
+    ]),
+    ["1 · Editor", "2 · Editor"],
+  )
 })
 
 test("the page gets each screen's drawing, with what is the same on every screen marked", () => {
@@ -196,7 +202,7 @@ test("the page gets each screen's drawing, with what is the same on every screen
     },
   })
 
-  assert.equal(drawing.title, "2 écrans d'un même design")
+  assert.equal(drawing.title, "Editor (2 écrans)")
   assert.equal(
     drawing.fingerprintLine,
     "Construit le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
@@ -241,17 +247,27 @@ test("the page gets each screen's drawing, with what is the same on every screen
     height: 381,
   })
   assert.deepEqual(
-    drawing.explanations.map(({ title, screens, reason }) => [
+    drawing.explanations.map(({ badgeText, title, screens, reason }) => [
+      badgeText,
       title,
       screens,
       reason,
     ]),
     [
-      ["2 · écran 1 OrderOffNotice — À créer", [1], "Un composant par mode."],
-      ["2 · écran 2 OrderSettings — À créer", [2], "Un composant par mode."],
+      [
+        "2 · écran 1",
+        "OrderOffNotice — À créer",
+        [1],
+        "Un composant par mode.",
+      ],
+      ["2 · écran 2", "OrderSettings — À créer", [2], "Un composant par mode."],
     ],
   )
-  assert.deepEqual(drawing.notOutlined, ["3 Divider (Un trait du conteneur.)"])
+  assert.deepEqual(
+    drawing.notOutlined.map(({ name, reason }) => [name, reason]),
+    [["3 Divider", "Un trait du conteneur."]],
+  )
+  assert.match(drawing.notOutlined[0].reviewHash, /^[0-9a-f]{12}$/)
   assert.deepEqual(
     drawing.correctableCandidates.map(({ number, targets, judgement }) => [
       number,
@@ -283,4 +299,58 @@ test("the page gets each screen's drawing, with what is the same on every screen
       [4, ["4 (Toutes ses utilisations) [2] to-create Body"], "Body · À créer"],
     ],
   )
+})
+
+test("a rebuilt page keeps the review hash of what did not change", () => {
+  /** @param {string} noteOfSettings */
+  const drawWith = (noteOfSettings) =>
+    buildPageDrawing({
+      screens: [
+        {
+          number: 1,
+          name: "Editor",
+          width: 400,
+          capture: buildBox([0, 0, 400, 300]),
+          figmaUrl: "https://figma.example/1",
+          captureDataUrl: "data:image/png;base64,",
+        },
+      ],
+      judgedCandidates: [
+        buildJudgedCandidate(
+          1,
+          "Editor",
+          [{ screen: 1, level: 1, box: [0, 0, 400, 300] }],
+          { verdict: "to-create", note: "Rien ne dessine cette fenêtre." },
+        ),
+        buildJudgedCandidate(
+          2,
+          "Settings",
+          [{ screen: 1, level: 2, box: [20, 100, 360, 80] }],
+          { verdict: "to-adapt", note: noteOfSettings },
+        ),
+      ],
+      fingerprint: {
+        createdAt: "2026-11-23",
+        figma: {
+          fileKey: "abc",
+          version: "1",
+          lastModified: "2026-11-20T10:00:00Z",
+        },
+        gitCommit: "34ee98aa6",
+      },
+    })
+  const before = drawWith("Il manque le sous-titre.")
+  const after = drawWith("Il manque le sous-titre et l'icône.")
+
+  /** @param {ReturnType<typeof drawWith>} drawing */
+  const listExplanationHashes = (drawing) =>
+    drawing.explanations.map((explanation) => explanation.reviewHash)
+  const [editorBefore, settingsBefore] = listExplanationHashes(before)
+  const [editorAfter, settingsAfter] = listExplanationHashes(after)
+  assert.match(editorBefore, /^[0-9a-f]{12}$/)
+  assert.equal(editorAfter, editorBefore)
+  assert.notEqual(settingsAfter, settingsBefore)
+  // The screen is checked for what its explanations do not say: it has not changed.
+  assert.equal(after.screens[0].reviewHash, before.screens[0].reviewHash)
+  assert.equal(after.reviewKey, before.reviewKey)
 })

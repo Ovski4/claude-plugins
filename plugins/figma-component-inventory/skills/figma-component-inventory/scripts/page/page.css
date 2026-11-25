@@ -1,67 +1,19 @@
+/* The inventory page's own styles, pasted after pageBase.css. */
 :root {
-  --page-background: #ffffff;
-  --text: #1c2430;
-  --text-muted: #5b6676;
-  --halo: #ffffff;
-  --loose-text: #d97706;
-}
-body {
-  margin: 0;
-  padding: 24px 32px 48px;
-  background: var(--page-background);
-  color: var(--text);
-  font:
-    14px/1.4 system-ui,
-    sans-serif;
-}
-h1 {
-  margin: 0;
-  font-size: 18px;
-}
-.fingerprint {
-  margin: 4px 0 16px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
-.approval {
-  display: inline-block;
-  margin: 8px 0 0;
-  padding: 2px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--halo);
-  background: var(--to-decide);
-}
-.approval.approved {
-  background: var(--reused);
-}
-.developer-words {
-  color: var(--text);
-  font-weight: 600;
-}
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  margin: 0 0 16px;
-  padding: 0;
-  list-style: none;
+  --loose-text: #b45309;
 }
 .legend li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   color: var(--verdict);
-  font-weight: 600;
 }
 .legend svg {
   width: 36px;
   height: 12px;
 }
-.not-outlined {
-  color: var(--text-muted);
-  font-size: 12px;
+/* A Figma component without an outline has no verdict, so no colour of its own, and
+   nothing to pick on the capture. */
+.panel-items.not-outlined > li {
+  --item-color: var(--text-muted);
+  cursor: auto;
 }
 .screens svg {
   display: block;
@@ -76,42 +28,8 @@ h1 {
   stroke-width: 2;
   stroke-dasharray: 2 3;
 }
-.explanations {
-  max-width: 900px;
-  margin: 24px 0 8px;
-  padding: 0;
-  list-style: none;
-}
-.explanations li {
-  margin-bottom: 10px;
-  padding-left: 12px;
-  border-left: 3px solid var(--verdict);
-}
-.explanations strong {
-  color: var(--verdict);
-}
-/* On a wide window the explanations sit beside the image and stay in view while it scrolls. */
-@media (min-width: 1400px) {
-  .screens-and-explanations {
-    display: flex;
-    align-items: flex-start;
-    gap: 32px;
-  }
-  .screens {
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-  .explanations {
-    position: sticky;
-    top: 16px;
-    flex: 1 1 360px;
-    min-width: 360px;
-    max-width: 560px;
-    max-height: calc(100vh - 32px);
-    margin-top: 16px;
-    overflow-y: auto;
-    font-size: 13px;
-  }
+.panel-items > li {
+  --item-color: var(--verdict);
 }
 .outline-halo {
   fill: none;
@@ -145,43 +63,18 @@ h1 {
     11px system-ui,
     sans-serif;
 }
+/* The drawings shrink with the window down to this width, then the panel goes under them. */
 .screens {
   display: flex;
+  flex: 1 1 700px;
   flex-wrap: wrap;
   align-items: flex-start;
   gap: 32px 16px;
-  margin-top: 16px;
+  min-width: 0;
 }
-.tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 0 0 16px;
-}
-.tabs:empty {
-  display: none;
-}
-.tabs button,
-.feedback-summary button,
-.correction button {
-  padding: 4px 12px;
-  border: 1px solid var(--text-muted);
-  border-radius: 999px;
-  background: var(--page-background);
-  color: var(--text);
-  font: inherit;
-  font-size: 13px;
-  cursor: pointer;
-}
-.tabs button[aria-selected="true"] {
-  background: var(--text);
-  color: var(--page-background);
-}
-.tabs .tabs-hint {
-  align-self: center;
-  margin-left: 8px;
-  color: var(--text-muted);
-  font-size: 12px;
+/* One screen: its title and its drawing, on a card. */
+.screens section {
+  padding: 12px 16px 16px;
 }
 .page-switch {
   display: block;
@@ -191,22 +84,17 @@ h1 {
 .page-switch[hidden] {
   display: none;
 }
-.page-hint {
-  margin: 0 0 8px;
-  color: var(--text-muted);
-  font-size: 12px;
-}
 [data-candidate] {
   cursor: pointer;
 }
 .isolating [data-candidate]:not(.isolated),
 .isolating .loose-text {
-  opacity: 0.12;
+  opacity: var(--faded-opacity);
 }
 .isolation-mask {
   display: none;
-  fill: var(--page-background);
-  fill-opacity: 0.82;
+  fill: var(--surface);
+  fill-opacity: var(--veil-opacity);
   fill-rule: evenodd;
   stroke: none;
 }
@@ -231,12 +119,12 @@ h1 {
   stroke: none;
 }
 .differences-only .same-on-every-screen {
-  opacity: 0.12;
+  opacity: var(--faded-opacity);
 }
 .veil-over-same-components {
   display: none;
-  fill: var(--page-background);
-  fill-opacity: 0.82;
+  fill: var(--surface);
+  fill-opacity: var(--veil-opacity);
   stroke: none;
   pointer-events: none;
 }
@@ -252,36 +140,9 @@ h1 {
   stroke: var(--text);
   stroke-width: 2;
 }
-.explanations li.corrected strong::after {
+.panel-items li.corrected .item-title::after {
   content: " · corrigé";
   color: var(--text);
-}
-/* The correction form and the text to paste stay at the bottom of the window. */
-.feedback {
-  position: fixed;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 24px;
-  max-height: 60vh;
-  padding: 12px 32px;
-  overflow-y: auto;
-  border-top: 1px solid var(--text-muted);
-  background: var(--page-background);
-  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.08);
-  font-size: 13px;
-}
-.correction {
-  display: flex;
-  flex: 1 1 560px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  gap: 8px 16px;
-}
-.feedback [hidden] {
-  display: none;
 }
 /* A tab strip: a line under the tabs, which the picked tab opens onto the fields below. */
 .correction-targets {
@@ -303,97 +164,14 @@ h1 {
   color: var(--text);
 }
 .correction .correction-targets button[aria-selected="true"] {
-  border-color: var(--text-muted) var(--text-muted) var(--page-background);
-  background: var(--page-background);
+  border-color: var(--text-muted) var(--text-muted) var(--surface);
+  background: var(--surface);
   color: var(--text);
   font-weight: 600;
 }
 .correction-targets .has-correction::after {
   content: " ●";
 }
-.correction-title {
-  flex-basis: 100%;
-  margin: 0;
-  font-weight: 600;
-}
-.correction label {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  color: var(--text-muted);
-}
-.correction input,
-.correction select,
-.feedback textarea {
-  padding: 4px 6px;
-  border: 1px solid var(--text-muted);
-  border-radius: 4px;
-  color: var(--text);
-  font: inherit;
-}
-.correction-note {
-  flex: 1 1 240px;
-}
 #correction-component {
   min-width: 240px;
-}
-.correction-choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-.correction-choices legend {
-  margin-bottom: 2px;
-  padding: 0;
-  color: var(--text-muted);
-}
-.correction-choices label {
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 10px;
-  border: 1px solid var(--verdict, var(--text-muted));
-  border-radius: 999px;
-  color: var(--verdict, var(--text));
-  cursor: pointer;
-}
-.correction-choices label:has(input:checked) {
-  background: var(--verdict, var(--text));
-  color: var(--page-background);
-}
-.correction-choices input {
-  display: none;
-}
-.feedback-summary {
-  display: flex;
-  flex: 1 1 360px;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.feedback-count {
-  margin: 0;
-  color: var(--text-muted);
-}
-.feedback-lines {
-  flex-basis: 100%;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.feedback-summary .feedback-lines button {
-  padding: 2px 0;
-  border: none;
-  border-radius: 0;
-  text-align: left;
-}
-.feedback-lines button:hover {
-  text-decoration: underline;
-}
-.feedback textarea {
-  flex-basis: 100%;
-  resize: vertical;
 }

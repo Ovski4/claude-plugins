@@ -16,7 +16,13 @@ const PLAYWRIGHT_VERSION = "1.64.1"
 // for a script run by hand or from a clone of the marketplace repo.
 export const PLUGIN_DATA_FOLDER =
   process.env.CLAUDE_PLUGIN_DATA ??
-  path.join(os.homedir(), ".claude", "plugins", "data", "github-pr-screenshots-ovski4")
+  path.join(
+    os.homedir(),
+    ".claude",
+    "plugins",
+    "data",
+    "github-pr-screenshots-ovski4",
+  )
 
 // Holds the GitHub session cookies: whoever copies this folder can act as the signed-in user.
 const BROWSER_PROFILE_FOLDER = path.join(PLUGIN_DATA_FOLDER, "browser-profile")
@@ -24,15 +30,38 @@ const BROWSER_PROFILE_FOLDER = path.join(PLUGIN_DATA_FOLDER, "browser-profile")
 // Typed loosely: Playwright lives in the data folder, where the editor's type checker can't see it.
 /** @returns {{ chromium: any }} */
 function loadPlaywrightInstallingItIfMissing() {
-  const playwrightPackageFile = path.join(PLUGIN_DATA_FOLDER, "node_modules", "playwright", "package.json")
+  const playwrightPackageFile = path.join(
+    PLUGIN_DATA_FOLDER,
+    "node_modules",
+    "playwright",
+    "package.json",
+  )
   if (!fs.existsSync(playwrightPackageFile)) {
-    console.error(`First run: installing Playwright ${PLAYWRIGHT_VERSION} and its Chromium in ${PLUGIN_DATA_FOLDER}`)
+    console.error(
+      `First run: installing Playwright ${PLAYWRIGHT_VERSION} and its Chromium in ${PLUGIN_DATA_FOLDER}`,
+    )
     fs.mkdirSync(PLUGIN_DATA_FOLDER, { recursive: true })
-    execFileSync("npm", ["install", "--prefix", PLUGIN_DATA_FOLDER, `playwright@${PLAYWRIGHT_VERSION}`], {
+    execFileSync(
+      "npm",
+      [
+        "install",
+        "--prefix",
+        PLUGIN_DATA_FOLDER,
+        `playwright@${PLAYWRIGHT_VERSION}`,
+      ],
+      {
+        stdio: ["ignore", "inherit", "inherit"],
+      },
+    )
+    const playwrightCli = path.join(
+      PLUGIN_DATA_FOLDER,
+      "node_modules",
+      "playwright",
+      "cli.js",
+    )
+    execFileSync(process.execPath, [playwrightCli, "install", "chromium"], {
       stdio: ["ignore", "inherit", "inherit"],
     })
-    const playwrightCli = path.join(PLUGIN_DATA_FOLDER, "node_modules", "playwright", "cli.js")
-    execFileSync(process.execPath, [playwrightCli, "install", "chromium"], { stdio: ["ignore", "inherit", "inherit"] })
   }
   return createRequire(playwrightPackageFile)("playwright")
 }

@@ -5,7 +5,8 @@
 
 const UPLOAD_TIME_LIMIT_MS = 60_000
 const COMMENT_BOX_SELECTOR = "#new_comment_field"
-const UPLOADED_IMAGE_URL_PATTERN = /https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]+/g
+const UPLOADED_IMAGE_URL_PATTERN =
+  /https:\/\/github\.com\/user-attachments\/assets\/[0-9a-f-]+/g
 
 /**
  * @param {any} page a Playwright page showing the pull request, signed in
@@ -28,15 +29,21 @@ export async function uploadImagesThroughCommentBox(page, imageFiles) {
           /** @param {{ selector: string, linksBefore: number }} arg */
           ({ selector, linksBefore }) =>
             /** @type {HTMLTextAreaElement | null} */ (
-              (document.querySelector(selector))?.value.match(/user-attachments\/assets\//g) ?? []
+              document
+                .querySelector(selector)
+                ?.value.match(/user-attachments\/assets\//g) ?? []
             ).length > linksBefore,
-          { selector: COMMENT_BOX_SELECTOR, linksBefore: uploadedImageUrls.length },
+          {
+            selector: COMMENT_BOX_SELECTOR,
+            linksBefore: uploadedImageUrls.length,
+          },
           { timeout: UPLOAD_TIME_LIMIT_MS },
         )
         .then(() => true)
         .catch(() => false)
       if (!hasUploadFinished) return { imageFileNotUploaded: imageFile }
-      const linksInCommentBox = (await commentBox.inputValue()).match(UPLOADED_IMAGE_URL_PATTERN) ?? []
+      const linksInCommentBox =
+        (await commentBox.inputValue()).match(UPLOADED_IMAGE_URL_PATTERN) ?? []
       uploadedImageUrls.push(linksInCommentBox[uploadedImageUrls.length])
     }
     return { uploadedImageUrls }

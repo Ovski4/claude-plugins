@@ -1,0 +1,429 @@
+/* What inventory.html and specs.html look alike by: render.mjs pastes this file before each
+   page's own page.css. Colours, the header, the legend, the tabs, the cards and the
+   corrections bar at the bottom of the window. */
+:root {
+  --page-background: #f8fafc;
+  --surface: #ffffff;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #5b6676;
+  --halo: #ffffff;
+  --approval-given: #15803d;
+  --approval-missing: #dc2626;
+  /* How much of what is not picked stays visible: the outlines, and the image under the veil. */
+  --faded-opacity: 0.12;
+  --veil-opacity: 0.82;
+  /* How much of a list's items stays visible beside the picked one. */
+  --unpicked-opacity: 0.4;
+}
+body {
+  margin: 0;
+  /* The bottom leaves room for the corrections bar. */
+  padding: 24px 32px 96px;
+  background: var(--page-background);
+  color: var(--text);
+  font:
+    14px/1.45 system-ui,
+    sans-serif;
+}
+h1 {
+  margin: 0;
+  font-size: 18px;
+}
+.page-header {
+  margin-bottom: 16px;
+}
+/* What the page is about: the name the screens of the mock-up share. */
+.page-subject {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.page-status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.approval {
+  margin: 0;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--halo);
+  background: var(--approval-missing);
+}
+.approval.approved {
+  background: var(--approval-given);
+}
+/* A round "i": what the page was built on shows while the pointer or the focus is on it. */
+.info-bubble {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--text-muted);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  font:
+    italic 700 13px/22px Georgia,
+    serif;
+  cursor: help;
+}
+.fingerprint {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1;
+  display: none;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.info-bubble:hover + .fingerprint,
+.info-bubble:focus-visible + .fingerprint {
+  display: block;
+}
+/* On a desktop window, where the page stands sits at the top right, beside the title. */
+@media (min-width: 1000px) {
+  .page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 32px;
+  }
+  .page-status {
+    margin-top: 0;
+  }
+  .fingerprint {
+    right: 0;
+    left: auto;
+  }
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+}
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.page-hint {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+/* A white surface on the page's grey: a capture, a side panel. */
+.card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 16px;
+}
+.tabs:empty {
+  display: none;
+}
+.tabs button,
+.feedback-summary button,
+.approve button,
+.correction button {
+  padding: 4px 12px;
+  border: 1px solid var(--text-muted);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.tabs button[aria-selected="true"],
+.component-tree button[aria-current="true"] {
+  background: var(--text);
+  color: var(--surface);
+}
+/* The correction form and the text to paste stay at the bottom of the window. */
+.feedback {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  max-height: 60vh;
+  padding: 12px 32px;
+  overflow-y: auto;
+  border-top: 1px solid var(--text-muted);
+  background: var(--surface);
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 0.08);
+  font-size: 13px;
+}
+.correction {
+  display: flex;
+  flex: 1 1 560px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 8px 16px;
+}
+.feedback [hidden] {
+  display: none;
+}
+.correction-title {
+  flex-basis: 100%;
+  margin: 0;
+  font-weight: 600;
+}
+.correction label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-muted);
+}
+.correction input,
+.correction select,
+.feedback textarea {
+  padding: 4px 6px;
+  border: 1px solid var(--text-muted);
+  border-radius: 4px;
+  color: var(--text);
+  font: inherit;
+}
+.correction-note {
+  flex: 1 1 240px;
+}
+.correction-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+.correction-choices legend {
+  margin-bottom: 2px;
+  padding: 0;
+  color: var(--text-muted);
+}
+/* A choice looks like a button: filled once picked, in the colour of what it stands for. */
+.correction-choices label {
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid var(--verdict, var(--text-muted));
+  border-radius: 6px;
+  color: var(--verdict, var(--text));
+  cursor: pointer;
+}
+.correction-choices label:has(input:checked) {
+  background: var(--verdict, var(--text));
+  color: var(--surface);
+}
+.correction-choices input {
+  display: none;
+}
+.feedback-summary {
+  display: flex;
+  flex: 1 1 360px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.feedback-count {
+  margin: 0;
+  color: var(--text-muted);
+}
+.feedback-lines {
+  flex-basis: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.feedback-summary .feedback-lines button {
+  padding: 2px 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  text-align: left;
+}
+.feedback-lines button:hover {
+  text-decoration: underline;
+}
+/* What throws work away (« Tout effacer ») is plain underlined text: it never looks like
+   the button beside it. */
+.feedback-summary button.quiet-action {
+  padding: 4px 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  text-decoration: underline;
+}
+.feedback textarea {
+  flex-basis: 100%;
+  resize: vertical;
+}
+/* The capture and its side panel: side by side while the window has room for both, the
+   panel under the capture otherwise. */
+.capture-beside-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 32px;
+}
+/* A panel that stays in view while the capture scrolls, and scrolls on its own. */
+.side-panel {
+  position: sticky;
+  top: 16px;
+  box-sizing: border-box;
+  flex: 1 1 360px;
+  min-width: 360px;
+  max-width: 560px;
+  max-height: calc(100vh - 32px - 64px);
+  padding: 16px 18px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.side-panel h3,
+.component-tree h3 {
+  margin: 16px 0 6px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.side-panel h3:first-child,
+.component-tree h3:first-child {
+  margin-top: 0;
+}
+/* What the panel lists, one item per thing outlined on the capture: a component of the
+   inventory, a zone of the specs. Each page gives --item-color, the colour of its outline. */
+.panel-items {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.panel-items > li {
+  margin-bottom: 8px;
+  padding: 4px 8px 4px 12px;
+  border-left: 3px solid var(--item-color);
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+.item-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--item-color);
+  font-weight: 600;
+}
+/* The number or the letter the outline carries on the capture. */
+.item-badge {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 2px;
+  background: var(--item-color);
+  color: var(--halo);
+  font:
+    600 10px/14px system-ui,
+    sans-serif;
+  text-align: center;
+  white-space: nowrap;
+}
+/* The picked item is tinted, the others step back: "picked" on the specs page, "isolated"
+   on the inventory's. */
+.panel-items > li.picked,
+.panel-items > li.isolated {
+  background: color-mix(in srgb, var(--item-color) 10%, transparent);
+}
+.panel-items.has-picked > li:not(.picked),
+.isolating .panel-items > li:not(.isolated) {
+  opacity: var(--unpicked-opacity);
+}
+.developer-words {
+  color: var(--text);
+  font-weight: 600;
+}
+/* A box the developer ticks once he has checked what it sits on: a component, a screen.
+   Ticked, it takes the colour of the text: no verdict's colour says "checked". */
+.review-check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.review-check:has(input:checked) {
+  color: var(--text);
+  font-weight: 600;
+}
+.review-check:has(input:disabled) {
+  cursor: not-allowed;
+}
+.review-check input {
+  margin: 0;
+  accent-color: var(--text);
+}
+/* The box the button « Suivant à vérifier » has just brought into view. */
+.review-check.pointed {
+  border-radius: 4px;
+  outline: 2px solid var(--text);
+  outline-offset: 4px;
+}
+/* How far the developer is: "12 / 31 vérifiés". */
+.review-count {
+  margin: 0;
+  font-weight: 600;
+}
+/* A screen whose box is ticked; a component whose own box and screens' boxes all are. */
+.tabs button.reviewed::after {
+  content: " ✓";
+}
+.component-tree button.reviewed::after {
+  content: "✓";
+}
+/* Once every box is ticked: the command that approves, for the developer's terminal. */
+.approve {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.approve p {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+.approve code {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--page-background);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
