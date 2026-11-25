@@ -1,7 +1,8 @@
 // @ts-check
 // The script of inventory.html: draws what lib/pageDrawing.mjs worked out, answers the tabs,
 // the switches and the clicks, and turns the developer's corrections into text for the chat.
-// render.mjs pastes it into the page, so it imports nothing.
+// render.mjs pastes it into the page, so it imports nothing: it calls as globals the
+// functions of pageReview.mjs and of lib/feedbackText.mjs, pasted before it.
 
 /** @typedef {import("../lib/pageDrawing.mjs").PageDrawing} PageDrawing */
 /** @typedef {import("../lib/pageDrawing.mjs").DrawnScreen} DrawnScreen */
@@ -14,7 +15,8 @@
  * What render.mjs writes into the page.
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
- *   verdicts: { key: string, label: string, color: string }[],
+ *   approveCommand: string | null,
+ *   verdicts: { key: string, label: string, color: string, isDrawnOnThePage: boolean }[],
  *   correctionVerdicts: { key: string, label: string }[],
  *   verdictsHash: string,
  * }} Inventory
@@ -321,7 +323,25 @@ function drawScreen(screen) {
   const title = createElement("h2")
   title.append(figmaLink)
   const section = createElement("section")
-  section.append(title, svg)
+  section.className = "card"
+  section.append(
+    title,
+    svg,
+    createReviewCheck(
+      {
+        reviewHash: screen.reviewHash,
+        label:
+          "Écran vérifié : tout ce qui est entouré est juste, rien n'est oublié",
+        subject: "screen",
+        whyNotYet: null,
+      },
+      {
+        candidateNumber: null,
+        tabOfScreen: screen.number,
+        drawnOnScreens: [screen.number],
+      },
+    ),
+  )
   getElement("screens").append(section)
   return { screen, section, svg }
 }
@@ -362,12 +382,12 @@ function drawTabs(drawnScreens, drawnExplanations) {
         !explanation.screens.some((screenNumber) => screenNumber === shown)
     }
   }
-  const buttons = choices.map(({ shown, text }) =>
-    createTabButton(text, () => show(shown)),
-  )
-  const hint = createElement("span", "← → pour passer d'un écran à l'autre")
-  hint.className = "tabs-hint"
-  getElement("tabs").append(...buttons, hint)
+  const buttons = choices.map(({ shown, text }) => {
+    const button = createTabButton(text, () => show(shown))
+    button.setAttribute("data-screen", String(shown))
+    return button
+  })
+  getElement("tabs").append(...buttons)
 
   document.addEventListener("keydown", (event) => {
     const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key]
@@ -393,13 +413,11 @@ function wireSwitch(switchId) {
 
 function drawHeader() {
   document.title = `Inventaire — ${inventory.title}`
-  getElement("screen-name").textContent = inventory.title
-  const approval = getElement("approval")
-  approval.textContent = inventory.approvalDate
-    ? `Validé par le développeur le ${inventory.approvalDate}`
-    : "Brouillon — pas encore validé par le développeur"
-  approval.classList.toggle("approved", Boolean(inventory.approvalDate))
-  getElement("fingerprint").textContent = inventory.fingerprintLine
+  showPageHeader({
+    subject: inventory.title,
+    approvalDate: inventory.approvalDate,
+    fingerprintLine: inventory.fingerprintLine,
+  })
 
   // Each verdict's colour comes with the data: "--reused" for the page's own rules, and
   // "--verdict" on any element that carries the verdict as a class.
@@ -413,7 +431,10 @@ function drawHeader() {
       .join("\n"),
   )
   document.head.append(verdictColours)
-  for (const { key, label } of inventory.verdicts) {
+  const verdictsInTheLegend = inventory.verdicts.filter(
+    (verdict) => verdict.isDrawnOnThePage,
+  )
+  for (const { key, label } of verdictsInTheLegend) {
     const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
     swatch.append(
       createSvgElement("line", {
@@ -429,9 +450,32 @@ function drawHeader() {
     item.append(swatch, label)
     getElement("legend").append(item)
   }
-  if (inventory.notOutlined.length) {
-    getElement("not-outlined").textContent =
-      `Non entourés : ${inventory.notOutlined.join(" ; ")}`
+}
+
+/**
+ * Under the explanations: the Figma components that are no React component of their own,
+ * each with what draws it instead and a box, as nothing on the capture shows them.
+ */
+function drawNotOutlined() {
+  getElement("not-outlined-heading").hidden = !inventory.notOutlined.length
+  for (const { name, reason, reviewHash } of inventory.notOutlined) {
+    const title = createElement("strong", name)
+    title.className = "item-title"
+    const item = createElement("li")
+    item.append(
+      title,
+      reason,
+      createReviewCheck(
+        {
+          reviewHash,
+          label: "Vérifié : pas un composant à part",
+          subject: "component",
+          whyNotYet: null,
+        },
+        { candidateNumber: null, tabOfScreen: null, drawnOnScreens: [] },
+      ),
+    )
+    getElement("not-outlined").append(item)
   }
 }
 
@@ -445,8 +489,13 @@ function drawExplanations() {
     item.className = classOfPart(explanation)
     item.setAttribute("data-candidate", String(explanation.candidateNumber))
     item.addEventListener("click", () => isolate(explanation.candidateNumber))
-    item.append(createElement("strong", explanation.title))
-    if (explanation.reason) item.append(createElement("br"), explanation.reason)
+    const badge = createElement("span", explanation.badgeText)
+    badge.className = "item-badge"
+    const title = createElement("strong")
+    title.className = "item-title"
+    title.append(badge, explanation.title)
+    item.append(title)
+    if (explanation.reason) item.append(explanation.reason)
     if (explanation.developerDecision !== null) {
       const decision = createElement(
         "span",
@@ -457,17 +506,96 @@ function drawExplanations() {
     }
     if (explanation.question)
       item.append(createElement("br"), explanation.question)
+    item.append(
+      createReviewCheck(
+        {
+          reviewHash: explanation.reviewHash,
+          label: "Vérifié",
+          subject: "component",
+          whyNotYet:
+            explanation.verdict === "to-decide" ? WHY_NOT_YET.undecided : null,
+        },
+        {
+          candidateNumber: explanation.candidateNumber,
+          tabOfScreen: null,
+          drawnOnScreens: explanation.screens,
+        },
+      ),
+    )
     getElement("explanations").append(item)
     return { explanation, item }
   })
 }
 
-/** @param {Event} event */
-function isTypingInAField(event) {
-  return (
-    event.target instanceof Element &&
-    Boolean(event.target.closest("input, select, textarea"))
+// The boxes the developer ticks: one per explanation, one per screen.
+/**
+ * @typedef {object} DrawnReviewBox
+ * @property {HTMLElement} reviewBox
+ * @property {ReviewCheck} check as it stands while nothing is corrected
+ * @property {number | null} candidateNumber the outlined component it is about; null for a screen and for what has no outline
+ * @property {number | null} tabOfScreen the screen it is about; null for a component
+ * @property {number[]} drawnOnScreens the screens whose tab shows the box; empty for a box every tab shows
+ */
+/** @type {DrawnReviewBox[]} */
+const drawnReviewBoxes = []
+
+/**
+ * @param {ReviewCheck} check
+ * @param {Pick<DrawnReviewBox, "candidateNumber" | "tabOfScreen" | "drawnOnScreens">} subject
+ */
+function createReviewCheck(check, subject) {
+  const reviewBox = createReviewBox(check, showReview)
+  drawnReviewBoxes.push({ reviewBox, check, ...subject })
+  return reviewBox
+}
+
+/** The numbers of the candidates that carry a correction, on all or some of their uses. */
+const listCorrectedNumbers = () =>
+  new Set(
+    [...corrections.keys()].map((id) => targetsById.get(id)?.candidateNumber),
   )
+
+/**
+ * Ticks what the developer has checked and counts it. A component that waits for his
+ * decision, or that carries a correction, cannot be ticked: it is not right as it is.
+ */
+function showReview() {
+  const correctedNumbers = listCorrectedNumbers()
+  const checks = drawnReviewBoxes.map((drawn) => {
+    const isCorrected = correctedNumbers.has(drawn.candidateNumber ?? undefined)
+    const check = {
+      ...drawn.check,
+      whyNotYet:
+        drawn.check.whyNotYet ?? (isCorrected ? WHY_NOT_YET.corrected : null),
+    }
+    fillReviewBox(drawn.reviewBox, check)
+    if (drawn.tabOfScreen !== null)
+      document
+        .querySelector(`.tabs [data-screen="${drawn.tabOfScreen}"]`)
+        ?.classList.toggle("reviewed", isReviewed(check))
+    return check
+  })
+  showReviewProgress(checks, {
+    approveCommand: inventory.approveCommand,
+    correctionCount: corrections.size,
+    showCheck: showReviewBoxOf,
+  })
+}
+
+/**
+ * Brings a box into view, on the tab of a screen that shows it when the picked tab does not.
+ * @param {ReviewCheck} check
+ */
+function showReviewBoxOf(check) {
+  const drawn = drawnReviewBoxes.find(
+    (each) => each.check.reviewHash === check.reviewHash,
+  )
+  if (!drawn) return
+  // The box is read at full strength: nothing stays faded around it.
+  if (isolatedNumber !== null) isolate(null)
+  const isOnThePickedTab = drawn.reviewBox.offsetParent !== null
+  if (!isOnThePickedTab) showTabOfScreen?.(drawn.drawnOnScreens[0])
+  pointAtReviewBox(drawn.reviewBox)
 }
 
 // The developer's corrections, by what they apply to: "7" for every use, "7b" or
@@ -689,9 +817,7 @@ function openCorrection(targetId) {
 
 /** Marks the corrected candidates, and updates the count, the list of corrections and the saved copy. */
 function showCorrections() {
-  const correctedNumbers = new Set(
-    [...corrections.keys()].map((id) => targetsById.get(id)?.candidateNumber),
-  )
+  const correctedNumbers = listCorrectedNumbers()
   markCandidateElements("corrected", (number) => correctedNumbers.has(number))
   const count = corrections.size
   getElement("feedback-lines").replaceChildren(
@@ -714,6 +840,7 @@ function showCorrections() {
   feedbackTextArea.hidden = true
   for (const id of ["feedback-copy", "feedback-reset"])
     getElement(id).hidden = !count
+  showReview()
   try {
     if (count)
       localStorage.setItem(
@@ -739,29 +866,24 @@ function restoreCorrections() {
   }
 }
 
-async function copyFeedbackText() {
+function copyFeedbackText() {
   const text = buildFeedbackText(
     inventory.title,
     [...corrections.values()],
     verdictLabels,
   )
-  const copyButton = getElement("feedback-copy")
-  try {
-    await navigator.clipboard.writeText(text)
-    copyButton.textContent = "Copié"
-    setTimeout(() => (copyButton.textContent = "Copier les corrections"), 1500)
-  } catch {
-    // The browser refuses the clipboard: the text is shown, selected for a manual copy.
+  copyWithConfirmation(getElement("feedback-copy"), text, () => {
     feedbackTextArea.value = text
     feedbackTextArea.hidden = false
     feedbackTextArea.select()
-  }
+  })
 }
 
 drawHeader()
 const drawnScreens = inventory.screens.map(drawScreen)
 wireSwitch("texts-outside-leaves")
 const drawnExplanations = drawExplanations()
+drawNotOutlined()
 if (drawnScreens.length > 1) {
   drawTabs(drawnScreens, drawnExplanations)
   getElement("differences-switch").hidden = false
@@ -769,10 +891,15 @@ if (drawnScreens.length > 1) {
 }
 drawCorrectionForm()
 restoreCorrections()
+restoreReview(
+  `inventory-reviewed ${inventory.reviewKey}`,
+  drawnReviewBoxes.map((drawn) => drawn.check.reviewHash),
+)
 showCorrections()
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && isolatedNumber !== null) isolate(null)
+  if (event.key !== "Escape" || isTypingInAField(event)) return
+  if (isolatedNumber !== null) isolate(null)
 })
 // A click beside the images and the reasons shows everything back; the page's own
 // controls (tabs, switches, links, the correction form) leave the isolation as it is.

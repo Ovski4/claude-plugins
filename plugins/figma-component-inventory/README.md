@@ -22,6 +22,12 @@ together.
 It is written for Claude Sonnet: in Claude Code, the `model` field of `SKILL.md` selects it.
 A tool that ignores that field runs the skill on its current model.
 
+The plugin holds a second skill, `/figma-component-specs <inventory-out-dir>`, the step after
+an approved inventory: for each component to create or to adapt, its props and what each one
+drives on the captures. It is described in
+[its own section](#figma-component-specs--the-props-of-the-components-to-create-or-to-adapt);
+everything before that section is about the inventory.
+
 ## What it needs
 
 The scripts judge the code of the repo they are run from.
@@ -105,7 +111,7 @@ node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, 
 #                                                     2. model: fills verdicts.json
 node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes inventory.html
 #                                                     4. developer: corrections made on the page, pasted in the chat; the model applies them
-node scripts/render.mjs <out-dir> --approve         # 5. once the developer agrees: stamp + inventory.md + map lines
+node scripts/render.mjs <out-dir> --approve=<code>  # 5. developer: the command the page shows once every box is ticked: stamp + inventory.md + map lines
 ```
 
 Both commands run from the repo whose code is judged, since code paths are checked against
@@ -123,7 +129,7 @@ it.
 
 ## Code
 
-Everything is in `skills/figma-component-inventory`:
+The inventory's code is in `skills/figma-component-inventory`:
 
 ```
 SKILL.md                  what the model follows
@@ -133,7 +139,9 @@ scripts/
   render.mjs              command: checks verdicts.json, writes inventory.html, approves
   page/                   the parts of inventory.html, which render.mjs pastes into one file with lib/feedbackText.mjs
     page.html               its structure
-    page.css                its styles
+    pageBase.css            what inventory.html and specs.html look alike by: colours, header, legend, tabs, cards, corrections bar
+    pageReview.mjs          what both pages do alike: the header's texts, the boxes the developer ticks, their count, the command that approves
+    page.css                the inventory page's own styles
     page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches, clicks and the correction form
     feedbackTextFunctions.d.ts tells the type check that page.js finds the functions of feedbackText.mjs in the page
   lib/                    one module per job, used by the two commands
@@ -144,6 +152,8 @@ scripts/
     figmaToCodeMap.mjs      what the repo's Figma-to-code map says of a Figma component
     brief.mjs               the content of brief.md
     verdicts.mjs            the five verdicts (label, colour, required fields), the checks, the approval
+    inventoryIndex.mjs      writes out/index.md: one line per inventory, with where it and its specs stand
+    approvedInventory.mjs   an approved inventory as the steps after it read it; refuses any other
     inventorySummary.mjs    the content of inventory.md
     inventoryWording.mjs    the French names that inventory.html and inventory.md share: outlines, screens, title
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
@@ -193,7 +203,8 @@ and `Instance` types of `scripts/lib/collectCandidates.mjs`.
   inside another. `parent` is the number of the candidate the instance sits in.
 - `box`: pixels at scale 1, from the top-left corner of the screen. `screens[].capture` uses
   the same coordinates: it starts above and left of the screen when the screen has a shadow.
-- `icons`: icon components (`ic/…`) found directly inside: listed, never outlined.
+- `icons`: icon components (`ic/…`) found directly inside: listed, never outlined. Each instance has its own
+  `icons` too: what tells apart three icon buttons of one variant.
 - `fingerprint`: the Figma version and the commit the file was built on. `render.mjs`
   refuses verdicts filled for another Figma version.
 
@@ -206,9 +217,60 @@ What the model does not write:
 - `decidedBy: "developer"` and `developerDecision`: the entry is a correction the developer
   gave. `developerDecision` is one short French sentence saying what he decided, written so
   that it reads alone in `inventory.md`. No model changes the entry afterwards.
-- `approval` (written by `render.mjs --approve`): the date the developer approved and a hash
-  of the verdicts. A page without a valid approval is shown as « Brouillon »; any later
+- `approval` (written by `render.mjs --approve=<code>`, which the developer runs: the page
+  shows the command once he has ticked every box, and the code is refused when the verdicts
+  changed since that page): the date the developer approved and a hash of the verdicts. A page without a valid approval is shown as « Brouillon »; any later
   change to a verdict cancels it.
+
+## Finding an inventory
+
+One folder holds one inventory and everything made from it: `candidates.json`,
+`verdicts.json`, `inventory.html`, `inventory.md`, then the specs (`specs.json`,
+`specs.html`, `specs.md`). Beside the folders, `index.md` lists them: one line per
+inventory, with the Figma screens it covers, whether the inventory and its specs are a
+draft or approved, and the commit it was built on. The `render.mjs` of both skills write it
+again at each run, from what the folders hold, so it is never edited by hand. A session
+reads it before building an inventory, to find the one that already covers a screen.
+
+## What the next step reads
+
+A step that builds on the inventory (the props of the components to create, the tickets)
+reads it through `loadApprovedInventory(outDir)` of `scripts/lib/approvedInventory.mjs`,
+never the JSON files directly. The function throws `InventoryNotUsable`, with every reason
+on its own line, unless all of this holds:
+
+- `candidates.json` and `verdicts.json` are in the folder;
+- `candidates.json` has every field of the table below;
+- `verdicts.json` passes the checks `render.mjs` runs before drawing, except that code
+  paths are not looked up again: a file moved since the approval makes the inventory out
+  of date, which the fingerprint tells;
+- the developer approved, and no verdict changed since.
+
+It returns the fingerprint, the day of the approval, the screens, and every candidate with
+the verdict of each of its instances (`ApprovedInventory`, in the same file).
+
+These fields of `candidates.json` are the format a later step can count on. Removing or
+renaming one breaks the steps that read the inventory:
+
+| Field                                        | Promised                                                |
+| -------------------------------------------- | ------------------------------------------------------- |
+| `fingerprint.figma.fileKey`, `.version`      | non-empty texts                                         |
+| `fingerprint.gitCommit`                      | a non-empty text                                        |
+| `screens`                                    | at least one screen                                     |
+| `screens[].number`, `.nodeId`, `.name`       | a whole number, two non-empty texts                     |
+| `screens[].capture`                          | `file`, the PNG's name in the folder, and its box       |
+| `screens[].texts[]`                          | `nodeId`, `characters` (may be empty) and `box`         |
+| `candidates[].number`, `.figmaName`, `.kind` | a whole number, a non-empty text, `instance` or `frame` |
+| `candidates[].instances[]`                   | `letter`, `nodeId`, `variant` (may be empty), `box`     |
+| `candidates[].instances[].screen`            | the `number` of one of `screens`                        |
+
+A box is `x`, `y`, `width` and `height`, all numbers. The other fields described above
+(`level`, `parent`, `icons`, `contentsThatDiffer`, `backdrop`) are written by the script
+but not checked: a step that needs one adds its check to `listInventoryFormatProblems`
+and its row to this table.
+
+A step that reads the inventory copies its fingerprint into its own deliverable. A
+different Figma version or commit later on tells that the deliverable may be out of date.
 
 ## The page
 
@@ -233,3 +295,98 @@ click, a click beside the images or the Escape key shows everything back.
 Labels are in French, since its images go into Jira tickets. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its
 number and its label but gets no outline, which would hide it.
+
+## figma-component-specs — the props of the components to create or to adapt
+
+`/figma-component-specs <inventory-out-dir>` takes the folder of an approved inventory and
+describes each component whose verdict is "to create" or "to adapt": its props (name,
+TypeScript type, required or not, where the parent gets the value) and its **zones**, the
+parts of its drawing with the props that drive each one. A reused component gets nothing:
+its props are in the code.
+
+A component to adapt shows what changes only, as before → after: the props to add or to modify, and a table of what changes without a prop (a height from 32 px to 36 px, an icon size). Its props that exist and stay as they are are not listed.
+
+The result is `specs.html`: a tree of the components, each under the one it is drawn in, then one tab per screen the shown component
+is drawn on. Each zone is outlined on the capture, cut around the component at the size the
+inventory shows it; a click on a zone opens a panel with its props and its rules. A zone that is itself a component of the tree (a header inside an editor) shows what the parent gives it, and links to that component: each component is described once. A screen whose specs say the same as an earlier one's gets no tab, and the earlier screen names it: same zones, and same content in the zones that props drive. The component's width and what a zone without props shows are not compared. The
+outline's colour gives the zone's kind:
+
+| Kind        | Meaning                                                                                |
+| ----------- | -------------------------------------------------------------------------------------- |
+| `prop`      | one or several props decide what the zone shows, or receive its actions                |
+| `fixed`     | in a component to create, the same whatever the props: a label, a divider              |
+| `change`    | in a component to adapt, where a change without a prop shows (« Changement de style ») |
+| `not-drawn` | drawn by the mock-up, left out by the component for a reason already written           |
+| `to-decide` | neither the mock-up nor the code says the rule: a question with 2 to 4 answers         |
+
+It reads the inventory through `loadApprovedInventory`, so it refuses a folder whose
+inventory is not approved or changed since its approval. It needs no Figma access: the
+captures and every position come from the inventory's folder.
+
+- **The scripts** list the components to specify, prepare what the inventory and the code
+  say of each, turn each zone into boxes, and draw.
+- **The model** reads the code, then writes the props and the zones. A zone names what it
+  outlines with the inventory's numbers and texts, never with coordinates. Its instructions
+  are in `skills/figma-component-specs/SKILL.md`, which is all it reads.
+
+```
+node scripts/prepare.mjs <inventory-out-dir>   # 1. script: checks the inventory, writes the files below
+#                                                2. model: reads the code, fills specs.json
+node scripts/render.mjs <inventory-out-dir>    # 3. script: checks specs.json, writes specs.html
+# 4. developer: corrections made on the page, pasted in the chat; the model applies them
+node scripts/render.mjs <inventory-out-dir> --approve=<code>   # 5. developer: the command the page shows once every box is ticked: stamp + specs.md
+```
+
+Both commands run from the repo the inventory judged. `prepare.mjs` keeps a `specs.json`
+that is already filled; `--reset-specs` empties it. Both exit with 2 when the inventory is
+not usable, and `render.mjs` with 3 when `specs.json` breaks a rule, each listing every
+reason.
+
+| File in `<inventory-out-dir>` | Written by | Content                                                                                                                                                        |
+| ----------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `specs-brief.md`              | script     | what the model reads: per component, its inventory entry, the developer's decision, the props its file declares, what it holds per screen                      |
+| `specs.json`                  | model      | one entry per component, keyed by its React name; the only file the model writes                                                                               |
+| `specs.html`                  | script     | the deliverable: the tree of components, screen tabs, captures, zone outlines, the panel of props, and a form that writes the corrections to paste in the chat |
+| `specs.md`                    | script     | written at approval: per component, the developer's decisions, what changes, the props and the zones; what the next steps read                                 |
+
+The format of `specs.json` and the rule of each field are in `SKILL.md`; the types are in
+`scripts/lib/componentSpecs.mjs`. `render.mjs` refuses, among others, a prop that no zone
+names, a zone part drawn nowhere inside the component, and a `to-decide` zone without its
+question and answers.
+
+What the model does not decide, in `specs.json`:
+
+- `developerDecisions`, per component: one French sentence per thing the developer settled.
+  No model changes what a sentence says afterwards.
+- `approval` (written by `render.mjs --approve=<code>`, which the developer runs: the page
+  shows the command once he has ticked every box, and the code is refused when the specs
+  changed since that page): the date the developer approved and a hash of the components. A page without a standing approval is shown as « Brouillon »; any
+  later change to the specs cancels it. The approval is refused while a zone is
+  `to-decide`.
+
+The code is in `skills/figma-component-specs`:
+
+```
+SKILL.md                  what the model follows
+scripts/
+  prepare.mjs             command: writes specs-brief.md and the specs.json to fill
+  render.mjs              command: checks specs.json, writes specs.html, approves
+  page/                   the parts of specs.html, which render.mjs pastes into one file
+    page.html               its structure
+    page.css                its own styles, after the inventory skill's pageBase.css
+    page.js draws what specsPageDrawing.mjs worked out; answers tabs, clicks, keys and the correction form
+    specsFeedbackTextFunctions.d.ts tells the type check that page.js finds the functions of specsFeedbackText.mjs in the page
+  lib/
+    componentSpecs.mjs      the components to specify, the kinds of zone, the checks of specs.json
+    specsBrief.mjs          the content of specs-brief.md
+    specsPageDrawing.mjs    everything specs.html draws: the cut of each capture, the outline of each zone
+    specsApproval.mjs       the developer's approval: what still blocks it, its stamp, whether it stands
+    specsSummary.mjs        the content of specs.md
+    specsFeedbackText.mjs   the developer's corrections on the page: the text to paste; pasted whole into the page
+    commandOutcome.mjs      what the two commands share: the name of specs.json, the exit codes
+tests/                    one test file per module of scripts/lib, and the fixtures they share
+```
+
+A kind of zone is declared once, in `ZONE_KINDS` of `scripts/lib/componentSpecs.mjs`: the
+page takes its labels and colours from there. The tests and the type check run as for the
+inventory, from `skills/figma-component-specs`.

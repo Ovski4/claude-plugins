@@ -28,24 +28,25 @@ const MAX_TEXT_LENGTH_SHOWN = 60
 const MAX_PROPS_DECLARATION_LINES = 40
 const FIRST_LINE_OF_A_PROPS_DECLARATION =
   /^(?:export )?(?:interface|type) \w*Props\b/
+const LINE_OPENING_A_BLOCK = /[{<(]\s*$/
 // The declaration ends at the first line that closes it at the left margin: "}", "}>" or ">".
-const LAST_LINE_OF_A_DECLARATION = /^[}>]/
+// A line that closes one block and opens the next ("> & {") is not its end.
+const isLastLineOfADeclaration = (/** @type {string} */ line) =>
+  /^[}>]/.test(line) && !LINE_OPENING_A_BLOCK.test(line)
 
 /**
  * The props a component file declares: every top-level `interface …Props` or `type …Props`.
  * @param {string} sourceText the content of a .tsx file
  * @returns {string} the declarations as written in the file; "" when it declares none
  */
-function extractPropsDeclarations(sourceText) {
+export function extractPropsDeclarations(sourceText) {
   const lines = sourceText.split("\n")
   const declarations = []
   for (let index = 0; index < lines.length; index++) {
     if (!FIRST_LINE_OF_A_PROPS_DECLARATION.test(lines[index])) continue
-    const isOnOneLine = !/[{<(]\s*$/.test(lines[index])
+    const isOnOneLine = !LINE_OPENING_A_BLOCK.test(lines[index])
     const lengthToClosingLine =
-      lines
-        .slice(index + 1)
-        .findIndex((line) => LAST_LINE_OF_A_DECLARATION.test(line)) + 2
+      lines.slice(index + 1).findIndex(isLastLineOfADeclaration) + 2
     const length = isOnOneLine ? 1 : lengthToClosingLine
     const declaration = lines.slice(
       index,

@@ -14,6 +14,9 @@
  * @property {number} level 1 for the screen's root component, +1 at each component nested inside another
  * @property {Box} box the visible part, in pixels at scale 1 from the screen's top-left corner
  * @property {number | null} parent the number of the candidate this instance sits in
+ * @property {string[]} [icons] the icon components directly inside this use, in the tree's
+ *   order: what tells apart three icon buttons of one variant. Not every candidates.json
+ *   has it: a missing list reads as an empty one.
  */
 /**
  * @typedef {object} Candidate
@@ -48,6 +51,7 @@
  * @typedef {object} Surroundings
  * @property {FigmaNode | null} parent
  * @property {CandidateGroup | null} enclosingGroup the closest Figma component around the node
+ * @property {{ icons: string[] } | null} enclosingUse the use of that component the node sits in
  * @property {number} enclosingLevel the level of that component; 0 outside any
  * @property {Box} clip what the clipping ancestors let through
  */
@@ -258,7 +262,10 @@ export function collectCandidates(
    * @param {FigmaNode} node
    * @param {Surroundings} surroundings
    */
-  function visit(node, { parent, enclosingGroup, enclosingLevel, clip }) {
+  function visit(
+    node,
+    { parent, enclosingGroup, enclosingUse, enclosingLevel, clip },
+  ) {
     if (node.visible === false || !node.absoluteBoundingBox) return
     const visibleBox =
       node === screenNode
@@ -274,10 +281,19 @@ export function collectCandidates(
       return
     }
     const level = enclosingLevel + 1
-    const use = { nodeId: node.id, level, enclosingGroup, box: visibleBox }
+    /** @type {string[]} */
+    const iconsInside = []
+    const use = {
+      nodeId: node.id,
+      level,
+      enclosingGroup,
+      box: visibleBox,
+      icons: iconsInside,
+    }
     let surroundingsOfChildren = {
       parent: node,
       enclosingGroup,
+      enclosingUse,
       enclosingLevel,
       clip: node.clipsContent ? visibleBox : clip,
     }
@@ -286,6 +302,7 @@ export function collectCandidates(
       const { figmaName, componentKey, variant } = describeComponentOf(node)
       if (figmaName.startsWith(ICON_NAME_PREFIX)) {
         enclosingGroup?.icons.add(figmaName)
+        enclosingUse?.icons.push(figmaName)
         return
       }
       const group = findOrCreateGroup(
@@ -298,6 +315,7 @@ export function collectCandidates(
       surroundingsOfChildren = {
         ...surroundingsOfChildren,
         enclosingGroup: group,
+        enclosingUse: use,
         enclosingLevel: level,
       }
     } else if (node.type === "FRAME" && node !== screenNode) {
@@ -321,6 +339,7 @@ export function collectCandidates(
   /** @type {Omit<Surroundings, "parent">} */
   const outsideAnyComponent = {
     enclosingGroup: null,
+    enclosingUse: null,
     enclosingLevel: 0,
     clip: screenBox,
   }
@@ -348,14 +367,18 @@ export function collectCandidates(
     componentKey: group.componentKey,
     instances: group.uses
       .toSorted((a, b) => a.box.y - b.box.y || a.box.x - b.box.x)
-      .map(({ enclosingGroup, nodeId, variant, level, box }, useIndex) => ({
-        letter: toInstanceLetter(useIndex),
-        nodeId,
-        variant,
-        level,
-        box,
-        parent: (enclosingGroup && numbersByGroup.get(enclosingGroup)) ?? null,
-      })),
+      .map(
+        ({ enclosingGroup, nodeId, variant, level, box, icons }, useIndex) => ({
+          letter: toInstanceLetter(useIndex),
+          nodeId,
+          variant,
+          level,
+          box,
+          parent:
+            (enclosingGroup && numbersByGroup.get(enclosingGroup)) ?? null,
+          icons,
+        }),
+      ),
     icons: [...group.icons],
   }))
   return { candidates, backdrop, texts }

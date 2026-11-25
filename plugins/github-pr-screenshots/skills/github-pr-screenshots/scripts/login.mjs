@@ -18,15 +18,24 @@ await page.goto("https://github.com/login")
 // GitHub fills this meta tag with the login on every page once signed in. The wait ends early,
 // with an error, when the window is closed.
 await page
-  .waitForSelector('meta[name="user-login"]:not([content=""])', { state: "attached", timeout: SIGN_IN_TIME_LIMIT_MS })
+  .waitForSelector('meta[name="user-login"]:not([content=""])', {
+    state: "attached",
+    timeout: SIGN_IN_TIME_LIMIT_MS,
+  })
   .catch(() => null)
-const signedInLogin = isWindowClosed ? null : await readSignedInGitHubLogin(page)
+const signedInLogin = isWindowClosed
+  ? null
+  : await readSignedInGitHubLogin(page)
 
 if (!isWindowClosed) await browser.close()
 
 if (signedInLogin) {
   console.log(`Signed in to GitHub as ${signedInLogin}.`)
 } else {
-  console.error(isWindowClosed ? "Window closed before signing in." : "Not signed in after 10 minutes.")
+  console.error(
+    isWindowClosed
+      ? "Window closed before signing in."
+      : "Not signed in after 10 minutes.",
+  )
   process.exit(1)
 }

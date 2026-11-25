@@ -1,8 +1,15 @@
 // @ts-check
 // The rules of verdicts.json, the file the model fills: the five verdicts, what each one
 // requires, the empty file given to the model, and the developer's approval.
-import { createHash } from "node:crypto"
+import {
+  buildApproval as buildApprovalOf,
+  hashApprovedContent,
+  readStandingApprovalDate,
+} from "./approval.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
+
+// The field of verdicts.json's approval that holds the hash of the approved verdicts.
+export const VERDICTS_HASH_KEY = "verdictsHash"
 
 /** @typedef {import("./mergeScreens.mjs").MergedCandidate} Candidate */
 /** @typedef {import("./mergeScreens.mjs").InstanceOnAScreen} Instance */
@@ -50,11 +57,7 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
  * @property {boolean} isNamedByScreens true when the exception names screens, false when it names letters
  * @property {string} note what draws these instances, in French
  */
-/**
- * @typedef {object} Approval
- * @property {string} date the day the developer approved, "2026-11-23"
- * @property {string} verdictsHash the hash of the verdicts he approved
- */
+/** @typedef {import("./approval.mjs").ApprovalOf<typeof VERDICTS_HASH_KEY>} Approval */
 /** @typedef {{ figmaVersion: string, verdicts: VerdictEntry[], approval?: Approval }} VerdictsFile */
 /**
  * @typedef {Instance & {
@@ -94,7 +97,7 @@ export const VERDICTS = {
   },
   "to-adapt": {
     label: "À adapter",
-    color: "#0891d1",
+    color: "#0369a1",
     requiredFields: ["codeComponent", "codePath", "note"],
     needsExistingCodePath: true,
   },
@@ -106,7 +109,7 @@ export const VERDICTS = {
   },
   "out-of-scope": {
     label: "Hors périmètre",
-    color: "#e0218a",
+    color: "#be185d",
     requiredFields: ["note"],
     needsExistingCodePath: false,
   },
@@ -126,8 +129,8 @@ export const NOT_A_COMPONENT = {
   label: "Pas un composant",
 }
 const VERDICT_WAITING_FOR_THE_DEVELOPER = "to-decide"
-const MIN_QUIZ_OPTIONS = 2
-const MAX_QUIZ_OPTIONS = 4
+export const MIN_QUIZ_OPTIONS = 2
+export const MAX_QUIZ_OPTIONS = 4
 // A note is printed under the image: two or three lines there, at about 110 characters a line.
 const MAX_NOTE_CHARACTERS = 330
 // A doubt is settled by reading the code before drawing, or asked with "to-decide".
@@ -479,28 +482,19 @@ export function listNumbersStillToDecide(judgedCandidates) {
  * Changes as soon as any verdict, note, question or option changes.
  * @param {VerdictEntry[]} entries
  */
-export function hashVerdicts(entries) {
-  return createHash("sha256").update(JSON.stringify(entries)).digest("hex")
-}
+export const hashVerdicts = (entries) => hashApprovedContent(entries)
 
 /**
  * @param {VerdictEntry[]} entries the verdicts the developer has just approved
  * @param {Date} now
  * @returns {Approval}
  */
-export function buildApproval(entries, now) {
-  return {
-    date: now.toISOString().slice(0, 10),
-    verdictsHash: hashVerdicts(entries),
-  }
-}
+export const buildApproval = (entries, now) =>
+  buildApprovalOf(VERDICTS_HASH_KEY, entries, now)
 
 /**
  * False once any verdict has changed since the developer approved: the page is a draft again.
  * @param {VerdictsFile} verdictsFile
  */
-export function isApprovalStillValid(verdictsFile) {
-  return (
-    verdictsFile.approval?.verdictsHash === hashVerdicts(verdictsFile.verdicts)
-  )
-}
+export const isApprovalStillValid = ({ approval, verdicts }) =>
+  readStandingApprovalDate(VERDICTS_HASH_KEY, approval, verdicts) !== null

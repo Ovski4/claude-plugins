@@ -1,6 +1,9 @@
 {
   "name": "ovski4",
-  "owner": { "name": "Baptiste Bouchereau", "url": "https://github.com/ovski4" },
+  "owner": {
+    "name": "Baptiste Bouchereau",
+    "url": "https://github.com/ovski4"
+  },
   "plugins": [
     {
       "name": "todo",
@@ -10,7 +13,7 @@
     {
       "name": "figma-component-inventory",
       "source": "./plugins/figma-component-inventory",
-      "description": "/figma-component-inventory draws the annotated component cut of a Figma screen: one outline per component, coloured by its frontend verdict, for the developer to approve"
+      "description": "/figma-component-inventory draws the annotated component cut of a Figma screen: one outline per component, coloured by its frontend verdict, for the developer to approve. /figma-component-specs then gives the props of each component to create or to adapt"
     },
     {
       "name": "github-pr-screenshots",

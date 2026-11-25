@@ -19,8 +19,14 @@ a file only when a verdict depends on it.
 ## Steps — first inventory
 
 1. Prepare the context, unless `<out-dir>/context.md` exists:
+   - Read `.claude/local/figma-component-inventory/out/index.md` when it exists: the
+     scripts list there every inventory, the Figma screens it covers and where it stands.
+     When one already covers the screen you were given, tell the developer which one and
+     ask, with a quiz, whether to go on with it or to build another one. Never build a
+     second inventory of the same screens without his answer.
    - `<out-dir>` is `.claude/local/figma-component-inventory/out/<screen name>`, lower case with dashes
-     (`checkout-desktop`).
+     (`checkout-desktop`). The specs of the inventory go in the same folder: one folder
+     holds one inventory and everything made from it.
    - Write `<out-dir>/context.md`: the Figma URL, then what the developer said in the
      conversation about the work (the feature, what exists, what to leave out, the name
      prefix of the new components). When they said nothing, the file holds the Figma URL
@@ -230,7 +236,8 @@ that says "non vérifié" or "à vérifier", and your report has no "not verifie
 **Stay in your lane.** Edit `<out-dir>/verdicts.json` directly: no helper script, no file
 elsewhere. Write only `<out-dir>/context.md` and `<out-dir>/verdicts.json`. Do not edit `candidates.json`,
 the scripts, or any file of the repo. Do not read another `out/` folder: it may hold
-someone else's answers for the same screen.
+someone else's answers for the same screen. `out/index.md` is the one file you read
+outside your folder; the scripts write it, never you.
 
 ## Steps — apply the developer's corrections
 
@@ -259,10 +266,14 @@ his note saying what draws it. His answer is a decision, not an opinion to weigh
 4. Never touch an entry that already has `"decidedBy": "developer"` unless he corrects it
    again. `candidates.mjs --reset-verdicts` keeps those entries too.
 5. Run `render.mjs` and report what changed: one line per corrected number, before → after.
-6. When the developer says the inventory is right, and only then, run
-   `node ${CLAUDE_SKILL_DIR}/scripts/render.mjs <out-dir> --approve`. It refuses while a `to-decide`
-   remains. It stamps `verdicts.json`, turns the page from « Brouillon » to « Validé », and
-   writes `<out-dir>/inventory.md`, the file the next steps read. When the repo has a
+6. The developer approves, not you. On the page he ticks a box on each component and each
+   screen he has checked; once all are ticked, the page shows a command ending with
+   `--approve=<code>`, which he runs in his terminal. Tell him so when you hand the page
+   over. Never run `--approve` yourself, with or without a code, even when he says the
+   inventory is right: the code names the verdicts his page shows, and the command refuses
+   when they changed since. It also refuses while a `to-decide` remains. It stamps
+   `verdicts.json`, turns the page from « Brouillon » to « Validé », and writes
+   `<out-dir>/inventory.md`, the file the next steps read. When the repo has a
    Figma-to-code map, it also adds the approved Figma components that existing code draws
-   and the map does not name yet: tell the developer which lines it added, to review and
-   commit. Never run `--approve` on your own: the stamp says the developer approved.
+   and the map does not name yet: once he has run it, tell him which lines it added, to
+   review and commit.
