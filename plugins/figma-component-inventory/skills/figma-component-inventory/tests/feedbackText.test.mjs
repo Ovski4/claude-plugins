@@ -6,23 +6,15 @@ import {
   buildFeedbackText,
 } from "../scripts/lib/feedbackText.mjs"
 import { OWN_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
-import { fillText, SHARED_PAGE_TEXTS } from "../scripts/page/pageTexts.mjs"
+import { buildTranslate } from "../scripts/page/pageTexts.mjs"
 
 const VERDICT_LABELS = {
   "to-create": "À créer",
   "not-a-component": "Pas un composant",
 }
 
-/**
- * The page's `translate`, for a page read in one language.
- * @param {"fr" | "en"} language
- * @returns {import("../scripts/page/pageTexts.mjs").Translate}
- */
-const translateIn = (language) => (key, values) =>
-  fillText(
-    { ...SHARED_PAGE_TEXTS[language], ...OWN_PAGE_TEXTS[language] }[key],
-    values,
-  )
+/** @param {"fr" | "en"} language the page's `translate`, for a page read in that language */
+const translateIn = (language) => buildTranslate(language, OWN_PAGE_TEXTS)
 
 test("a correction keeps only what differs from the inventory", () => {
   const judgement = { verdict: "to-adapt", codeComponent: "Select" }

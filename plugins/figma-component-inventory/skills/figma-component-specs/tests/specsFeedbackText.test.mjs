@@ -8,21 +8,10 @@ import {
   sortSpecCorrections,
 } from "../scripts/lib/specsFeedbackText.mjs"
 import { OWN_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
-import {
-  fillText,
-  SHARED_PAGE_TEXTS,
-} from "../../figma-component-inventory/scripts/page/pageTexts.mjs"
+import { buildTranslate } from "../../figma-component-inventory/scripts/page/pageTexts.mjs"
 
-/**
- * The page's `translate`, for a page read in one language.
- * @param {"fr" | "en"} language
- * @returns {import("../../figma-component-inventory/scripts/page/pageTexts.mjs").Translate}
- */
-const translateIn = (language) => (key, values) =>
-  fillText(
-    { ...SHARED_PAGE_TEXTS[language], ...OWN_PAGE_TEXTS[language] }[key],
-    values,
-  )
+/** @param {"fr" | "en"} language the page's `translate`, for a page read in that language */
+const translateIn = (language) => buildTranslate(language, OWN_PAGE_TEXTS)
 
 test("an empty form gives no correction, a filled one keeps the answer and the trimmed note", () => {
   assert.equal(

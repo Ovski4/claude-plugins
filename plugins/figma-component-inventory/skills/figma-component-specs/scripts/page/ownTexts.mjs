@@ -1,8 +1,8 @@
 // @ts-check
 // The texts only specs.html shows, in each language the developer can read the page in.
-// render.mjs pastes this file into the page before page.js, as a plain script without its
-// "export" word: page.js adds them to the shared texts of the inventory skill's
-// pageTexts.mjs. Nothing here touches the page, so that the tests can load it.
+// render.mjs pastes this file into the page before the inventory skill's pageReview.mjs,
+// as a plain script without its "export" word: pageReview.mjs adds them to the shared
+// texts of pageTexts.mjs. Nothing here touches the page, so that the tests can load it.
 // What the model wrote in specs.json (the zones' names, the rules, the questions) is
 // shown as written.
 

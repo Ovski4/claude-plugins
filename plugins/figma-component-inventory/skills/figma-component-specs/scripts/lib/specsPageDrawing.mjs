@@ -43,16 +43,15 @@ import { hashComponents, readStandingApprovalDate } from "./specsApproval.mjs"
 // inventory's blue of « À adapter » is hard to tell from the purple of « À créer », so a
 // component to adapt takes the inventory's green, which this page uses for nothing else.
 /** @type {Record<string, string>} */
+const COLOURS_IN_THE_TREE = {
+  "to-create": VERDICTS["to-create"].color,
+  "to-adapt": VERDICTS.reused.color,
+}
 // The line that says what the page is built on, in each language a page is read in.
 /** @type {TextInEveryLanguage} */
 const BUILT_ON_WORDING = {
   fr: "Construit sur l'inventaire validé le {date} · {mockupAndCommit}",
   en: "Built on the inventory approved on {date} · {mockupAndCommit}",
-}
-
-const COLOURS_IN_THE_TREE = {
-  "to-create": VERDICTS["to-create"].color,
-  "to-adapt": VERDICTS.reused.color,
 }
 /** @typedef {import("./componentSpecs.mjs").ComponentToSpecify} ComponentToSpecify */
 /**

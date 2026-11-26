@@ -48,7 +48,8 @@ Worth having, not required:
 Other frameworks (Vue, Svelte) have not been tried: the instructions speak of React
 components, and only TypeScript props declarations are read.
 
-The page and the notes are written in French.
+The pages are read in French or in English, as the developer picks in their settings; the
+model's notes and the files the next steps read are written in French.
 
 ## Settings
 

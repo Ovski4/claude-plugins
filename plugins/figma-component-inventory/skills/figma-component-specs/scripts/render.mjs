@@ -21,8 +21,8 @@ import {
   InventoryNotUsable,
   loadApprovedInventory,
 } from "../../figma-component-inventory/scripts/lib/approvedInventory.mjs"
+import { CommandFailure } from "../../figma-component-inventory/scripts/lib/commandFailure.mjs"
 import {
-  CommandFailure,
   readCaptureAsDataUrl,
   writeStandalonePage,
 } from "../../figma-component-inventory/scripts/lib/standalonePage.mjs"

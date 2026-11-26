@@ -38,9 +38,6 @@ function createElement(tagName, { className, text } = {}, children = []) {
   return element
 }
 
-addPageTexts(OWN_PAGE_TEXTS)
-showStaticTexts()
-
 const specsElement = getElement("specs")
 /** @type {Specs} */
 const specs = JSON.parse(specsElement.textContent ?? "")

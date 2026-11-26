@@ -1,8 +1,8 @@
 // @ts-check
 // The texts only inventory.html shows, in each language the developer can read the page
-// in. render.mjs pastes this file into the page before page.js, as a plain script without
-// its "export" word: page.js adds them to the shared texts of pageTexts.mjs. Nothing here
-// touches the page, so that the tests can load it.
+// in. render.mjs pastes this file into the page before pageReview.mjs, as a plain script
+// without its "export" word: pageReview.mjs adds them to the shared texts of pageTexts.mjs.
+// Nothing here touches the page, so that the tests can load it.
 // What the model wrote in verdicts.json (the reasons, the questions) is shown as written.
 
 /** @type {Record<import("./pageTexts.mjs").PageLanguage, Record<string, string>>} */

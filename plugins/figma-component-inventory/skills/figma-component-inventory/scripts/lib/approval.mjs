@@ -63,7 +63,7 @@ export function readStandingApprovalDate(hashKey, approval, content) {
 }
 
 /** The exit code of a render.mjs whose approval is refused. */
-export const EXIT_CODE_NOT_APPROVED = 4
+const EXIT_CODE_NOT_APPROVED = 4
 // The file the specs skill fills in an inventory's folder, and the field of its approval
 // that holds the hash of the approved components.
 export const SPECS_FILE_NAME = "specs.json"
@@ -74,7 +74,7 @@ const APPROVE_FLAG = "--approve"
 /**
  * Whether the command asks for the approval. "--approve" is the only option of a
  * render.mjs: any other one stops the command, so that a mistyped approval
- * ("--approve=3f9a1c2e") is not taken for a plain redraw of the page.
+ * ("--aprove", "--approve=yes") is not taken for a plain redraw of the page.
  * @param {string[]} commandArguments what follows the script's name
  */
 export function readWhetherApprovalIsAsked(commandArguments) {

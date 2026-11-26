@@ -5,51 +5,60 @@
 // developer ticks as he checks the page, keeps what is ticked in the browser, shows the
 // count in the bar at the bottom, invites him to approve once nothing blocks it, tells the
 // stylesheet how high that bar is, keeps what he chooses in the page's settings, and gives
-// every text in the language he picked there (the texts are in pageTexts.mjs, pasted
-// before this file).
-// The page has the elements "screen-name", "approval", "fingerprint", "feedback" and
-// "feedback-count".
+// every text in the language he picked there (the texts are in pageTexts.mjs and in the
+// page's ownTexts.mjs, both pasted before this file).
+// The page has the elements "screen-name", "approval", "fingerprint", "settings-button",
+// "page-settings", "feedback" and "feedback-count".
 
 /** @param {string} id */
 const getSharedElement = (id) =>
   /** @type {HTMLElement} */ (document.getElementById(id))
 
+// What the browser keeps for the developer from one visit to the next. Some browsers keep
+// nothing for a page opened from a file: the page then works without it.
+
+/**
+ * @param {string} storageKey
+ * @returns {string | null} null when nothing is kept under that name
+ */
+function readKept(storageKey) {
+  try {
+    return localStorage.getItem(storageKey)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * @param {string} storageKey
+ * @param {string | null} value null forgets what is kept under that name
+ * @returns {boolean} false when the browser keeps nothing for this page
+ */
+function keep(storageKey, value) {
+  try {
+    if (value === null) localStorage.removeItem(storageKey)
+    else localStorage.setItem(storageKey, value)
+    return true
+  } catch {
+    return false
+  }
+}
+
 // The language of the page: the one the developer picked in the settings, kept by the
 // browser for every page of the same kind.
 const LANGUAGE_STORAGE_KEY = "page-language"
-
-/** @returns {PageLanguage} */
-function readKeptLanguage() {
-  try {
-    const kept = localStorage.getItem(LANGUAGE_STORAGE_KEY)
-    if (kept !== null && kept in PAGE_LANGUAGES)
-      return /** @type {PageLanguage} */ (kept)
-  } catch {
-    // The browser keeps nothing for this page: it is read in the default language.
-  }
-  return DEFAULT_PAGE_LANGUAGE
-}
-
-const pageLanguage = readKeptLanguage()
+const keptLanguage = readKept(LANGUAGE_STORAGE_KEY)
+const pageLanguage =
+  keptLanguage !== null && keptLanguage in PAGE_LANGUAGES
+    ? /** @type {PageLanguage} */ (keptLanguage)
+    : DEFAULT_PAGE_LANGUAGE
 document.documentElement.lang = pageLanguage
-/** The texts of the page in its language: the shared ones, then the page's own. */
-const textsOfThePage = { ...SHARED_PAGE_TEXTS[pageLanguage] }
 
 /**
- * Adds the texts only one page shows to the shared ones.
- * @param {Record<PageLanguage, Record<string, string>>} textsByLanguage
+ * A text in the page's language, by its name in the dictionaries ("approval.given"),
+ * with what each name in braces becomes.
  */
-export function addPageTexts(textsByLanguage) {
-  Object.assign(textsOfThePage, textsByLanguage[pageLanguage])
-}
-
-/**
- * A text in the page's language.
- * @param {string} key the text's name in the dictionaries: "approval.given"
- * @param {Record<string, string | number>} [values] what each name in braces becomes
- */
-export const translate = (key, values) =>
-  fillText(textsOfThePage[key] ?? key, values)
+export const translate = buildTranslate(pageLanguage, OWN_PAGE_TEXTS)
 
 /**
  * A text render.mjs wrote into the page's data once per language, in the page's one.
@@ -58,19 +67,14 @@ export const translate = (key, values) =>
 export const inPageLanguage = (textInEveryLanguage) =>
   textInEveryLanguage[pageLanguage]
 
-/**
- * Writes the texts page.html leaves empty: an element names its text in `data-text`, and
- * the text of its `aria-label` in `data-text-aria-label`.
- */
-export function showStaticTexts() {
-  for (const element of document.querySelectorAll("[data-text]"))
-    element.textContent = translate(element.getAttribute("data-text") ?? "")
-  for (const element of document.querySelectorAll("[data-text-aria-label]")) {
-    const key = element.getAttribute("data-text-aria-label") ?? ""
-    element.setAttribute("aria-label", translate(key))
-  }
+// The texts page.html leaves empty: an element names its text in `data-text`, and the
+// text of its `aria-label` in `data-text-aria-label`.
+for (const element of document.querySelectorAll("[data-text]"))
+  element.textContent = translate(element.getAttribute("data-text") ?? "")
+for (const element of document.querySelectorAll("[data-text-aria-label]")) {
+  const key = element.getAttribute("data-text-aria-label") ?? ""
+  element.setAttribute("aria-label", translate(key))
 }
-showStaticTexts()
 
 // The corrections bar covers the bottom of the window, and its height changes: the form
 // opens, the corrections add up. The stylesheet reads that height to end the page above
@@ -120,31 +124,7 @@ document.addEventListener("keydown", (event) => {
 // The page's settings: what the developer chooses there is his way of reading these pages,
 // not a fact about one mock-up. The browser keeps each choice for every page of the same
 // kind.
-
-/**
- * @param {string} storageKey
- * @returns {boolean} false when nothing is kept, or when the browser keeps nothing
- */
-function readKeptSetting(storageKey) {
-  try {
-    return localStorage.getItem(storageKey) === "on"
-  } catch {
-    return false
-  }
-}
-
-/**
- * @param {string} storageKey
- * @param {boolean} isOn
- */
-function keepSetting(storageKey, isOn) {
-  try {
-    if (isOn) localStorage.setItem(storageKey, "on")
-    else localStorage.removeItem(storageKey)
-  } catch {
-    // The browser keeps nothing for this page: the choice lasts until it is closed.
-  }
-}
+const KEPT_WHEN_A_SETTING_IS_ON = "on"
 
 /**
  * The setting that picks the page's language. Every text is written when the page loads:
@@ -156,13 +136,8 @@ function createLanguageChoice() {
   for (const [language, name] of Object.entries(PAGE_LANGUAGES))
     select.append(new Option(name, language, false, language === pageLanguage))
   select.addEventListener("change", () => {
-    try {
-      localStorage.setItem(LANGUAGE_STORAGE_KEY, select.value)
-    } catch {
-      // The browser keeps nothing for this page: it stays in its language.
-      return
-    }
-    location.reload()
+    // A browser that keeps nothing would load the page again in the same language.
+    if (keep(LANGUAGE_STORAGE_KEY, select.value)) location.reload()
   })
   const choice = document.createElement("label")
   choice.className = "page-choice"
@@ -172,29 +147,27 @@ function createLanguageChoice() {
 
 // The cog of the header shows the settings over the page, and they stay there while the
 // developer ticks their boxes: the cog, Escape or a click anywhere else hides them.
-const settingsButton = document.getElementById("settings-button")
-const settingsPanel = document.getElementById("page-settings")
-if (settingsButton && settingsPanel) {
-  /** @param {boolean} areShown */
-  const showSettings = (areShown) => {
-    settingsPanel.hidden = !areShown
-    settingsButton.setAttribute("aria-expanded", String(areShown))
-  }
-  settingsButton.addEventListener("click", () =>
-    showSettings(settingsPanel.hidden),
-  )
-  document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") showSettings(false)
-  })
-  settingsPanel.append(createLanguageChoice())
-  document.addEventListener("click", (event) => {
-    const isOnTheSettings =
-      event.target instanceof Node &&
-      (settingsPanel.contains(event.target) ||
-        settingsButton.contains(event.target))
-    if (!isOnTheSettings) showSettings(false)
-  })
+const settingsButton = getSharedElement("settings-button")
+const settingsPanel = getSharedElement("page-settings")
+/** @param {boolean} areShown */
+function showSettings(areShown) {
+  settingsPanel.hidden = !areShown
+  settingsButton.setAttribute("aria-expanded", String(areShown))
 }
+settingsPanel.append(createLanguageChoice())
+settingsButton.addEventListener("click", () =>
+  showSettings(settingsPanel.hidden),
+)
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") showSettings(false)
+})
+document.addEventListener("click", (event) => {
+  const isOnTheSettings =
+    event.target instanceof Node &&
+    (settingsPanel.contains(event.target) ||
+      settingsButton.contains(event.target))
+  if (!isOnTheSettings) showSettings(false)
+})
 
 /**
  * Wires a box of the page's settings: while it is ticked, the page's body carries a class
@@ -208,10 +181,10 @@ export function wireSettingSwitch(switchId, onChange) {
   const box = /** @type {HTMLInputElement} */ (getSharedElement(switchId))
   const showSetting = () =>
     document.body.classList.toggle(switchId, box.checked)
-  box.checked = readKeptSetting(storageKey)
+  box.checked = readKept(storageKey) === KEPT_WHEN_A_SETTING_IS_ON
   showSetting()
   box.addEventListener("change", () => {
-    keepSetting(storageKey, box.checked)
+    keep(storageKey, box.checked ? KEPT_WHEN_A_SETTING_IS_ON : null)
     showSetting()
     onChange?.()
   })
@@ -306,11 +279,11 @@ export function restoreReview(storageKey, hashesOnThePage) {
   reviewStorageKey = storageKey
   try {
     /** @type {string[]} */
-    const saved = JSON.parse(localStorage.getItem(storageKey) ?? "[]")
+    const saved = JSON.parse(readKept(storageKey) ?? "[]")
     for (const reviewHash of saved)
       if (hashesOnThePage.includes(reviewHash)) reviewedHashes.add(reviewHash)
   } catch {
-    // Nothing kept, or unreadable: the page starts with nothing checked.
+    // What is kept cannot be read: the page starts with nothing checked.
   }
 }
 
@@ -348,14 +321,7 @@ export function createReviewBox(check, onToggle) {
   box.addEventListener("change", () => {
     if (box.checked) reviewedHashes.add(check.reviewHash)
     else reviewedHashes.delete(check.reviewHash)
-    try {
-      localStorage.setItem(
-        reviewStorageKey,
-        JSON.stringify([...reviewedHashes]),
-      )
-    } catch {
-      // The browser keeps nothing for this page: the checks last until it is closed.
-    }
+    keep(reviewStorageKey, JSON.stringify([...reviewedHashes]))
     onToggle()
   })
   return reviewBox

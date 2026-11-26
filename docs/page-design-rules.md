@@ -39,7 +39,8 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   share a colour: « Changement de style » is not the purple of « À créer ».
 - Red is kept for what waits on the developer (« À trancher », a draft).
 - The colours of a set of categories (verdicts, kinds of zone) are declared once in the
-  lib that defines the set, with their French label, and sent to the page with the data.
+  lib that defines the set, with their label in each language, and sent to the page with
+  the data.
   The page's CSS never repeats them.
 - A colour that carries text, or text on it, has a contrast of 4.5 to 1 at least with
   `--surface`: « À adapter » is `#0369a1`, not a lighter blue.
@@ -63,9 +64,9 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   again in it. French is the language of a page nobody picked a language for.
 - No text is written in `page.html` or in a page script. A text has a name
   (« approval.given ») and one sentence per language in a dictionary: `pageTexts.mjs` for
-  what both pages show, the `ownTexts.mjs` of the page's folder for the rest
-  (`addPageTexts`). A script asks for it with `translate(name, values)`; an element of
-  `page.html` names it in `data-text`, or in `data-text-aria-label` for its `aria-label`.
+  what both pages show, the `ownTexts.mjs` of the page's folder for the rest. A script
+  asks for it with `translate(name, values)`; an element of `page.html` names it in
+  `data-text`, or in `data-text-aria-label` for its `aria-label`.
 - A value goes in braces (« {date} »), never glued to the sentence by the script: the
   words around it do not come in the same order in every language.
 - A text that `render.mjs` builds from the inventory (« Editor (2 écrans) », a verdict's
@@ -95,10 +96,11 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
    what it says. A round cog under the « i » of the header (`.settings-button`, in
    `.status-buttons`) shows them in a panel over the page (`.page-settings`), which stays
    while the developer ticks its boxes: the cog again, a click anywhere else or Escape
-   hides it. Each setting is a box to tick with what it does
-   (`.page-switch`). A page adds its boxes there and wires them with `wireSettingSwitch`
-   of the shared `pageReview.mjs`: the browser keeps each choice for every page of the
-   same kind. No setting sits elsewhere on the page.
+   hides it. A setting of one page is a box to tick with what it does (`.page-switch`):
+   the page adds its boxes there and wires them with `wireSettingSwitch` of the shared
+   `pageReview.mjs`. The language is a list (`.page-choice`) that the same script adds
+   under them on both pages. The browser keeps each choice for every page of the same
+   kind. No setting sits elsewhere on the page.
 5. **One line of hint**: what a click does and how to come back.
 6. **The capture and its side panel**, in `.capture-beside-panel`: side by side while the
    window has room, the panel under the capture otherwise.

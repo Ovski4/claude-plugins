@@ -35,9 +35,6 @@ function getElement(id) {
   return element
 }
 
-addPageTexts(OWN_PAGE_TEXTS)
-showStaticTexts()
-
 const inventoryElement = getElement("inventory")
 /** @type {Inventory} */
 const inventory = JSON.parse(inventoryElement.textContent ?? "")

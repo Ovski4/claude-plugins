@@ -21,12 +21,12 @@ import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
+import { CommandFailure } from "./lib/commandFailure.mjs"
 import { WRITTEN_FILES_LANGUAGE } from "./lib/languages.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
 import { buildPageDrawing } from "./lib/pageDrawing.mjs"
 import { readProjectSettings } from "./lib/projectSettings.mjs"
 import {
-  CommandFailure,
   readCaptureAsDataUrl,
   writeStandalonePage,
 } from "./lib/standalonePage.mjs"

@@ -2,7 +2,7 @@
 // The texts inventory.html and specs.html show alike, in each language the developer can
 // read the pages in. render.mjs pastes this file into the page before pageReview.mjs, as a
 // plain script without its "export" words: pageReview.mjs picks the language and gives the
-// texts through `translate`. Nothing here touches the page, so that the tests can load it.
+// texts through `translate`, the shared ones and those of the page's ownTexts.mjs. Nothing here touches the page, so that the tests can load it.
 // A text in braces is replaced when the text is shown: "{date}".
 
 /** The languages of the pages, each under the name its own speakers give it. */
@@ -100,3 +100,18 @@ export const fillText = (text, values = {}) =>
   text.replace(/\{(\w+)\}/g, (inBraces, name) =>
     name in values ? String(values[name]) : inBraces,
   )
+
+/**
+ * The `translate` of a page read in one language: gives a text by its name in the
+ * dictionaries, its braces replaced, and the name itself when no dictionary has it.
+ * @param {PageLanguage} language
+ * @param {Record<PageLanguage, Record<string, string>>} ownTexts the texts only that page shows
+ * @returns {Translate}
+ */
+export function buildTranslate(language, ownTexts) {
+  const textsOfThePage = {
+    ...SHARED_PAGE_TEXTS[language],
+    ...ownTexts[language],
+  }
+  return (key, values) => fillText(textsOfThePage[key] ?? key, values)
+}
