@@ -3,13 +3,25 @@
 // file before each page's own page.js as a plain script, without its "export" words, so its
 // functions are that script's globals. It fills the page's header, makes the boxes the
 // developer ticks as he checks the page, keeps what is ticked in the browser, and shows the
-// count and the command that approves in the bar at the bottom.
+// count and the command that approves in the bar at the bottom, and tells the stylesheet
+// how high that bar is.
 // The page has the elements "screen-name", "approval", "fingerprint", "feedback" and
 // "feedback-count".
 
 /** @param {string} id */
 const getSharedElement = (id) =>
   /** @type {HTMLElement} */ (document.getElementById(id))
+
+// The corrections bar covers the bottom of the window, and its height changes: the form
+// opens, the corrections add up. The stylesheet reads that height to end the page above
+// the bar, so that the last line of the page can be scrolled into view.
+const correctionsBar = getSharedElement("feedback")
+new ResizeObserver(() => {
+  document.documentElement.style.setProperty(
+    "--corrections-bar-height",
+    `${correctionsBar.offsetHeight}px`,
+  )
+}).observe(correctionsBar)
 
 /**
  * The header's texts: what the page is about, where its approval stands, what it is

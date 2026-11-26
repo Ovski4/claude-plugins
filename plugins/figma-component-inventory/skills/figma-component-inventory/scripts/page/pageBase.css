@@ -15,11 +15,18 @@
   --veil-opacity: 0.82;
   /* How much of a list's items stays visible beside the picked one. */
   --unpicked-opacity: 0.4;
+  /* How much of the window's bottom the corrections bar covers. pageReview.mjs measures
+     it and writes the height here each time it changes; this value is a bar of one line. */
+  --corrections-bar-height: 72px;
+}
+/* What is scrolled into view (the next box to tick) stops above the corrections bar. */
+html {
+  scroll-padding-bottom: var(--corrections-bar-height);
 }
 body {
   margin: 0;
-  /* The bottom leaves room for the corrections bar. */
-  padding: 24px 32px 96px;
+  /* The page ends above the corrections bar: its last line can be scrolled into view. */
+  padding: 24px 32px calc(var(--corrections-bar-height) + 24px);
   background: var(--page-background);
   color: var(--text);
   font:
@@ -297,7 +304,8 @@ h1 {
   flex: 1 1 360px;
   min-width: 360px;
   max-width: 560px;
-  max-height: calc(100vh - 32px - 64px);
+  /* From 16px under the window's top to 16px above the corrections bar. */
+  max-height: calc(100vh - 32px - var(--corrections-bar-height));
   padding: 16px 18px;
   overflow-y: auto;
   font-size: 13px;

@@ -74,7 +74,11 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 4. **One line of hint**: what a click does and how to come back.
 5. **The capture and its side panel**, in `.capture-beside-panel`: side by side while the
    window has room, the panel under the capture otherwise.
-6. **The corrections bar**, fixed at the bottom of the window.
+6. **The corrections bar**, fixed at the bottom of the window. It covers what is under
+   it, and its height changes (the form opens, the corrections add up): the shared
+   `pageReview.mjs` measures it into `--corrections-bar-height`, and `pageBase.css` ends
+   the page, the side panel and what is scrolled into view above it. A page never sets a
+   fixed room for the bar.
 
 ## Controls
 

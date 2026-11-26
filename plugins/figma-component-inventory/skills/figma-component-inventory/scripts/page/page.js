@@ -684,12 +684,6 @@ function drawCorrectionForm() {
     fillCorrectionFields()
     showCorrections()
   })
-  // The bar stays at the bottom of the window: the page ends above it, whatever its height.
-  const GAP_ABOVE_FEEDBACK_BAR = 24
-  const feedbackBar = getElement("feedback")
-  new ResizeObserver(() => {
-    document.body.style.paddingBottom = `${feedbackBar.offsetHeight + GAP_ABOVE_FEEDBACK_BAR}px`
-  }).observe(feedbackBar)
 }
 
 /**
