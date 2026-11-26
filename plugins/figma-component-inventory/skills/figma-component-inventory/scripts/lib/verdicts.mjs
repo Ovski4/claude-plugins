@@ -20,11 +20,11 @@ export const VERDICTS_HASH_KEY = "verdictsHash"
  * @property {VerdictKey | null} [verdict] null until the model has judged
  * @property {string | null} [codeComponent] the React component: the existing one, or the proposed name for "to-create"
  * @property {string | null} [codePath] that component's file, from the repo's root
- * @property {string} [note] the reason, in French, printed under the image
+ * @property {string} [note] the reason, in the repo's language, printed under the image
  * @property {string} [question] for "to-decide": what the developer is asked
  * @property {string[]} [options] for "to-decide": the answers he picks from
  * @property {"developer"} [decidedBy] set when the developer gave this entry himself: no model changes it afterwards
- * @property {string} [developerDecision] one French sentence saying what he decided
+ * @property {string} [developerDecision] one sentence in the repo's language saying what he decided
  */
 /**
  * One entry of verdicts.json.
@@ -55,7 +55,7 @@ export const VERDICTS_HASH_KEY = "verdictsHash"
  * @typedef {object} PartNotOutlined
  * @property {Instance[]} instances
  * @property {boolean} isNamedByScreens true when the exception names screens, false when it names letters
- * @property {string} note what draws these instances, in French
+ * @property {string} note what draws these instances, in the repo's language
  */
 /** @typedef {import("./approval.mjs").ApprovalOf<typeof VERDICTS_HASH_KEY>} Approval */
 /** @typedef {{ figmaVersion: string, verdicts: VerdictEntry[], approval?: Approval }} VerdictsFile */

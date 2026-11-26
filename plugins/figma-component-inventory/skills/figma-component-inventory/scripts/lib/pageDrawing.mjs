@@ -132,7 +132,7 @@ const writeInEveryLanguage = buildWriterInEveryLanguage(OWN_PAGE_TEXTS)
  * A Figma component the page draws no outline for, on all or some of its uses.
  * @typedef {object} NotOutlined
  * @property {string} name its number and Figma name, with the uses concerned: "6 Segment", "17 · écrans 1 4 Mode settings"
- * @property {string} reason what draws it instead, in French
+ * @property {string} reason what draws it instead, as the model wrote it
  * @property {string} reviewHash changes when the developer has to check it again: its uses, its reason
  */
 /**

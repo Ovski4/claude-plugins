@@ -143,6 +143,7 @@ async function main() {
     lookUpInFigmaToCodeMap,
     hasFigmaToCodeMap: projectSettings.figmaToCodeMap !== null,
     designSystemFolder: projectSettings.designSystemFolder,
+    projectLanguage: projectSettings.language,
     componentFiles: listTrackedFiles(
       repoRoot,
       projectSettings.componentsFolder,

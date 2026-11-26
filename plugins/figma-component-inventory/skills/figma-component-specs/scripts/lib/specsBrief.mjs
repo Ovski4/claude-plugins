@@ -2,7 +2,10 @@
 // Writes the brief the model reads before filling specs.json: for each component to create
 // or to adapt, what the approved inventory says of it and what it holds on each screen,
 // named the way a zone's "parts" name it.
-import { translateForWrittenFiles } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
+import {
+  tellLanguageToWriteIn,
+  translateForWrittenFiles,
+} from "../../../figma-component-inventory/scripts/lib/languages.mjs"
 import { extractPropsDeclarations } from "../../../figma-component-inventory/scripts/lib/brief.mjs"
 import {
   isBoxInside,
@@ -124,9 +127,11 @@ function describeComponentInstance(
  * @param {object} input
  * @param {ApprovedInventory} input.inventory
  * @param {(codePath: string) => string} input.readCodeFile "" when the file cannot be read
+ * @param {import("../../../figma-component-inventory/scripts/lib/languages.mjs").PageLanguage} input.projectLanguage
+ *   the language of the repo's team, which the model writes the specs in
  * @returns {string} the content of specs-brief.md
  */
-export function buildSpecsBrief({ inventory, readCodeFile }) {
+export function buildSpecsBrief({ inventory, readCodeFile, projectLanguage }) {
   const { fingerprint, approvedOn, screens } = inventory
   const components = listComponentsToSpecify(inventory)
   const drawnInstances = listDrawnInstances(inventory)
@@ -134,6 +139,8 @@ export function buildSpecsBrief({ inventory, readCodeFile }) {
     `# ${components.length} components to specify`,
     "",
     `From the inventory approved on ${approvedOn} (Figma version ${fingerprint.figma.version}, commit ${fingerprint.gitCommit}).`,
+    "",
+    tellLanguageToWriteIn(projectLanguage),
     "",
     ...screens.map(
       ({ number, name, capture }) => `${number}. ${name} — \`${capture.file}\``,

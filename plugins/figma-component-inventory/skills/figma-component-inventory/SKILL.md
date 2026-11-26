@@ -106,7 +106,7 @@ reading order (top to bottom, then left to right).
 | `to-adapt`     | an existing component that has to change                        | the same, plus `note`: the prop, type or style that blocks, and what the mock-up needs                                                |
 | `to-create`    | no component does this job                                      | `codeComponent`: the proposed name; `note`: where you searched, the closest existing code, what the new component takes from it       |
 | `out-of-scope` | `context.md` says this work leaves it out                       | `note`: why                                                                                                                           |
-| `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`, in French                                                                                       |
+| `to-decide`    | neither the code nor the context can answer, only the developer | `note`, `question`, 2 to 4 `options`                                                                                                  |
 
 - `except`: the uses whose judgement differs from the candidate's, named by letter
   (`"instances": ["a", "b"]`) or by screen (`"screens": [1, 4]`). An exception keeps the
@@ -222,8 +222,10 @@ a generic name (`Header`, `Tag`).
 more): the reason, not the story of your search. One fact per sentence, no list of every
 file you opened.
 
-**Write every `note` in French, for a developer who has neither the conversation nor the
-code open.** A component name comes with what it does or lacks. State only facts you checked.
+**Write every `note`, `question` and `options` in the repo's language, for a developer who
+has neither the conversation nor the code open.** The brief names that language in its
+first lines; the examples of this file are in French. A component name comes with what it
+does or lacks. State only facts you checked.
 
 **Nothing is left "to verify".** The page is what the developer approves: a verdict with
 an open doubt is not ready to draw. Before running `render.mjs`, go through your notes and
@@ -254,14 +256,14 @@ composant` means the outline is no React component of its own: `"outlined": fals
 his note saying what draws it. His answer is a decision, not an opinion to weigh.
 
 1. For each correction, change the entry (or the `except` of the instances he named) to what
-   he said, and add `"decidedBy": "developer"` and `"developerDecision"`: one short French
-   sentence saying what he decided, readable by someone who never saw the chat ("Le
+   he said, and add `"decidedBy": "developer"` and `"developerDecision"`: one short
+   sentence in the repo's language saying what he decided, readable by someone who never saw the chat ("Le
    composant s'appelle OrderProfileRow."). Tidy his wording freely: fix
    typos, drop the outline number and any name he gave up. Keep everything he asked for,
    and add nothing he did not say. Do not re-judge his decision, soften it or "improve"
    it, even if the code seems to say otherwise; if it cannot be applied (a file that does
    not exist, two corrections that contradict each other), stop and ask him with a quiz.
-2. Keep the entry valid: a `note` in French when the verdict needs one, written from his
+2. Keep the entry valid: a `note` in the repo's language when the verdict needs one, written from his
    words and from the code you open for the facts (the prop that changes, the file reused).
 3. An answer to a `to-decide` is a correction like the others: the entry takes the chosen
    verdict, and `question` / `options` are removed.

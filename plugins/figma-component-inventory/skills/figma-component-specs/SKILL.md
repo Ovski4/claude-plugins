@@ -51,8 +51,8 @@ decision, not an opinion to weigh.
 1. Change the component's entry to what he said. An answer to a `to-decide` zone gives the
    zone its real kind (`prop`, `fixed` or `not-drawn`), with the props it needs, and removes
    `question` and `options`.
-2. Add one sentence per decision to the component's `developerDecisions`, in French,
-   readable by someone who never saw the chat (« Le tag s'affiche quand la consigne égale
+2. Add one sentence per decision to the component's `developerDecisions`, in the repo's
+   language, readable by someone who never saw the chat (« Le tag s'affiche quand la consigne égale
    un préréglage. »). `developerDecisions` is a list of strings in the component's entry,
    beside `props` and `zones`; create it at the first decision. When his answer asks for a
    new prop without naming it, name it the way the feature's code names its own, and say
@@ -127,7 +127,7 @@ changes, each thing read as before → after:
   modify also gives `"typeBefore"`, its type today, `type` being the one after;
 - beside `props`, a `changes` list for what changes without a prop:
   `{ "what": "Hauteur du champ", "before": "32 px", "after": "36 px" }`. `what` names the
-  thing in a few French words, `before` is what the code does today, read in its file,
+  thing in a few words of the repo's language, `before` is what the code does today, read in its file,
   `after` what the mock-up asks. Keep the three short: a value, not a sentence.
 
 A prop that exists and stays as it is has nothing to tell: leave it out.
@@ -139,13 +139,13 @@ no prop changes has an empty `props` list.
 
 A **zone** is a part of the component's drawing and the props that drive it:
 
-| `kind`      | When                                                                      | Required with it                        |
-| ----------- | ------------------------------------------------------------------------- | --------------------------------------- |
-| `prop`      | one or several props decide what the zone shows, or receive its actions   | `props`: their names                    |
-| `fixed`     | in a component to create, the same whatever the props: a label, a divider | no `props`                              |
-| `change`    | in a component to adapt, where an item of `changes` shows                 | no `props`; an item in `changes`        |
-| `not-drawn` | the mock-up draws it and the component leaves it out, for a known reason  | no `props`; the reason as first note    |
-| `to-decide` | neither the mock-up nor the code says the rule, only the developer can    | `question`, 2 to 4 `options`, in French |
+| `kind`      | When                                                                      | Required with it                     |
+| ----------- | ------------------------------------------------------------------------- | ------------------------------------ |
+| `prop`      | one or several props decide what the zone shows, or receive its actions   | `props`: their names                 |
+| `fixed`     | in a component to create, the same whatever the props: a label, a divider | no `props`                           |
+| `change`    | in a component to adapt, where an item of `changes` shows                 | no `props`; an item in `changes`     |
+| `not-drawn` | the mock-up draws it and the component leaves it out, for a known reason  | no `props`; the reason as first note |
+| `to-decide` | neither the mock-up nor the code says the rule, only the developer can    | `question`, 2 to 4 `options`         |
 
 `parts` says what the zone outlines, with what the brief lists under the component:
 
@@ -156,7 +156,7 @@ A **zone** is a part of the component's drawing and the props that drive it:
 `letter`: `A`, `B`… in reading order on the first screen that draws the component; a zone
 that screen leaves out takes the next letter, in the order of the screens that draw it,
 then in reading order on that screen. `label`: what the zone is, in a
-few French words. `notes`: its rules, one French sentence each. `options`: a list of plain
+few words. `notes`: its rules, one sentence each. `options`: a list of plain
 sentences.
 
 ## Rules
@@ -219,8 +219,10 @@ wastes the developer's answer.
 `className` or a loading state the captures do not show is not listed, and `render.mjs`
 refuses a prop that no zone names.
 
-**Write `label`, `source`, `note` and `notes` in French, for a developer who has neither
-the conversation nor the code open.** One fact per sentence. State only facts you checked.
+**Write `label`, `source`, `note`, `notes`, `question`, `options` and `changes` in the
+repo's language, for a developer who has neither the conversation nor the code open.** The
+brief names that language in its first lines; the examples of this file are in French. One
+fact per sentence. State only facts you checked.
 
 **Stay in your lane.** Edit `<out-dir>/specs.json` directly: no helper script, no file
 elsewhere. Do not edit `candidates.json`, `verdicts.json`, `inventory.md`, the scripts or

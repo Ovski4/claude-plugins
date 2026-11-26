@@ -115,11 +115,14 @@ test("the brief gives each candidate what the repo already says about it", () =>
       "services/frontend/src/components/ui/button.tsx",
     ],
     readCodeFile: (codePath) => (codePath === BUTTON_PATH ? BUTTON_SOURCE : ""),
+    projectLanguage: "fr",
   })
 
   assert.equal(
     brief,
     `# Editor — order
+
+Language of this repo: French. Write in it everything the developer will read: notes, questions and their options, names of zones, his decisions.
 
 Design system: the components of \`services/frontend/src/components/ui\` win over a feature's own.
 

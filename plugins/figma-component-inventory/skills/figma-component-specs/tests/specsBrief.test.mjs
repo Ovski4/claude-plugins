@@ -19,6 +19,7 @@ test("the brief gives, per component to specify, the inventory's words, its decl
     inventory: buildApprovedInventory(),
     readCodeFile: (codePath) =>
       codePath === "src/components/ui/select.tsx" ? SELECT_SOURCE : "",
+    projectLanguage: "en",
   })
 
   assert.equal(
@@ -26,6 +27,8 @@ test("the brief gives, per component to specify, the inventory's words, its decl
     `# 2 components to specify
 
 From the inventory approved on 2026-11-23 (Figma version 2423993102449653660, commit 34ee98aa6).
+
+Language of this repo: English. Write in it everything the developer will read: notes, questions and their options, names of zones, his decisions.
 
 1. Editor — regulation · Continuous · Default — \`screen-87-91461.png\`
 
@@ -74,7 +77,11 @@ test("the brief names the icon of a use, which tells apart two uses of one varia
   )
   if (select) select.instances[0].icons = ["ic/caret-down/16"]
 
-  const brief = buildSpecsBrief({ inventory, readCodeFile: () => "" })
+  const brief = buildSpecsBrief({
+    inventory,
+    readCodeFile: () => "",
+    projectLanguage: "fr",
+  })
 
   assert.match(
     brief,

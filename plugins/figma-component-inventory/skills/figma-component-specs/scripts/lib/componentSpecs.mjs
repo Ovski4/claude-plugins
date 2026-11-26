@@ -18,8 +18,8 @@ import {
  * @property {string} name as written in the code: "targetTemperature"
  * @property {string} type its TypeScript type: "number", "HeatingPeriod"
  * @property {boolean} required false for an optional prop
- * @property {string} source where the parent gets the value, in French: the hook, the state field or the constant
- * @property {string} [note] a rule the type does not say, in French: "obligatoire avec heatingPeriod"
+ * @property {string} source where the parent gets the value, in the repo's language: the hook, the state field or the constant
+ * @property {string} [note] a rule the type does not say, in the repo's language: "obligatoire avec heatingPeriod"
  * @property {PropChangeKey} [change] for a component to adapt, where every listed prop is new or modified; absent for a component to create
  * @property {string} [typeBefore] for a prop to modify: its TypeScript type today, `type` being the one after
  */
@@ -43,16 +43,16 @@ import {
  * One zone of a component: a part of its drawing and the props that drive it.
  * @typedef {object} ZoneSpec
  * @property {string} letter "A", "B"…: unique in the component
- * @property {string} label what the zone is, in French: "Période de chauffe"
+ * @property {string} label what the zone is, in the repo's language: "Période de chauffe"
  * @property {ZoneKindKey} kind
  * @property {ZonePart[]} parts
  * @property {string[]} [props] the names of the props that drive the zone
- * @property {string[]} [notes] the rules of the zone, in French, one sentence each
+ * @property {string[]} [notes] the rules of the zone, in the repo's language, one sentence each
  * @property {string} [question] for "to-decide": what the developer is asked
  * @property {string[]} [options] for "to-decide": the answers he picks from
  */
 /**
- * One thing a component to adapt changes without a prop, in French, read as "before → after".
+ * One thing a component to adapt changes without a prop, in the repo's language, read as "before → after".
  * @typedef {object} ChangeSpec
  * @property {string} what the thing that changes: "Hauteur du champ"
  * @property {string} before what the code does today: "32 px"
@@ -63,7 +63,7 @@ import {
  * @property {string} codeComponent
  * @property {PropSpec[]} props every prop of a component to create; for a component to adapt, only the props to add or to modify
  * @property {ZoneSpec[]} zones
- * @property {string[]} [developerDecisions] what the developer settled on the page or in the chat, in French, one sentence each: no model changes what a decision says
+ * @property {string[]} [developerDecisions] what the developer settled on the page or in the chat, in the repo's language, one sentence each: no model changes what a decision says
  * @property {ChangeSpec[]} [changes] for a component to adapt: what changes without a prop
  */
 /**

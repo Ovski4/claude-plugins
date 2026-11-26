@@ -49,8 +49,8 @@ Other frameworks (Vue, Svelte) have not been tried: the instructions speak of Re
 components, and only TypeScript props declarations are read.
 
 The pages are read in French or in English: in the repo's language (the `language`
-setting below) until the developer picks another in a page's settings. The model's notes
-and the files the next steps read are written in French.
+setting below) until the developer picks another in a page's settings. The model writes
+its notes in the repo's language; the files the next steps read are written in French.
 
 ## Settings
 
@@ -73,7 +73,7 @@ The repo declares its paths in
 | `componentFileExtensions` | The extensions of a component file. Test and Storybook files (`button.test.tsx`, `button.stories.tsx`) are left out. Required.                                                                                                                                                      |
 | `designSystemFolder`      | The folder of the shared components: its files are proposed to the model before a feature's own. `null` or absent: no file gets priority.                                                                                                                                           |
 | `figmaToCodeMap`          | The table that gives the component of each Figma component. `null` or absent: no name is pre-filled, the model finds every component in the code. At approval, the Figma components that existing code draws and the table does not name yet are added to its "Components" section. |
-| `language`                | The language of the repo's team, `"fr"` or `"en"`: both pages are read in it until a developer picks another in a page's settings. Absent: `"en"`.                                                                                                                                  |
+| `language`                | The language of the repo's team, `"fr"` or `"en"`: both pages are read in it until a developer picks another in a page's settings, and the model writes its notes, questions and decisions in it. Absent: `"en"`.                                                                   |
 
 All paths start at the repo's root. The output of each screen goes to
 `.claude/local/figma-component-inventory/out/<screen name>` of that repo.
@@ -223,7 +223,7 @@ The format and the rule of each verdict are in `SKILL.md`; the types are in
 What the model does not write:
 
 - `decidedBy: "developer"` and `developerDecision`: the entry is a correction the developer
-  gave. `developerDecision` is one short French sentence saying what he decided, written so
+  gave. `developerDecision` is one short sentence saying what he decided, written so
   that it reads alone in `inventory.md`. No model changes the entry afterwards.
 - `approval` (written by `render.mjs --approve`, which the model runs once the developer
   says in the chat that he approves; refused while a verdict is `to-decide`, and when the
@@ -309,7 +309,7 @@ and the capture is veiled except where that component is drawn, on every screen.
 click, a click beside the images or the Escape key shows everything back.
 
 Labels are in the language the developer picks in the page's settings, French unless he
-picked English; the model's notes are in French. Every outline is dotted; only
+picked English; the model's notes are in the repo's language. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its
 number and its label but gets no outline, which would hide it.
 
@@ -373,7 +373,7 @@ question and answers.
 
 What the model does not decide, in `specs.json`:
 
-- `developerDecisions`, per component: one French sentence per thing the developer settled.
+- `developerDecisions`, per component: one sentence per thing the developer settled.
   No model changes what a sentence says afterwards.
 - `approval` (written by `render.mjs --approve`, which the model runs once the developer
   says in the chat that he approves; refused while a zone is `to-decide`, and when the

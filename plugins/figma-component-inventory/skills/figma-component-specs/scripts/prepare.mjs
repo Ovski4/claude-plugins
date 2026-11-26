@@ -16,6 +16,7 @@ import {
   loadApprovedInventory,
 } from "../../figma-component-inventory/scripts/lib/approvedInventory.mjs"
 import { findRepoRoot } from "../../figma-component-inventory/scripts/lib/gitRepo.mjs"
+import { readProjectSettings } from "../../figma-component-inventory/scripts/lib/projectSettings.mjs"
 import {
   EXIT_CODE_FAILED,
   EXIT_CODE_INVENTORY_NOT_USABLE,
@@ -37,6 +38,7 @@ function main() {
 
   const brief = buildSpecsBrief({
     inventory,
+    projectLanguage: readProjectSettings(repoRoot).language,
     readCodeFile: (codePath) => {
       const file = path.join(repoRoot, codePath)
       return fs.existsSync(file) ? fs.readFileSync(file, "utf8") : ""

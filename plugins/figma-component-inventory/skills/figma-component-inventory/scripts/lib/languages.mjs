@@ -54,3 +54,15 @@ export function buildWriterInEveryLanguage(ownTexts) {
       )
     )
 }
+
+// The briefs are written in English for the model: a language is named there in English.
+/** @type {Record<PageLanguage, string>} */
+const LANGUAGE_NAMES_IN_ENGLISH = { fr: "French", en: "English" }
+
+/**
+ * The line of a brief that tells the model which language to write in: what it writes in
+ * the file it fills is read by the repo's team, on the page and in the tickets.
+ * @param {PageLanguage} projectLanguage the `language` of the repo's settings file
+ */
+export const tellLanguageToWriteIn = (projectLanguage) =>
+  `Language of this repo: ${LANGUAGE_NAMES_IN_ENGLISH[projectLanguage]}. Write in it everything the developer will read: notes, questions and their options, names of zones, his decisions.`

@@ -1,6 +1,7 @@
 // @ts-check
 // Writes the brief the model reads before judging: for each candidate, what the scripts can
 // already find in the repo, so that the model opens a file only to settle a verdict.
+import { tellLanguageToWriteIn } from "./languages.mjs"
 import { isBoxInside, measureArea } from "./box.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
 
@@ -189,6 +190,8 @@ function listTextsHeldDirectly(screens, candidates) {
  *   the repo's root; null when the repo has none
  * @param {string[]} inventory.componentFiles every component file of the repo, from its root
  * @param {(codePath: string) => string} inventory.readCodeFile "" when the file cannot be read
+ * @param {import("./languages.mjs").PageLanguage} inventory.projectLanguage the language
+ *   of the repo's team, which the model writes its notes in
  * @returns {string} the content of brief.md
  */
 export function buildBrief({
@@ -199,6 +202,7 @@ export function buildBrief({
   designSystemFolder,
   componentFiles,
   readCodeFile,
+  projectLanguage,
 }) {
   const hasSeveralScreens = screens.length > 1
   const backdrop = screens.find((screen) => screen.backdrop)?.backdrop
@@ -220,6 +224,8 @@ export function buildBrief({
       ]
     : [`# ${screens[0].name}`]
   lines.push(
+    "",
+    tellLanguageToWriteIn(projectLanguage),
     "",
     designSystemFolder
       ? `Design system: the components of \`${designSystemFolder}\` win over a feature's own.`
