@@ -159,7 +159,12 @@ function createLabel(label) {
 
 /** @param {DrawnScreen["looseTexts"][number]} looseText shown by its own switch */
 function createLooseText(looseText) {
-  const group = createSvgElement("g", { class: "loose-text" })
+  const group = createSvgElement("g", {
+    class:
+      looseText.verdictOfComponentAround === OUT_OF_SCOPE_VERDICT
+        ? "loose-text in-out-of-scope-component"
+        : "loose-text",
+  })
   group.append(
     createSvgElement("title", {}, looseText.characters),
     createSvgElement("rect", looseText.box),

@@ -103,6 +103,8 @@ const PAGE_WORDING = {
  * @property {Box} box
  * @property {string} characters what it says
  * @property {string} tag "→ 1": the only component around it; "?" when there is none
+ * @property {VerdictKey | null} verdictOfComponentAround the verdict of that only
+ *   component; null when there is none
  * @property {number} tagWidth
  */
 /**
@@ -243,7 +245,7 @@ function listNumbersSameOnEveryScreen(judgedCandidates, screenNumbers) {
  * may be a label or a help text that deserves a component, or a prop of the component
  * next to it.
  * @param {ScreenText[]} texts
- * @param {{ candidateNumber: number, box: Box }[]} outlines
+ * @param {{ candidateNumber: number, verdict: VerdictKey, box: Box }[]} outlines
  * @returns {DrawnLooseText[]}
  */
 export function findLooseTexts(texts, outlines) {
@@ -266,6 +268,7 @@ export function findLooseTexts(texts, outlines) {
         box: text.box,
         characters: text.characters,
         tag,
+        verdictOfComponentAround: owner?.verdict ?? null,
         tagWidth: measureBadge(tag),
       },
     ]

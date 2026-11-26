@@ -62,8 +62,16 @@ function buildJudgedCandidate(
 
 test("a text is loose when the only component around it is the outermost one, or none", () => {
   const outlines = [
-    { candidateNumber: 1, box: buildBox([0, 0, 400, 300]) },
-    { candidateNumber: 2, box: buildBox([20, 100, 360, 80]) },
+    {
+      candidateNumber: 1,
+      verdict: /** @type {const} */ ("out-of-scope"),
+      box: buildBox([0, 0, 400, 300]),
+    },
+    {
+      candidateNumber: 2,
+      verdict: /** @type {const} */ ("to-create"),
+      box: buildBox([20, 100, 360, 80]),
+    },
   ]
   /** @param {string} characters @param {BoxValues} box */
   const buildText = (characters, box) => ({
@@ -82,10 +90,14 @@ test("a text is loose when the only component around it is the outermost one, or
   )
 
   assert.deepEqual(
-    looseTexts.map(({ characters, tag }) => [characters, tag]),
+    looseTexts.map(({ characters, tag, verdictOfComponentAround }) => [
+      characters,
+      tag,
+      verdictOfComponentAround,
+    ]),
     [
-      ["Mode", "→ 1"],
-      ["Footnote", "?"],
+      ["Mode", "→ 1", "out-of-scope"],
+      ["Footnote", "?", null],
     ],
   )
 })

@@ -124,8 +124,10 @@
   display: inline;
 }
 /* Everything drawn about a component that is out of scope: its outlines, its labels, its
-   reason in the panel and its entry in the legend. */
-.hide-out-of-scope :is(.screens, .panel-items, .legend) .out-of-scope {
+   reason in the panel, its entry in the legend, and the texts it is the only component
+   around. A text with no component around it stays: nothing says whose it is. */
+.hide-out-of-scope :is(.screens, .panel-items, .legend) .out-of-scope,
+.hide-out-of-scope .loose-text.in-out-of-scope-component {
   display: none;
 }
 .screens h2 {
