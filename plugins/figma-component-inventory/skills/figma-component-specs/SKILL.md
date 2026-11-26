@@ -44,8 +44,9 @@ your work re-reads all you have read so far: group your file reads in one comman
 The developer read the page and answers in the chat, in his own words or with the text the
 page's form builds: « Corrections des specs … », then per target its name (`Select` for the
 component, `Select · zone A` for one zone) and one indented line per field: `réponse`, the
-option he picked for a `to-decide` zone, and `note`, anything else in his words. His answer
-is a decision, not an opinion to weigh.
+option he picked for a `to-decide` zone, and `note`, anything else in his words. A page read
+in English writes « Corrections of the specs … », `answer` and `note`. His answer is a
+decision, not an opinion to weigh.
 
 1. Change the component's entry to what he said. An answer to a `to-decide` zone gives the
    zone its real kind (`prop`, `fixed` or `not-drawn`), with the props it needs, and removes

@@ -47,6 +47,7 @@ export const OWN_PAGE_TEXTS = {
     "correction.answer": "À trancher : réponse à la question",
     "corrections.none":
       "Aucune correction : cliquer sur un composant ou une zone pour le corriger",
+    "corrections.title": "Corrections des specs « {subject} » :",
   },
   en: {
     "page.title": "Props of the components to create or to adapt",
@@ -87,5 +88,6 @@ export const OWN_PAGE_TEXTS = {
     "correction.answer": "To decide: answer to the question",
     "corrections.none":
       "No correction: click a component or a zone to correct it",
+    "corrections.title": "Corrections of the specs “{subject}”:",
   },
 }

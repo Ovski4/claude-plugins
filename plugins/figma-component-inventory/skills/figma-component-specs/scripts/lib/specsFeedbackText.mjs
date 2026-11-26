@@ -1,7 +1,10 @@
 // @ts-check
 // The corrections the developer makes on specs.html, and the text the page builds from
 // them for him to paste into the chat. render.mjs pastes this file into the page as a plain
-// script, without its "export" words: its functions use nothing but each other.
+// script, without its "export" words: its functions use nothing but each other, and take
+// the page's texts from the `translate` they are given.
+
+/** @typedef {import("../../../figma-component-inventory/scripts/page/pageTexts.mjs").Translate} Translate */
 
 /**
  * One correction made on the page.
@@ -33,14 +36,20 @@ export function buildSpecCorrection(target, form) {
 /**
  * What a correction says, each field named: ["réponse : …", "note : …"].
  * @param {SpecCorrection} correction
+ * @param {Translate} translate gives the page's texts in its language
  */
-export function listSpecCorrectionFields({ answer, note }) {
+export function listSpecCorrectionFields({ answer, note }, translate) {
   return [
-    ["réponse", answer],
+    ["answer", answer],
     ["note", note],
   ]
     .filter(([, value]) => value)
-    .map(([fieldName, value]) => `${fieldName} : ${value}`)
+    .map(([field, value]) =>
+      translate("corrections.field", {
+        name: translate(`corrections.field.${field}`),
+        value: value ?? "",
+      }),
+    )
 }
 
 /**
@@ -61,15 +70,17 @@ export function sortSpecCorrections(corrections, targetsInPageOrder) {
  * indented line per field. "" when there is no correction.
  * @param {string} specsTitle
  * @param {SpecCorrection[]} corrections in the order to write them
+ * @param {Translate} translate gives the page's texts in its language
  */
-export function buildSpecsFeedbackText(specsTitle, corrections) {
+export function buildSpecsFeedbackText(specsTitle, corrections, translate) {
   if (!corrections.length) return ""
   return [
-    `Corrections des specs « ${specsTitle} » :`,
+    translate("corrections.title", { subject: specsTitle }),
     ...corrections.map((correction) =>
-      [`${correction.target} :`, ...listSpecCorrectionFields(correction)].join(
-        "\n  ",
-      ),
+      [
+        translate("corrections.target", { target: correction.target }),
+        ...listSpecCorrectionFields(correction, translate),
+      ].join("\n  "),
     ),
   ].join("\n")
 }

@@ -7,6 +7,22 @@ import {
   nameCorrectionTarget,
   sortSpecCorrections,
 } from "../scripts/lib/specsFeedbackText.mjs"
+import { OWN_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
+import {
+  fillText,
+  SHARED_PAGE_TEXTS,
+} from "../../figma-component-inventory/scripts/page/pageTexts.mjs"
+
+/**
+ * The page's `translate`, for a page read in one language.
+ * @param {"fr" | "en"} language
+ * @returns {import("../../figma-component-inventory/scripts/page/pageTexts.mjs").Translate}
+ */
+const translateIn = (language) => (key, values) =>
+  fillText(
+    { ...SHARED_PAGE_TEXTS[language], ...OWN_PAGE_TEXTS[language] }[key],
+    values,
+  )
 
 test("an empty form gives no correction, a filled one keeps the answer and the trimmed note", () => {
   assert.equal(
@@ -44,7 +60,7 @@ test("the text to paste lists the corrections in the page's order, one line per 
   )
 
   assert.equal(
-    buildSpecsFeedbackText("Editor — order", corrections),
+    buildSpecsFeedbackText("Editor — order", corrections, translateIn("fr")),
     `Corrections des specs « Editor — order » :
 Select :
   note : une prop size plutôt qu'un changement pour tous
@@ -52,5 +68,17 @@ OrderSettings · zone C :
   réponse : Seulement en Continu.
   note : sans prop de plus`,
   )
-  assert.equal(buildSpecsFeedbackText("Editor — order", []), "")
+  assert.equal(
+    buildSpecsFeedbackText("Editor — order", corrections, translateIn("en")),
+    `Corrections of the specs “Editor — order”:
+Select:
+  note: une prop size plutôt qu'un changement pour tous
+OrderSettings · zone C:
+  answer: Seulement en Continu.
+  note: sans prop de plus`,
+  )
+  assert.equal(
+    buildSpecsFeedbackText("Editor — order", [], translateIn("fr")),
+    "",
+  )
 })

@@ -245,7 +245,9 @@ The developer looked at the page and answered by outline number ("7: Select", "2
 create, OrderDayRow", "8 and 11 are one component"), in his own words or with the text the
 page's form builds: « Corrections de l'inventaire … », then per outline its name ("7" for
 every use, "7b" or "7 · écran 2" for one outline) and one indented line per field he changed:
-`verdict`, `composant React`, `réponse`, `même composant que`, `note`. A field that is not
+`verdict`, `composant React`, `réponse`, `même composant que`, `note`. A page read in
+English writes « Corrections of the inventory … » and `verdict`, `React component`,
+`answer`, `same component as`, `note`, with the verdicts' English names. A field that is not
 written keeps the entry's value. `réponse` is the option he picked for a `to-decide`.
 `même composant que : 8` under 11 means 8 and 11 are one component. `verdict : Pas un
 composant` means the outline is no React component of its own: `"outlined": false`, with

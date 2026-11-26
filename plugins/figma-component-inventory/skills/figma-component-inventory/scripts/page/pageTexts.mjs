@@ -44,6 +44,10 @@ export const SHARED_PAGE_TEXTS = {
     "corrections.count.several":
       "{count} corrections à coller dans la conversation",
     "correction.reopen": "Rouvrir cette correction",
+    "corrections.target": "{target} :",
+    "corrections.field": "{name} : {value}",
+    "corrections.field.answer": "réponse",
+    "corrections.field.note": "note",
     "panel.developerDecision": "Décidé par le développeur : {decision}",
   },
   en: {
@@ -72,9 +76,19 @@ export const SHARED_PAGE_TEXTS = {
     "corrections.count.several":
       "{count} corrections to paste in the conversation",
     "correction.reopen": "Reopen this correction",
+    "corrections.target": "{target}:",
+    "corrections.field": "{name}: {value}",
+    "corrections.field.answer": "answer",
+    "corrections.field.note": "note",
     "panel.developerDecision": "Decided by the developer: {decision}",
   },
 }
+
+/**
+ * Gives a text of the page in its language, its braces replaced: what `translate` of
+ * pageReview.mjs does in the page.
+ * @typedef {(key: string, values?: Record<string, string | number>) => string} Translate
+ */
 
 /**
  * A text with its braces replaced: "Validé par le développeur le {date}" and

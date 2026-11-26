@@ -861,7 +861,7 @@ function showCorrections() {
     ...sortCorrections([...corrections.values()]).map((correction) => {
       const line = createElement(
         "button",
-        `${correction.target} — ${listCorrectionFields(correction, verdictLabels).join(" · ")}`,
+        `${correction.target} — ${listCorrectionFields(correction, verdictLabels, translate).join(" · ")}`,
       )
       line.setAttribute("type", "button")
       line.setAttribute("title", translate("correction.reopen"))
@@ -908,6 +908,7 @@ function copyFeedbackText() {
     inPageLanguage(inventory.title),
     [...corrections.values()],
     verdictLabels,
+    translate,
   )
   copyWithConfirmation(getElement("feedback-copy"), text, () => {
     feedbackTextArea.value = text

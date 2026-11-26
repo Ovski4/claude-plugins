@@ -1,7 +1,10 @@
 // @ts-check
 // The corrections the developer makes on inventory.html, and the text the page builds from
 // them for him to paste into the chat. render.mjs pastes this file into the page as a plain
-// script, without its "export" words: its functions use nothing but each other.
+// script, without its "export" words: its functions use nothing but each other, and take
+// the page's texts from the `translate` they are given.
+
+/** @typedef {import("../page/pageTexts.mjs").Translate} Translate */
 
 /**
  * One correction made on the page. Fields left as the inventory has them are null.
@@ -63,20 +66,27 @@ export function sortCorrections(corrections) {
  * OrderDayRow", "note : une ligne par jour"]. The name tells a component from a note.
  * @param {PageCorrection} correction
  * @param {Record<string, string>} verdictLabels each verdict's key → its label on the page
+ * @param {Translate} translate gives the page's texts in its language
  */
 export function listCorrectionFields(
   { verdict, codeComponent, answer, sameAs, note },
   verdictLabels,
+  translate,
 ) {
   return [
     ["verdict", verdict && verdictLabels[verdict]],
-    ["composant React", codeComponent],
-    ["réponse", answer],
-    ["même composant que", sameAs],
+    ["component", codeComponent],
+    ["answer", answer],
+    ["sameAs", sameAs],
     ["note", note],
   ]
     .filter(([, value]) => value)
-    .map(([fieldName, value]) => `${fieldName} : ${value}`)
+    .map(([field, value]) =>
+      translate("corrections.field", {
+        name: translate(`corrections.field.${field}`),
+        value: value ?? "",
+      }),
+    )
 }
 
 /**
@@ -85,15 +95,21 @@ export function listCorrectionFields(
  * @param {string} inventoryTitle
  * @param {PageCorrection[]} corrections
  * @param {Record<string, string>} verdictLabels each verdict's key → its label on the page
+ * @param {Translate} translate gives the page's texts in its language
  */
-export function buildFeedbackText(inventoryTitle, corrections, verdictLabels) {
+export function buildFeedbackText(
+  inventoryTitle,
+  corrections,
+  verdictLabels,
+  translate,
+) {
   if (!corrections.length) return ""
   return [
-    `Corrections de l'inventaire « ${inventoryTitle} » :`,
+    translate("corrections.title", { subject: inventoryTitle }),
     ...sortCorrections(corrections).map((correction) =>
       [
-        `${correction.target} :`,
-        ...listCorrectionFields(correction, verdictLabels),
+        translate("corrections.target", { target: correction.target }),
+        ...listCorrectionFields(correction, verdictLabels, translate),
       ].join("\n  "),
     ),
   ].join("\n")

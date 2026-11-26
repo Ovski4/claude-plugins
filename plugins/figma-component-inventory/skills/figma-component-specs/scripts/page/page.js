@@ -735,7 +735,7 @@ function showCorrections() {
   getElement("feedback-lines").replaceChildren(
     ...sortedCorrections.map((correction) => {
       const line = createElement("button", {
-        text: `${correction.target} — ${listSpecCorrectionFields(correction).join(" · ")}`,
+        text: `${correction.target} — ${listSpecCorrectionFields(correction, translate).join(" · ")}`,
       })
       line.setAttribute("type", "button")
       line.setAttribute("title", translate("correction.reopen"))
@@ -785,7 +785,11 @@ function showWhatACorrectionBlocks() {
 }
 
 function copyFeedbackText() {
-  const text = buildSpecsFeedbackText(subject, listSortedCorrections())
+  const text = buildSpecsFeedbackText(
+    subject,
+    listSortedCorrections(),
+    translate,
+  )
   copyWithConfirmation(getElement("feedback-copy"), text, () => {
     feedbackTextArea.value = text
     feedbackTextArea.hidden = false

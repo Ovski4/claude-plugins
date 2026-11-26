@@ -36,6 +36,10 @@ export const OWN_PAGE_TEXTS = {
     "correction.toDecide": "À trancher : {question}",
     "corrections.none":
       "Aucune correction : cliquer sur un composant pour le corriger",
+    "corrections.title": "Corrections de l'inventaire « {subject} » :",
+    "corrections.field.verdict": "verdict",
+    "corrections.field.component": "composant React",
+    "corrections.field.sameAs": "même composant que",
   },
   en: {
     "page.title": "Component inventory",
@@ -65,5 +69,9 @@ export const OWN_PAGE_TEXTS = {
     "correction.sameAs": "Same component as",
     "correction.toDecide": "To decide: {question}",
     "corrections.none": "No correction: click a component to correct it",
+    "corrections.title": "Corrections of the inventory “{subject}”:",
+    "corrections.field.verdict": "verdict",
+    "corrections.field.component": "React component",
+    "corrections.field.sameAs": "same component as",
   },
 }
