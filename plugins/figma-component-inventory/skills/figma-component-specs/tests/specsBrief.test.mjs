@@ -36,7 +36,7 @@ Under a component, what a nested React component holds is not repeated: the zone
 
 A zone's "parts" name what is listed under a component: a candidate by its number (\`{ "candidate": 19 }\`), one use by number and letter (\`{ "instance": "11a" }\`), a text by its exact characters (\`{ "text": "Consigne" }\`).
 
-## Select — À adapter
+## Select — To adapt
 
 - Inventory candidate: 8 Input — field
 - Inventory's reason: Le libellé au-dessus du champ manque.
@@ -54,7 +54,7 @@ What it holds, on each screen it is drawn on:
 - Screen 1, instance 8a, variant "State=Default", 200 × 40 px
   - Texts: "19,5 °C"
 
-## OrderDeliverySettings — À créer
+## OrderDeliverySettings — To create
 
 - Inventory candidate: 17 Mode settings
 - Inventory's reason: Aucun composant ne dessine ces réglages.
@@ -62,7 +62,7 @@ What it holds, on each screen it is drawn on:
 What it holds, on each screen it is drawn on:
 
 - Screen 1, instance 17b, 432 × 92 px
-  - 8a Input — field [State=Default] — Select, À adapter
+  - 8a Input — field [State=Default] — Select, To adapt
   - 19a Group — no React component of its own
   - 20a Field row — no React component of its own
   - Texts: "Consigne"
@@ -85,6 +85,6 @@ test("the brief names the icon of a use, which tells apart two uses of one varia
 
   assert.match(
     brief,
-    /^ {2}- 8a Input — field \[State=Default\], icon ic\/caret-down\/16 — Select, À adapter$/m,
+    /^ {2}- 8a Input — field \[State=Default\], icon ic\/caret-down\/16 — Select, To adapt$/m,
   )
 })

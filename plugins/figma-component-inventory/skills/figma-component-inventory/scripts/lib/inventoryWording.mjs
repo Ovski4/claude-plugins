@@ -3,12 +3,15 @@
 // so that the page and the summary always say the same thing. The words come from the
 // pages' dictionaries, through the `translate` of the language to write in.
 
-import { translateForWrittenFiles } from "./languages.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
 
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /** @typedef {import("./verdicts.mjs").JudgedInstance} JudgedInstance */
 /** @typedef {import("./languages.mjs").Translate} Translate */
+
+/** The line of inventory.md and specs.md that keeps a later session from judging again. */
+export const DEVELOPER_DECISIONS_RULE =
+  'The decisions marked "Developer" are final: do not judge them again.'
 
 /**
  * What an outline's badge says: "6", or "6b" when the candidate has several instances.
@@ -33,14 +36,15 @@ export function nameOutlines(candidate, instances) {
 }
 
 /**
- * The instances of a candidate that have no outline: "17 · écrans 1 4 Mode settings", or
+ * The instances of a candidate that have no outline: "17 · screens 1 4 Mode settings", or
  * "6a 6b Segment" when they are named by letter.
  * @param {JudgedCandidate} candidate
  * @param {import("./verdicts.mjs").PartNotOutlined} part
+ * @param {Translate} translate
  */
-export function namePartNotOutlined(candidate, part) {
+export function namePartNotOutlined(candidate, part, translate) {
   const where = part.isNamedByScreens
-    ? `${candidate.number} · ${nameScreens(listScreenNumbers(part.instances), translateForWrittenFiles)}`
+    ? `${candidate.number} · ${nameScreens(listScreenNumbers(part.instances), translate)}`
     : part.instances
         .map((instance) => `${candidate.number}${instance.letter}`)
         .join(" ")

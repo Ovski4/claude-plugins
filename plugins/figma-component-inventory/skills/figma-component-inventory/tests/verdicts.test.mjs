@@ -329,27 +329,27 @@ test("an approval holds until a verdict changes, and inventory.md lists the appr
   })
   assert.equal(
     summary,
-    `# Inventaire des composants — Editor — order
+    `# Component inventory — Editor — order
 
-Validé par le développeur le 2026-11-23. Maquette : [Figma](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-91461), modifiée le 2026-11-20 (version 2423993102449653660). Code : commit 34ee98aa6.
-Les décisions marquées « développeur » font foi : ne pas les rejuger.
+Approved by the developer on 2026-11-23. Design: [Figma](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-91461), last changed on 2026-11-20 (version 2423993102449653660). Code: commit 34ee98aa6.
+The decisions marked "Developer" are final: do not judge them again.
 
-## Réutilisé
+## Reused
 
-- **1c Button** — \`services/frontend/src/components/ui/button.tsx\` — Figma « Button — icon » ×1 ([nœud](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-1c))
+- **1c Button** — \`services/frontend/src/components/ui/button.tsx\` — Figma "Button — icon" ×1 ([node](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-1c))
   - 28 px = largeur et hauteur de .btnIcon.discreet (button.module.css).
 
-## À créer
+## To create
 
-- **2 StatusTag** — Figma « Tag — status » ×1 ([nœud](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-2a))
+- **2 StatusTag** — Figma "Tag — status" ×1 ([node](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-2a))
   - Aucun composant ne dessine cette pastille.
 
-## Hors périmètre
+## Out of scope
 
-- **1a 1b Button** — \`services/frontend/src/components/ui/button.tsx\` — Figma « Button — icon » ×2 ([nœud](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-1a))
+- **1a 1b Button** — \`services/frontend/src/components/ui/button.tsx\` — Figma "Button — icon" ×2 ([node](https://www.figma.com/design/AbCdEfGhIjKlMnOpQrStUv/?node-id=87-1a))
   - Traités à part.
 
-## Pas un composant à part
+## Not a component of its own
 
 - 3 Point — Dessiné par StatusTag.
 `,

@@ -1,7 +1,7 @@
 // @ts-check
 // The languages of what the scripts write: a page is read in the language its developer
 // picks, so a script writes each of the page's texts once per language; the files the next
-// steps read are written in one language.
+// steps read are written in English, whatever the repo's language.
 import { buildTranslate, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
 
 /** @typedef {import("../page/pageTexts.mjs").PageLanguage} PageLanguage */
@@ -15,10 +15,11 @@ import { buildTranslate, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
 const NO_OWN_TEXTS = { fr: {}, en: {} }
 
 /**
- * The language of inventory.md, specs.md and index.md.
+ * The language of inventory.md, specs.md and index.md: the model reads them before it
+ * writes tickets or code, and what it wrote there itself stays in the repo's language.
  * @type {PageLanguage}
  */
-export const WRITTEN_FILES_LANGUAGE = "fr"
+export const WRITTEN_FILES_LANGUAGE = "en"
 
 /** The shared texts in the language of the written files, for what has no page of its own. */
 export const translateForWrittenFiles = buildTranslate(

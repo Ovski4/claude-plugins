@@ -50,7 +50,8 @@ components, and only TypeScript props declarations are read.
 
 The pages are read in French or in English: in the repo's language (the `language`
 setting below) until the developer picks another in a page's settings. The model writes
-its notes in the repo's language; the files the next steps read are written in French.
+its notes in the repo's language; the files the next steps read
+(`inventory.md`, `specs.md`, `index.md`) are written in English.
 
 ## Settings
 

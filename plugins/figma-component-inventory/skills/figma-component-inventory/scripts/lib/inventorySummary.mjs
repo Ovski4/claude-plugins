@@ -2,6 +2,7 @@
 // Writes inventory.md: what the next steps of the workflow read instead of the page.
 import { translateForWrittenFiles } from "./languages.mjs"
 import {
+  DEVELOPER_DECISIONS_RULE,
   nameOutlines,
   namePartNotOutlined,
   nameScreens,
@@ -28,7 +29,7 @@ import { groupByJudgement, VERDICT_KEYS } from "./verdicts.mjs"
  * @param {Fingerprint} inventory.fingerprint
  * @param {string} inventory.approvalDate "2026-11-23"
  * @param {JudgedCandidate[]} inventory.judgedCandidates
- * @returns {string} the content of inventory.md, in French
+ * @returns {string} the content of inventory.md
  */
 export function buildInventorySummary({
   screens,
@@ -40,14 +41,14 @@ export function buildInventorySummary({
   const hasSeveralScreens = screens.length > 1
   const figmaLinks = screens.map(({ number, name, nodeId }) =>
     hasSeveralScreens
-      ? `[écran ${number} « ${name} »](${buildFigmaNodeUrl(fileKey, nodeId)})`
+      ? `[screen ${number} "${name}"](${buildFigmaNodeUrl(fileKey, nodeId)})`
       : `[Figma](${buildFigmaNodeUrl(fileKey, nodeId)})`,
   )
   const lines = [
-    `# Inventaire des composants — ${titleInventory(screens, translateForWrittenFiles)}`,
+    `# Component inventory — ${titleInventory(screens, translateForWrittenFiles)}`,
     "",
-    `Validé par le développeur le ${approvalDate}. Maquette : ${figmaLinks.join(", ")}, modifiée le ${lastModified.slice(0, 10)} (version ${version}). Code : commit ${fingerprint.gitCommit}.`,
-    "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
+    `Approved by the developer on ${approvalDate}. Design: ${figmaLinks.join(", ")}, last changed on ${lastModified.slice(0, 10)} (version ${version}). Code: commit ${fingerprint.gitCommit}.`,
+    DEVELOPER_DECISIONS_RULE,
   ]
   const outlinedCandidates = judgedCandidates.filter(
     (candidate) => candidate.outlined,
@@ -72,14 +73,12 @@ export function buildInventorySummary({
             hasSeveralScreens && screenNumbers.length < screens.length
               ? `, ${nameScreens(screenNumbers, translateForWrittenFiles)}`
               : ""
-          const figmaLink = `[nœud](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
+          const figmaLink = `[node](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
           return [
-            `- **${nameOutlines(candidate, instances)} ${codeComponent ?? candidate.figmaName}**${codePath ? ` — \`${codePath}\`` : ""} — Figma « ${candidate.figmaName} » ×${instances.length}${where} (${figmaLink})`,
+            `- **${nameOutlines(candidate, instances)} ${codeComponent ?? candidate.figmaName}**${codePath ? ` — \`${codePath}\`` : ""} — Figma "${candidate.figmaName}" ×${instances.length}${where} (${figmaLink})`,
             ...(note ? [`  - ${note}`] : []),
             ...(developerDecision !== null
-              ? [
-                  `  - Développeur : ${developerDecision || "décision confirmée"}`,
-                ]
+              ? [`  - Developer: ${developerDecision || "decision confirmed"}`]
               : []),
           ]
         }),
@@ -95,12 +94,13 @@ export function buildInventorySummary({
   const items = judgedCandidates.flatMap((candidate) =>
     candidate.outlined
       ? candidate.partsNotOutlined.map(
-          (part) => `- ${namePartNotOutlined(candidate, part)} — ${part.note}`,
+          (part) =>
+            `- ${namePartNotOutlined(candidate, part, translateForWrittenFiles)} — ${part.note}`,
         )
       : [`- ${candidate.number} ${candidate.figmaName} — ${candidate.note}`],
   )
   if (items.length) {
-    lines.push("", "## Pas un composant à part", "", ...items)
+    lines.push("", "## Not a component of its own", "", ...items)
   }
   return `${lines.join("\n")}\n`
 }

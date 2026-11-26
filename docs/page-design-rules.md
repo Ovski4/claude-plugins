@@ -51,7 +51,7 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 - `system-ui`, 14 px, line height 1.45. Side panels and the corrections bar: 13 px. Hints,
   captions and tags: 12 px or 11 px, in `--text-muted`.
 - What the developer reads is in the page's language (see "Languages"); what the model
-  wrote is in French. Code, comments and class names are in English.
+  wrote is in the repo's language. Code, comments and class names are in English.
 - A component name or a prop name is written as in the code, in `<code>` when it sits in a
   sentence.
 - The page shows what there is to read. It never writes that a list is empty; the title

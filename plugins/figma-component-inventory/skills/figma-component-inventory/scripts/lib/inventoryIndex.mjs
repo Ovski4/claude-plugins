@@ -20,7 +20,7 @@ const INDEX_FILE_NAME = "index.md"
  * One inventory as the index shows it.
  * @typedef {object} IndexedInventory
  * @property {string} folder the name of its folder, beside index.md: "editor-modes-6"
- * @property {string} title what its screens' names share: "Editor — regulation (6 écrans)"
+ * @property {string} title what its screens' names share: "Editor — regulation (6 screens)"
  * @property {{ number: number, figmaUrl: string }[]} screens
  * @property {string} builtOn the day candidates.json was written: "2026-11-23"
  * @property {string} gitCommit the commit the code was read at
@@ -85,12 +85,12 @@ function readIndexedInventory(inventoryFolder) {
 
 /**
  * @param {IndexedInventory[]} inventories
- * @returns {string} the content of index.md, in French
+ * @returns {string} the content of index.md
  */
 export function buildInventoryIndex(inventories) {
   /** @param {string | null} approvedOn */
   const tellApproval = (approvedOn) =>
-    approvedOn ? `Validé le ${approvedOn}` : "Brouillon"
+    approvedOn ? `Approved on ${approvedOn}` : "Draft"
   const rows = inventories
     .toSorted((a, b) => a.folder.localeCompare(b.folder))
     .map((inventory) => {
@@ -107,13 +107,13 @@ export function buildInventoryIndex(inventories) {
       ].join(" | ")} |`
     })
   return [
-    "# Inventaires de composants",
+    "# Component inventories",
     "",
-    "Écrit par `render.mjs` à chaque passage : ne pas modifier à la main. Un dossier par",
-    "inventaire ; ses specs sont dans le même dossier. Seul un inventaire validé se lit",
-    "(`inventory.md`), et seules des specs validées (`specs.md`).",
+    "Written by `render.mjs` each time it runs: do not edit by hand. One folder per",
+    "inventory; its specs are in the same folder. Only an approved inventory is to be read",
+    "(`inventory.md`), and only approved specs (`specs.md`).",
     "",
-    "| Dossier | Ce qu'il couvre | Écrans Figma | Inventaire | Specs | Construit le · commit |",
+    "| Folder | What it covers | Figma screens | Inventory | Specs | Built on · commit |",
     "| --- | --- | --- | --- | --- | --- |",
     ...rows,
     "",

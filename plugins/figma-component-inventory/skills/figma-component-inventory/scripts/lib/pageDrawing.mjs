@@ -582,7 +582,11 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
       .flatMap((candidate) =>
         candidate.outlined
           ? candidate.partsNotOutlined.map((part) => ({
-              name: namePartNotOutlined(candidate, part),
+              name: namePartNotOutlined(
+                candidate,
+                part,
+                translateForCorrectionTargets,
+              ),
               reason: part.note,
               instances: part.instances,
             }))

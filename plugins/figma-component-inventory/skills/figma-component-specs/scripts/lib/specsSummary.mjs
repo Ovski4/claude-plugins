@@ -5,6 +5,7 @@ import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scrip
 import { buildTranslate } from "../../../figma-component-inventory/scripts/page/pageTexts.mjs"
 import { OWN_PAGE_TEXTS } from "../page/ownTexts.mjs"
 import {
+  DEVELOPER_DECISIONS_RULE,
   nameScreens,
   titleInventory,
 } from "../../../figma-component-inventory/scripts/lib/inventoryWording.mjs"
@@ -14,7 +15,8 @@ import {
   listComponentsToSpecify,
 } from "./componentSpecs.mjs"
 
-// specs.md takes its words from the specs page's dictionaries, in the language of the files.
+// specs.md takes the names of verdicts and of kinds of zones from the specs page's
+// dictionaries, in the language of the files.
 const translate = buildTranslate(WRITTEN_FILES_LANGUAGE, OWN_PAGE_TEXTS)
 
 /** @typedef {import("./componentSpecs.mjs").ApprovedInventory} ApprovedInventory */
@@ -38,7 +40,7 @@ const writePropRow = ({
   `| ${[
     `\`${name}\`${change ? ` (${translate(`propChange.${change}`).toLowerCase()})` : ""}`,
     typeBefore ? `\`${typeBefore}\` → \`${type}\`` : `\`${type}\``,
-    required ? "oui" : "non",
+    required ? "yes" : "no",
     source,
     note ?? "",
   ]
@@ -50,15 +52,15 @@ const writePropRow = ({
  * @param {ApprovedInventory} input.inventory
  * @param {SpecsFile} input.specsFile one that `listSpecProblems` finds no problem in
  * @param {string} input.approvalDate "2026-11-24"
- * @returns {string} the content of specs.md, in French
+ * @returns {string} the content of specs.md
  */
 export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
   const { fingerprint, approvedOn, screens } = inventory
   const lines = [
-    `# Props des composants — ${titleInventory(screens, translate)}`,
+    `# Component props — ${titleInventory(screens, translate)}`,
     "",
-    `Validé par le développeur le ${approvalDate}. Construit sur l'inventaire validé le ${approvedOn} : maquette Figma version ${fingerprint.figma.version}, code au commit ${fingerprint.gitCommit}.`,
-    "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
+    `Approved by the developer on ${approvalDate}. Built on the inventory approved on ${approvedOn}: Figma design version ${fingerprint.figma.version}, code at commit ${fingerprint.gitCommit}.`,
+    DEVELOPER_DECISIONS_RULE,
   ]
   for (const component of listComponentsToSpecify(inventory)) {
     const spec = specsFile.components.find(
@@ -72,25 +74,25 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
     if (component.codePath) lines.push("", `\`${component.codePath}\``)
     const decisionsAndChanges = [
       ...(spec.developerDecisions ?? []).map(
-        (decision) => `- Développeur : ${decision}`,
+        (decision) => `- Developer: ${decision}`,
       ),
       ...(spec.changes ?? []).map(
         ({ what, before, after }) =>
-          `- À changer : ${what} : ${before} → ${after}`,
+          `- To change: ${what}: ${before} → ${after}`,
       ),
     ]
     if (decisionsAndChanges.length) lines.push("", ...decisionsAndChanges)
     if (spec.props.length) {
       lines.push(
         "",
-        component.isToAdapt ? "Props nouvelles ou modifiées :" : "Props :",
+        component.isToAdapt ? "New or changed props:" : "Props:",
         "",
-        "| Prop | Type | Obligatoire | D'où vient la valeur | Règle |",
+        "| Prop | Type | Required | Where the value comes from | Rule |",
         "| --- | --- | --- | --- | --- |",
         ...spec.props.map(writePropRow),
       )
     }
-    lines.push("", "Zones :", "")
+    lines.push("", "Zones:", "")
     for (const zone of spec.zones) {
       const screenNumbers = listScreenNumbers(
         zone.parts.flatMap((part) =>
@@ -98,10 +100,10 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
         ),
       ).toSorted((a, b) => a - b)
       const drivenBy = zone.props?.length
-        ? ` : ${zone.props.map((name) => `\`${name}\``).join(", ")}`
+        ? `: ${zone.props.map((name) => `\`${name}\``).join(", ")}`
         : ""
       lines.push(
-        `- **${zone.letter} — ${zone.label}** (${translate(`zoneKind.${zone.kind}`)}${drivenBy} ; ${nameScreens(screenNumbers, translate)})`,
+        `- **${zone.letter} — ${zone.label}** (${translate(`zoneKind.${zone.kind}`)}${drivenBy}; ${nameScreens(screenNumbers, translate)})`,
         ...(zone.notes ?? []).map((note) => `  - ${note}`),
       )
     }

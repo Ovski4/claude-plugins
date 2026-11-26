@@ -2,6 +2,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import { namePartNotOutlined } from "../scripts/lib/inventoryWording.mjs"
+import { translateForWrittenFiles } from "../scripts/lib/languages.mjs"
 import { mergeScreenCandidates } from "../scripts/lib/mergeScreens.mjs"
 import { applyVerdictsToCandidates } from "../scripts/lib/verdicts.mjs"
 
@@ -160,9 +161,13 @@ test("a component keeps one number on every screen, and a frame whose content di
   )
   assert.deepEqual(
     settingsWithAParagraph.partsNotOutlined.map((part) => [
-      namePartNotOutlined(settingsWithAParagraph, part),
+      namePartNotOutlined(
+        settingsWithAParagraph,
+        part,
+        translateForWrittenFiles,
+      ),
       part.note,
     ]),
-    [["5 · écran 1 Settings", "Un paragraphe de l'éditeur."]],
+    [["5 · screen 1 Settings", "Un paragraphe de l'éditeur."]],
   )
 })

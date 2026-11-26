@@ -29,7 +29,7 @@ test("the index has one line per inventory, with where it and its specs stand", 
     },
     {
       folder: "editor-modes-6",
-      title: "Editor — regulation (2 écrans)",
+      title: "Editor — regulation (2 screens)",
       screens,
       builtOn: "2026-11-23",
       gitCommit: "34ee98aa6",
@@ -40,10 +40,10 @@ test("the index has one line per inventory, with where it and its specs stand", 
   ])
 
   assert.deepEqual(index.split("\n").slice(6), [
-    "| Dossier | Ce qu'il couvre | Écrans Figma | Inventaire | Specs | Construit le · commit |",
+    "| Folder | What it covers | Figma screens | Inventory | Specs | Built on · commit |",
     "| --- | --- | --- | --- | --- | --- |",
-    "| `editor-modes-6/` | Editor — regulation (2 écrans) | [1](https://figma.example/?node-id=87-1) [2](https://figma.example/?node-id=87-2) | Validé le 2026-11-23 | Brouillon | 2026-11-23 · 34ee98aa6 |",
-    "| `planning-week/` | Planning — week | [1](https://figma.example/?node-id=87-1) | Brouillon | — | 2026-11-25 · 7e0db2c23 |",
+    "| `editor-modes-6/` | Editor — regulation (2 screens) | [1](https://figma.example/?node-id=87-1) [2](https://figma.example/?node-id=87-2) | Approved on 2026-11-23 | Draft | 2026-11-23 · 34ee98aa6 |",
+    "| `planning-week/` | Planning — week | [1](https://figma.example/?node-id=87-1) | Draft | — | 2026-11-25 · 7e0db2c23 |",
     "",
   ])
 })
@@ -97,7 +97,7 @@ test("the index is written beside the inventories' folders, from what each folde
     .filter((line) => line.startsWith("| `"))
     .map((row) => row.split(" | ").slice(3, 5).join(" / "))
   assert.deepEqual(rows, [
-    "Validé le 2026-11-24 / Validé le 2026-11-24",
-    "Brouillon / —",
+    "Approved on 2026-11-24 / Approved on 2026-11-24",
+    "Draft / —",
   ])
 })

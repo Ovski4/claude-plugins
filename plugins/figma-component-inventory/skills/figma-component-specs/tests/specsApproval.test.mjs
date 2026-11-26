@@ -45,34 +45,34 @@ test("specs.md gives each component's decisions, changes, props and zones", () =
       specsFile,
       approvalDate: "2026-11-24",
     }),
-    `# Props des composants — Editor — regulation · Continuous · Default
+    `# Component props — Editor — regulation · Continuous · Default
 
-Validé par le développeur le 2026-11-24. Construit sur l'inventaire validé le 2026-11-23 : maquette Figma version 2423993102449653660, code au commit 34ee98aa6.
-Les décisions marquées « développeur » font foi : ne pas les rejuger.
+Approved by the developer on 2026-11-24. Built on the inventory approved on 2026-11-23: Figma design version 2423993102449653660, code at commit 34ee98aa6.
+The decisions marked "Developer" are final: do not judge them again.
 
-## Select — À adapter
+## Select — To adapt
 
 \`src/components/ui/select.tsx\`
 
-- Développeur : La hauteur change pour tous les usages.
-- À changer : Hauteur du champ : 32 px → 36 px
+- Developer: La hauteur change pour tous les usages.
+- To change: Hauteur du champ: 32 px → 36 px
 
-Zones :
+Zones:
 
-- **A — Champ** (Changement de style ; écran 1)
+- **A — Champ** (Style change; screen 1)
 
-## OrderDeliverySettings — À créer
+## OrderDeliverySettings — To create
 
-Props :
+Props:
 
-| Prop | Type | Obligatoire | D'où vient la valeur | Règle |
+| Prop | Type | Required | Where the value comes from | Rule |
 | --- | --- | --- | --- | --- |
-| \`targetTemperature\` | \`"start" \\| "end"\` | oui | state.targetTemperature de useOrderEditorState |  |
+| \`targetTemperature\` | \`"start" \\| "end"\` | yes | state.targetTemperature de useOrderEditorState |  |
 
-Zones :
+Zones:
 
-- **A — Consigne** (Pilotée par des props : \`targetTemperature\` ; écran 1)
-- **B — Libellé « Consigne »** (Fixe, sans prop ; écran 1)
+- **A — Consigne** (Driven by props: \`targetTemperature\`; screen 1)
+- **B — Libellé « Consigne »** (Fixed, no prop; screen 1)
 `,
   )
 })
