@@ -140,6 +140,7 @@ scripts/
   render.mjs              command: checks verdicts.json, writes inventory.html, approves
   page/                   the parts of inventory.html, which render.mjs pastes into one file with lib/feedbackText.mjs
     page.html               its structure
+    pageHeader.html         the header of inventory.html and specs.html, their settings panel included
     pageBase.css            what inventory.html and specs.html look alike by: colours, header, legend, tabs, cards, corrections bar
     pageTexts.mjs           the texts both pages show, in French and in English
     ownTexts.mjs            the texts only inventory.html shows, in French and in English

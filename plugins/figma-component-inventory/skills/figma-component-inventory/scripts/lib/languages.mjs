@@ -12,18 +12,26 @@ import { buildTranslate, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
  * @typedef {Record<PageLanguage, string>} TextInEveryLanguage
  */
 
+const NO_OWN_TEXTS = { fr: {}, en: {} }
+
 /**
- * The language of inventory.md, specs.md and index.md, and of the names the corrections
- * give to what they apply to ("7 · écran 2").
+ * The language of inventory.md, specs.md and index.md.
  * @type {PageLanguage}
  */
 export const WRITTEN_FILES_LANGUAGE = "fr"
 
 /** The shared texts in the language of the written files, for what has no page of its own. */
-export const translateForWrittenFiles = buildTranslate(WRITTEN_FILES_LANGUAGE, {
-  fr: {},
-  en: {},
-})
+export const translateForWrittenFiles = buildTranslate(
+  WRITTEN_FILES_LANGUAGE,
+  NO_OWN_TEXTS,
+)
+
+/**
+ * The words of the names the corrections give to what they apply to ("7 · écran 2"). A
+ * name is the same whatever the language the page is read in: the browser keeps the
+ * corrections under it, and the model reads it back in the text the developer pastes.
+ */
+export const translateForCorrectionTargets = buildTranslate("fr", NO_OWN_TEXTS)
 
 /**
  * Gives what writes a text of one page in every language.

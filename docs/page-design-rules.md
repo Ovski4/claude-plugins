@@ -69,6 +69,9 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   `data-text`, or in `data-text-aria-label` for its `aria-label`.
 - A value goes in braces (« {date} »), never glued to the sentence by the script: the
   words around it do not come in the same order in every language.
+- A text that counts something has two forms, « name.one » and « name.several ». A script
+  asks for « name » with a `count`, and `translate` gives the form the language uses for
+  that count: no script tests the count itself.
 - The scripts take their words from the same dictionaries, never from a table of their
   own: a verdict's name is the text « verdict.to-create », a kind of zone
   « zoneKind.prop ». A category sent to the page carries its key and its colour, and the
@@ -82,7 +85,9 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 
 ## Layout, from top to bottom
 
-1. **Header.** On the left, the `h1` says what kind of page it is (« Inventaire des
+1. **Header.** Written once for both pages, in the inventory skill's
+   `page/pageHeader.html`: a `page.html` only holds the comment that marks its place. On
+   the left, the `h1` says what kind of page it is (« Inventaire des
    composants »), and under it what it is about: the name the screens share, from
    `titleInventory`. On the right, from 1000 px of width: the approval pill, then a round
    « i » that shows on hover or focus what the page was built on (dates, commit). Under
@@ -208,8 +213,11 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 - The boxes, their count and the invitation to approve are made by the shared
   `scripts/page/pageReview.mjs`, which `writeStandalonePage` pastes before the page's own
   `page.js`: a page says what its boxes are and when one cannot be ticked, never how a box
-  is drawn, kept or counted. The same file fills the header (`showPageHeader`) and copies a
-  text with its « Copié » (`copyWithConfirmation`): a page does not write these again.
+  is drawn, kept or counted. The same file fills the header (`showPageHeader`) and owns the
+  corrections in the bar: their list, their count, the copy of their text with its
+  « Copié » and their keeping in the browser (`showCorrectionsInTheBar`,
+  `copyCorrectionsText`, `readKeptCorrections`). A page says what its corrections are
+  and how one reads; it does not write these again.
 - A check is kept in the browser as a hash of what the developer read (`reviewHash`,
   worked out by the lib): a rebuilt page keeps the checks of what did not change.
 - The boxes only help the developer keep track of what he has read: they approve nothing

@@ -25,7 +25,7 @@ import { listScreenNumbers } from "./mergeScreens.mjs"
 import { OWN_PAGE_TEXTS } from "../page/ownTexts.mjs"
 import {
   buildWriterInEveryLanguage,
-  translateForWrittenFiles,
+  translateForCorrectionTargets,
 } from "./languages.mjs"
 import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 
@@ -421,7 +421,7 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
       screenNumbers.includes(instance.screen),
     ).length === instances.length
   return hasSeveralScreens && coversWholeScreens
-    ? `${candidate.number} · ${nameScreens(screenNumbers, translateForWrittenFiles)}`
+    ? `${candidate.number} · ${nameScreens(screenNumbers, translateForCorrectionTargets)}`
     : nameOutlines(candidate, instances)
 }
 

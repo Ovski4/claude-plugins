@@ -11,9 +11,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
-  readWhetherApprovalIsAsked,
-  refuseApprovalOfContentNotOnThePage,
-  refuseApprovalWhileUndecided,
+  checkApprovalAsked,
   SPECS_HASH_KEY,
 } from "../../figma-component-inventory/scripts/lib/approval.mjs"
 import { writeInventoryIndex } from "../../figma-component-inventory/scripts/lib/inventoryIndex.mjs"
@@ -24,6 +22,7 @@ import {
 import { CommandFailure } from "../../figma-component-inventory/scripts/lib/commandFailure.mjs"
 import {
   readCaptureAsDataUrl,
+  readPageData,
   writeStandalonePage,
 } from "../../figma-component-inventory/scripts/lib/standalonePage.mjs"
 import {
@@ -74,14 +73,14 @@ function main() {
 
   const zonesStillToDecide = listZonesStillToDecide(specsFile)
   const pageFile = path.join(outDir, PAGE_FILE_NAME)
-  const isApproving = readWhetherApprovalIsAsked(commandArguments)
+  const isApproving = checkApprovalAsked({
+    commandArguments,
+    stillToDecide: zonesStillToDecide,
+    pageFile,
+    readHashOnThePage: () => readPageData(pageFile)?.[SPECS_HASH_KEY],
+    contentToApprove: specsFile.components,
+  })
   if (isApproving) {
-    refuseApprovalWhileUndecided(zonesStillToDecide)
-    refuseApprovalOfContentNotOnThePage({
-      pageFile,
-      hashKey: SPECS_HASH_KEY,
-      contentToApprove: specsFile.components,
-    })
     specsFile.approval = buildSpecsApproval(specsFile.components, new Date())
     fs.writeFileSync(specsPath, JSON.stringify(specsFile, null, 2))
   } else if (specsFile.approval && !readStandingApprovalDate(specsFile)) {

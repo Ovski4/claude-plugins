@@ -12,11 +12,7 @@
 // Run from inside the repo whose code is judged: the code paths of verdicts.json are checked against it.
 import fs from "node:fs"
 import path from "node:path"
-import {
-  readWhetherApprovalIsAsked,
-  refuseApprovalOfContentNotOnThePage,
-  refuseApprovalWhileUndecided,
-} from "./lib/approval.mjs"
+import { checkApprovalAsked } from "./lib/approval.mjs"
 import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
@@ -28,6 +24,7 @@ import { buildPageDrawing } from "./lib/pageDrawing.mjs"
 import { readProjectSettings } from "./lib/projectSettings.mjs"
 import {
   readCaptureAsDataUrl,
+  readPageData,
   writeStandalonePage,
 } from "./lib/standalonePage.mjs"
 import {
@@ -87,14 +84,14 @@ function main() {
     judgedCandidates,
   ).map((number) => `candidate ${number}`)
   const pageFile = path.join(outDir, PAGE_FILE_NAME)
-  const isApproving = readWhetherApprovalIsAsked(commandArguments)
+  const isApproving = checkApprovalAsked({
+    commandArguments,
+    stillToDecide: candidatesStillToDecide,
+    pageFile,
+    readHashOnThePage: () => readPageData(pageFile)?.[VERDICTS_HASH_KEY],
+    contentToApprove: verdictsFile.verdicts,
+  })
   if (isApproving) {
-    refuseApprovalWhileUndecided(candidatesStillToDecide)
-    refuseApprovalOfContentNotOnThePage({
-      pageFile,
-      hashKey: VERDICTS_HASH_KEY,
-      contentToApprove: verdictsFile.verdicts,
-    })
     verdictsFile.approval = buildApproval(verdictsFile.verdicts, new Date())
     fs.writeFileSync(
       path.join(outDir, "verdicts.json"),

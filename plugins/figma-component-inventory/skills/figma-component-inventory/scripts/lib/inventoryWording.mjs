@@ -53,7 +53,8 @@ export function namePartNotOutlined(candidate, part) {
  * @returns {string} "écran 2", "écrans 1 4"
  */
 export const nameScreens = (screenNumbers, translate) =>
-  translate(screenNumbers.length > 1 ? "screens.several" : "screens.one", {
+  translate("screens", {
+    count: screenNumbers.length,
     numbers: screenNumbers.join(" "),
   })
 

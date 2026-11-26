@@ -1,24 +1,30 @@
 // @ts-check
 import assert from "node:assert/strict"
-import fs from "node:fs"
-import os from "node:os"
-import path from "node:path"
 import { test } from "node:test"
 import {
+  checkApprovalAsked,
   hashApprovedContent,
-  readWhetherApprovalIsAsked,
-  refuseApprovalOfContentNotOnThePage,
-  refuseApprovalWhileUndecided,
 } from "../scripts/lib/approval.mjs"
 
 const VERDICTS_ON_THE_PAGE = [{ number: 1, verdict: "reused" }]
 const VERDICTS_CHANGED_SINCE = [{ number: 1, verdict: "to-adapt" }]
 
+/** @param {Partial<Parameters<typeof checkApprovalAsked>[0]>} asked */
+const check = (asked) =>
+  checkApprovalAsked({
+    commandArguments: ["out", "--approve"],
+    stillToDecide: [],
+    pageFile: "out/inventory.html",
+    readHashOnThePage: () => hashApprovedContent(VERDICTS_ON_THE_PAGE),
+    contentToApprove: VERDICTS_ON_THE_PAGE,
+    ...asked,
+  })
+
 test("the command reads whether the approval is asked, and stops on any other option", () => {
-  assert.equal(readWhetherApprovalIsAsked(["out"]), false)
-  assert.equal(readWhetherApprovalIsAsked(["out", "--approve"]), true)
+  assert.equal(check({ commandArguments: ["out"] }), false)
+  assert.equal(check({}), true)
   assert.throws(
-    () => readWhetherApprovalIsAsked(["out", "--approve=3f9a1c2e"]),
+    () => check({ commandArguments: ["out", "--approve=3f9a1c2e"] }),
     {
       message:
         "Not approved: unknown option --approve=3f9a1c2e. The developer approves in the conversation; the command then takes --approve alone.",
@@ -28,37 +34,41 @@ test("the command reads whether the approval is asked, and stops on any other op
 })
 
 test("the approval is refused while a question is open", () => {
-  assert.doesNotThrow(() => refuseApprovalWhileUndecided([]))
   assert.throws(
-    () => refuseApprovalWhileUndecided(["candidate 3", "candidate 7"]),
+    () => check({ stillToDecide: ["candidate 3", "candidate 7"] }),
     {
       message: 'Not approved: still "to-decide": candidate 3, candidate 7',
       exitCode: 4,
     },
   )
+  // A plain redraw is not stopped by an open question.
+  assert.equal(
+    check({ commandArguments: ["out"], stillToDecide: ["candidate 3"] }),
+    false,
+  )
 })
 
 test("the approval is refused when the page does not show the content to approve", () => {
-  const folder = fs.mkdtempSync(path.join(os.tmpdir(), "approval-test-"))
-  const pageFile = path.join(folder, "inventory.html")
-  /** @param {unknown} contentToApprove */
-  const refuse = (contentToApprove) =>
-    refuseApprovalOfContentNotOnThePage({
-      pageFile,
-      hashKey: "verdictsHash",
-      contentToApprove,
-    })
   const refusal = {
-    message: new RegExp(`^Not approved: ${pageFile} does not show the content`),
+    message:
+      /^Not approved: out\/inventory\.html does not show the content to approve/,
     exitCode: 4,
   }
-
-  assert.throws(() => refuse(VERDICTS_ON_THE_PAGE), refusal, "no page drawn")
-  fs.writeFileSync(
-    pageFile,
-    `<script>{"verdictsHash":"${hashApprovedContent(VERDICTS_ON_THE_PAGE)}","title":"Editor"}</script>`,
+  assert.throws(
+    () => check({ readHashOnThePage: () => undefined }),
+    refusal,
+    "no page",
   )
-  assert.doesNotThrow(() => refuse(VERDICTS_ON_THE_PAGE))
-  assert.throws(() => refuse(VERDICTS_CHANGED_SINCE), refusal)
-  fs.rmSync(folder, { recursive: true })
+  assert.throws(
+    () => check({ contentToApprove: VERDICTS_CHANGED_SINCE }),
+    refusal,
+  )
+  // A plain redraw is how the page catches up with the content.
+  assert.equal(
+    check({
+      commandArguments: ["out"],
+      contentToApprove: VERDICTS_CHANGED_SINCE,
+    }),
+    false,
+  )
 })

@@ -6,7 +6,6 @@
 // the render script with "--approve", which is refused while a question is open, and when
 // the file is not the one the page he read was drawn from.
 import { createHash } from "node:crypto"
-import fs from "node:fs"
 import { CommandFailure } from "./commandFailure.mjs"
 
 /**
@@ -72,59 +71,46 @@ export const SPECS_HASH_KEY = "specsHash"
 const APPROVE_FLAG = "--approve"
 
 /**
- * Whether the command asks for the approval. "--approve" is the only option of a
- * render.mjs: any other one stops the command, so that a mistyped approval
- * ("--aprove", "--approve=yes") is not taken for a plain redraw of the page.
- * @param {string[]} commandArguments what follows the script's name
+ * Whether the command asks for an approval that can be given; an approval asked for and
+ * refused stops the command. "--approve" is the only option of a render.mjs: any other
+ * one stops it too, so that a mistyped approval ("--aprove", "--approve=yes") is not taken
+ * for a plain redraw of the page.
+ * It is refused while something waits for the developer's decision, and when the page he
+ * read does not show the content to approve: the model may have changed the file since
+ * that page was drawn.
+ * @param {object} asked
+ * @param {string[]} asked.commandArguments what follows the script's name
+ * @param {string[]} asked.stillToDecide what still asks the developer a question:
+ *   "candidate 7", "Select zone C"
+ * @param {string} asked.pageFile the page he read, "out/inventory.html"
+ * @param {() => unknown} asked.readHashOnThePage reads the hash of its content that the
+ *   page carries, undefined when no page is drawn; called only when the approval is asked
+ * @param {unknown} asked.contentToApprove the file's content as it is now
+ * @returns {boolean}
  */
-export function readWhetherApprovalIsAsked(commandArguments) {
+export function checkApprovalAsked({
+  commandArguments,
+  stillToDecide,
+  pageFile,
+  readHashOnThePage,
+  contentToApprove,
+}) {
   const unknownOption = commandArguments.find(
     (argument) => argument.startsWith("--") && argument !== APPROVE_FLAG,
   )
-  if (unknownOption === undefined)
-    return commandArguments.includes(APPROVE_FLAG)
-  throw new CommandFailure(
-    `Not approved: unknown option ${unknownOption}. The developer approves in the conversation; the command then takes ${APPROVE_FLAG} alone.`,
-    EXIT_CODE_NOT_APPROVED,
-  )
-}
-
-/**
- * Stops the command while something waits for the developer's decision: nothing is
- * approved before he has answered.
- * @param {string[]} stillToDecide what still asks him a question: "candidate 7", "Select zone C"
- */
-export function refuseApprovalWhileUndecided(stillToDecide) {
-  if (!stillToDecide.length) return
-  throw new CommandFailure(
-    `Not approved: still "to-decide": ${stillToDecide.join(", ")}`,
-    EXIT_CODE_NOT_APPROVED,
-  )
-}
-
-/**
- * Stops the command when the file to approve is not the one the page shows: the developer
- * approves what he read, and the model may have changed the file since that page was drawn.
- * @param {object} asked
- * @param {string} asked.pageFile the page the developer read, "out/inventory.html"
- * @param {string} asked.hashKey the field the page's data keeps the hash of its content
- *   in: "verdictsHash", "specsHash"
- * @param {unknown} asked.contentToApprove the file's content as it is now
- */
-export function refuseApprovalOfContentNotOnThePage({
-  pageFile,
-  hashKey,
-  contentToApprove,
-}) {
-  const pageText = fs.existsSync(pageFile)
-    ? fs.readFileSync(pageFile, "utf8")
-    : ""
-  const hashOnThePage = pageText.match(
-    new RegExp(`"${hashKey}":"([0-9a-f]+)"`),
-  )?.[1]
-  if (hashOnThePage === hashApprovedContent(contentToApprove)) return
-  throw new CommandFailure(
-    `Not approved: ${pageFile} does not show the content to approve, which changed since the page was drawn. Run the command without ${APPROVE_FLAG}, hand the page to the developer and wait for his approval of that page.`,
-    EXIT_CODE_NOT_APPROVED,
-  )
+  const isAsked = commandArguments.includes(APPROVE_FLAG)
+  const refusals = [
+    unknownOption !== undefined &&
+      `unknown option ${unknownOption}. The developer approves in the conversation; the command then takes ${APPROVE_FLAG} alone.`,
+    isAsked &&
+      stillToDecide.length > 0 &&
+      `still "to-decide": ${stillToDecide.join(", ")}`,
+    isAsked &&
+      readHashOnThePage() !== hashApprovedContent(contentToApprove) &&
+      `${pageFile} does not show the content to approve, which changed since the page was drawn. Run the command without ${APPROVE_FLAG}, hand the page to the developer and wait for his approval of that page.`,
+  ]
+  const refusal = refusals.find((each) => typeof each === "string")
+  if (refusal)
+    throw new CommandFailure(`Not approved: ${refusal}`, EXIT_CODE_NOT_APPROVED)
+  return isAsked
 }

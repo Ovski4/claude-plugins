@@ -552,10 +552,9 @@ function draw() {
     })),
   )
   const sameScreens = screen.sameOnScreenNumbers
-  const sizeTextKey =
-    sameScreens.length === 0
-      ? "screen.size"
-      : `screen.sizeSameSpecs.${sameScreens.length > 1 ? "several" : "one"}`
+  const sizeTextKey = sameScreens.length
+    ? "screen.sizeSameSpecs"
+    : "screen.size"
   const figmaLink = createElement("a", {
     text: translate("screen.link", {
       number: screen.screenNumber,
@@ -570,6 +569,7 @@ function draw() {
         component: shownComponent.codeComponent,
         width: screen.componentFrame.width,
         height: screen.componentFrame.height,
+        count: sameScreens.length,
         screens: sameScreens.join(", "),
       }),
     }),
@@ -690,10 +690,6 @@ const correctionForm = /** @type {HTMLFormElement} */ (getElement("correction"))
 const noteInput = /** @type {HTMLInputElement} */ (
   getElement("correction-note")
 )
-const feedbackTextArea = /** @type {HTMLTextAreaElement} */ (
-  getElement("feedback-text")
-)
-
 const nameShownTarget = () =>
   nameCorrectionTarget(shownComponent.codeComponent, selectedZoneLetter)
 
@@ -727,36 +723,13 @@ const listSortedCorrections = () =>
 
 /** Updates the count, the list of corrections and the copy the browser keeps. */
 function showCorrections() {
-  const sortedCorrections = listSortedCorrections()
-  const count = sortedCorrections.length
-  getElement("feedback-lines").replaceChildren(
-    ...sortedCorrections.map((correction) => {
-      const line = createElement("button", {
-        text: `${correction.target} — ${listSpecCorrectionFields(correction, translate).join(" · ")}`,
-      })
-      line.setAttribute("type", "button")
-      line.setAttribute("title", translate("correction.reopen"))
-      line.addEventListener("click", () => openCorrection(correction.target))
-      return createElement("li", {}, [line])
-    }),
-  )
-  getElement("feedback-count").textContent = count
-    ? translate(`corrections.count.${count > 1 ? "several" : "one"}`, { count })
-    : translate("corrections.none")
-  feedbackTextArea.hidden = true
+  showCorrectionsInTheBar({
+    corrections: listSortedCorrections(),
+    listFields: (correction) => listSpecCorrectionFields(correction, translate),
+    openCorrection,
+    storageKey: correctionsStorageKey,
+  })
   getElement("correction-clear").hidden = !corrections.has(nameShownTarget())
-  for (const id of ["feedback-copy", "feedback-reset"])
-    getElement(id).hidden = !count
-  try {
-    if (count) {
-      localStorage.setItem(
-        correctionsStorageKey,
-        JSON.stringify(sortedCorrections),
-      )
-    } else localStorage.removeItem(correctionsStorageKey)
-  } catch {
-    // The browser keeps nothing for this page: the corrections last until it is closed.
-  }
 }
 
 function saveCorrectionForm() {
@@ -782,16 +755,9 @@ function showWhatACorrectionBlocks() {
 }
 
 function copyFeedbackText() {
-  const text = buildSpecsFeedbackText(
-    subject,
-    listSortedCorrections(),
-    translate,
+  copyCorrectionsText(
+    buildSpecsFeedbackText(subject, listSortedCorrections(), translate),
   )
-  copyWithConfirmation(getElement("feedback-copy"), text, () => {
-    feedbackTextArea.value = text
-    feedbackTextArea.hidden = false
-    feedbackTextArea.select()
-  })
 }
 
 /** @param {Iterable<string>} targets the corrections to drop */
@@ -811,16 +777,10 @@ getElement("feedback-reset").addEventListener("click", () => {
   if (window.confirm(translate("corrections.confirmReset")))
     dropCorrections(corrections.keys())
 })
-try {
-  /** @type {SpecCorrection[]} */
-  const savedCorrections = JSON.parse(
-    localStorage.getItem(correctionsStorageKey) ?? "[]",
-  )
-  for (const correction of savedCorrections)
-    corrections.set(correction.target, correction)
-} catch {
-  // Nothing kept, or unreadable: the page starts without corrections.
-}
+/** @type {SpecCorrection[]} */
+const keptCorrections = readKeptCorrections(correctionsStorageKey)
+for (const correction of keptCorrections)
+  corrections.set(correction.target, correction)
 restoreReview(
   `specs-reviewed ${specs.reviewKey}`,
   specs.components.flatMap((component) => [

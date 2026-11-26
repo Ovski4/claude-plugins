@@ -2,6 +2,7 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
+  buildTranslate,
   DEFAULT_PAGE_LANGUAGE,
   fillText,
   PAGE_LANGUAGES,
@@ -53,6 +54,29 @@ test("every verdict and every kind of zone has its name in the dictionaries", ()
     assert.ok(SPECS_PAGE_TEXTS.fr[`zoneKind.${key}`], key)
   for (const key of ["to-add", "to-modify"])
     assert.ok(SPECS_PAGE_TEXTS.fr[`propChange.${key}`], key)
+})
+
+test("a text that counts comes in the form its language uses for the count", () => {
+  const inFrench = buildTranslate("fr", INVENTORY_PAGE_TEXTS)
+  const inEnglish = buildTranslate("en", INVENTORY_PAGE_TEXTS)
+  assert.deepEqual(
+    [0, 1, 2].map((count) => inFrench("review.subject.screen", { count })),
+    ["0 écran", "1 écran", "2 écrans"],
+  )
+  assert.deepEqual(
+    [0, 1, 2].map((count) => inEnglish("review.subject.screen", { count })),
+    ["0 screens", "1 screen", "2 screens"],
+  )
+  assert.equal(inFrench("not.in.any.dictionary"), "not.in.any.dictionary")
+  for (const { fr } of [
+    SHARED_PAGE_TEXTS,
+    INVENTORY_PAGE_TEXTS,
+    SPECS_PAGE_TEXTS,
+  ]) {
+    const formsOfOne = Object.keys(fr).filter((key) => key.endsWith(".one"))
+    for (const key of formsOfOne)
+      assert.ok(fr[key.replace(/\.one$/, ".several")], key)
+  }
 })
 
 test("a text's braces are replaced by the values given, and left when none is", () => {

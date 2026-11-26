@@ -43,10 +43,10 @@ export const SHARED_PAGE_TEXTS = {
     "review.notYet.corrected":
       "Corrigé : à vérifier une fois la page reconstruite",
     "review.notYet.undecided": "À trancher d'abord",
-    "review.subject.component.one": "composant",
-    "review.subject.component.several": "composants",
-    "review.subject.screen.one": "écran",
-    "review.subject.screen.several": "écrans",
+    "review.subject.component.one": "{count} composant",
+    "review.subject.component.several": "{count} composants",
+    "review.subject.screen.one": "{count} écran",
+    "review.subject.screen.several": "{count} écrans",
     "correction.note": "Note",
     "correction.clear": "Annuler cette correction",
     "corrections.copy": "Copier les corrections",
@@ -87,10 +87,10 @@ export const SHARED_PAGE_TEXTS = {
     "review.next": "Next to check →",
     "review.notYet.corrected": "Corrected: to check once the page is rebuilt",
     "review.notYet.undecided": "To decide first",
-    "review.subject.component.one": "component",
-    "review.subject.component.several": "components",
-    "review.subject.screen.one": "screen",
-    "review.subject.screen.several": "screens",
+    "review.subject.component.one": "{count} component",
+    "review.subject.component.several": "{count} components",
+    "review.subject.screen.one": "{count} screen",
+    "review.subject.screen.several": "{count} screens",
     "correction.note": "Note",
     "correction.clear": "Cancel this correction",
     "corrections.copy": "Copy the corrections",
@@ -129,6 +129,9 @@ export const fillText = (text, values = {}) =>
 /**
  * The `translate` of a page read in one language: gives a text by its name in the
  * dictionaries, its braces replaced, and the name itself when no dictionary has it.
+ * A text that counts something has two forms, "<name>.one" and "<name>.several": asked by
+ * its name with a `count`, it comes in the form that language uses for that count
+ * ("1 correction", "2 corrections"; "0 correction" in French, "0 corrections" in English).
  * @param {PageLanguage} language
  * @param {Record<PageLanguage, Record<string, string>>} ownTexts the texts only that page shows
  * @returns {Translate}
@@ -138,5 +141,12 @@ export function buildTranslate(language, ownTexts) {
     ...SHARED_PAGE_TEXTS[language],
     ...ownTexts[language],
   }
-  return (key, values) => fillText(textsOfThePage[key] ?? key, values)
+  const pluralRules = new Intl.PluralRules(language)
+  return (key, values = {}) => {
+    const formForTheCount =
+      pluralRules.select(Number(values.count)) === "one" ? "one" : "several"
+    const text =
+      textsOfThePage[key] ?? textsOfThePage[`${key}.${formForTheCount}`]
+    return fillText(text ?? key, values)
+  }
 }

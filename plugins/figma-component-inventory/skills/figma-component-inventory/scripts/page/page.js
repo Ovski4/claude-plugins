@@ -584,10 +584,9 @@ function showReview() {
   const leftOutCount = drawnReviewBoxes.length - countedBoxes.length
   const leftOutLine = getElement("out-of-scope-left-out")
   leftOutLine.hidden = leftOutCount === 0
-  leftOutLine.textContent = translate(
-    `panel.outOfScopeLeftOut.${leftOutCount > 1 ? "several" : "one"}`,
-    { count: leftOutCount },
-  )
+  leftOutLine.textContent = translate("panel.outOfScopeLeftOut", {
+    count: leftOutCount,
+  })
   const checks = countedBoxes.map((drawn) => {
     const isCorrected = correctedNumbers.has(drawn.candidateNumber ?? undefined)
     const check = {
@@ -665,10 +664,6 @@ const sameAsSelect = /** @type {HTMLSelectElement} */ (
 const noteInput = /** @type {HTMLInputElement} */ (
   getElement("correction-note")
 )
-const feedbackTextArea = /** @type {HTMLTextAreaElement} */ (
-  getElement("feedback-text")
-)
-
 /**
  * A choice among others of the same group, drawn as a pill.
  * @param {"correction-verdict" | "correction-answer"} group
@@ -849,65 +844,32 @@ function openCorrection(targetId) {
 function showCorrections() {
   const correctedNumbers = listCorrectedNumbers()
   markCandidateElements("corrected", (number) => correctedNumbers.has(number))
-  const count = corrections.size
-  getElement("feedback-lines").replaceChildren(
-    ...sortCorrections([...corrections.values()]).map((correction) => {
-      const line = createElement(
-        "button",
-        `${correction.target} — ${listCorrectionFields(correction, verdictLabels, translate).join(" · ")}`,
-      )
-      line.setAttribute("type", "button")
-      line.setAttribute("title", translate("correction.reopen"))
-      line.addEventListener("click", () => openCorrection(correction.target))
-      const item = createElement("li")
-      item.append(line)
-      return item
-    }),
-  )
-  getElement("feedback-count").textContent = count
-    ? translate(`corrections.count.${count > 1 ? "several" : "one"}`, { count })
-    : translate("corrections.none")
-  feedbackTextArea.hidden = true
-  for (const id of ["feedback-copy", "feedback-reset"])
-    getElement(id).hidden = !count
+  showCorrectionsInTheBar({
+    corrections: sortCorrections([...corrections.values()]),
+    listFields: (correction) =>
+      listCorrectionFields(correction, verdictLabels, translate),
+    openCorrection,
+    storageKey: correctionsStorageKey,
+  })
   showReview()
-  try {
-    if (count)
-      localStorage.setItem(
-        correctionsStorageKey,
-        JSON.stringify([...corrections.values()]),
-      )
-    else localStorage.removeItem(correctionsStorageKey)
-  } catch {
-    // The browser keeps nothing for this page: the corrections last until it is closed.
-  }
 }
 
 function restoreCorrections() {
-  try {
-    /** @type {PageCorrection[]} */
-    const saved = JSON.parse(
-      localStorage.getItem(correctionsStorageKey) ?? "[]",
-    )
-    for (const correction of saved)
-      corrections.set(correction.target, correction)
-  } catch {
-    // Nothing kept, or unreadable: the page starts without corrections.
-  }
+  /** @type {PageCorrection[]} */
+  const keptCorrections = readKeptCorrections(correctionsStorageKey)
+  for (const correction of keptCorrections)
+    corrections.set(correction.target, correction)
 }
 
 function copyFeedbackText() {
-  const text = buildFeedbackText(
-    inPageLanguage(inventory.title),
-    [...corrections.values()],
-    verdictLabels,
-    translate,
+  copyCorrectionsText(
+    buildFeedbackText(
+      inPageLanguage(inventory.title),
+      [...corrections.values()],
+      verdictLabels,
+      translate,
+    ),
   )
-  copyWithConfirmation(getElement("feedback-copy"), text, () => {
-    feedbackTextArea.value = text
-    feedbackTextArea.hidden = false
-    feedbackTextArea.select()
-  })
 }
 
 drawHeader()

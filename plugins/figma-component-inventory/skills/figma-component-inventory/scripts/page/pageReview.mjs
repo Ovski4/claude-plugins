@@ -8,7 +8,8 @@
 // every text in the language he picked there (the texts are in pageTexts.mjs and in the
 // page's ownTexts.mjs, both pasted before this file).
 // The page has the elements "screen-name", "approval", "fingerprint", "settings-button",
-// "page-settings", "feedback" and "feedback-count".
+// "page-settings", "feedback", "feedback-count", "feedback-lines", "feedback-copy",
+// "feedback-reset" and "feedback-text".
 
 /** @param {string} id */
 const getSharedElement = (id) =>
@@ -192,14 +193,24 @@ export function wireSettingSwitch(switchId, onChange) {
 
 const COPIED_SHOWN_FOR_MILLISECONDS = 1500
 
+// The corrections, in the bar at the bottom: both pages list them, count them, copy their
+// text and keep them in the browser the same way. A page says what its corrections are and
+// how each one reads.
+
 /**
- * Copies a text for the developer to paste, and says so on the button for a moment.
- * @param {HTMLElement} button
- * @param {string} text
- * @param {() => void} selectForManualCopy called when the browser refuses the clipboard:
- *   shows the text selected, for a copy by hand
+ * A correction of either page, as the bar needs it.
+ * @typedef {{ target: string }} ShownCorrection `target`: what it applies to, "7b",
+ *   "Select · zone A"
  */
-export async function copyWithConfirmation(button, text, selectForManualCopy) {
+
+/**
+ * Copies the text of the corrections for the developer to paste, and says so on the
+ * button for a moment. When the browser refuses the clipboard, the text is shown selected
+ * under the list, for a copy by hand.
+ * @param {string} text
+ */
+export async function copyCorrectionsText(text) {
+  const button = getSharedElement("feedback-copy")
   const idleText = button.textContent
   try {
     await navigator.clipboard.writeText(text)
@@ -209,8 +220,67 @@ export async function copyWithConfirmation(button, text, selectForManualCopy) {
       COPIED_SHOWN_FOR_MILLISECONDS,
     )
   } catch {
-    selectForManualCopy()
+    const textToCopyByHand = /** @type {HTMLTextAreaElement} */ (
+      getSharedElement("feedback-text")
+    )
+    textToCopyByHand.value = text
+    textToCopyByHand.hidden = false
+    textToCopyByHand.select()
   }
+}
+
+/**
+ * The corrections the browser kept for this page.
+ * @template {ShownCorrection} Correction
+ * @param {string} storageKey names the page and the content it was drawn from
+ * @returns {Correction[]} none when nothing is kept, or when it cannot be read
+ */
+export function readKeptCorrections(storageKey) {
+  try {
+    return JSON.parse(readKept(storageKey) ?? "[]")
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Lists the corrections in the bar with their count, shows the buttons that copy and clear
+ * them while there is one, and keeps them in the browser.
+ * @template {ShownCorrection} Correction
+ * @param {object} shown
+ * @param {Correction[]} shown.corrections in the order to list them
+ * @param {(correction: Correction) => string[]} shown.listFields what a correction
+ *   changes, each field named: ["verdict : À créer", "note : une ligne par jour"]
+ * @param {(target: string) => void} shown.openCorrection opens the form on a correction
+ *   again
+ * @param {string} shown.storageKey
+ */
+export function showCorrectionsInTheBar({
+  corrections,
+  listFields,
+  openCorrection,
+  storageKey,
+}) {
+  getSharedElement("feedback-lines").replaceChildren(
+    ...corrections.map((correction) => {
+      const line = document.createElement("button")
+      line.type = "button"
+      line.textContent = `${correction.target} — ${listFields(correction).join(" · ")}`
+      line.title = translate("correction.reopen")
+      line.addEventListener("click", () => openCorrection(correction.target))
+      const item = document.createElement("li")
+      item.append(line)
+      return item
+    }),
+  )
+  const count = corrections.length
+  getSharedElement("feedback-count").textContent = count
+    ? translate("corrections.count", { count })
+    : translate("corrections.none")
+  getSharedElement("feedback-text").hidden = true
+  for (const id of ["feedback-copy", "feedback-reset"])
+    getSharedElement(id).hidden = !count
+  keep(storageKey, count ? JSON.stringify(corrections) : null)
 }
 
 /** Why a box cannot be ticked yet, written in place of its label. */
@@ -221,37 +291,23 @@ export const WHY_NOT_YET = {
 
 /**
  * What a box is about, as the count names it for one and for several.
- * @typedef {keyof typeof REVIEW_SUBJECT_NAMES} ReviewSubject
+ * @typedef {(typeof REVIEW_SUBJECTS)[number]} ReviewSubject
  */
-const REVIEW_SUBJECT_NAMES = {
-  component: [
-    translate("review.subject.component.one"),
-    translate("review.subject.component.several"),
-  ],
-  screen: [
-    translate("review.subject.screen.one"),
-    translate("review.subject.screen.several"),
-  ],
-}
+const REVIEW_SUBJECTS = /** @type {const} */ (["component", "screen"])
 
 /**
  * What the boxes are about: "8 composants, 6 écrans".
  * @param {ReviewCheck[]} checks
  */
 const countReviewSubjects = (checks) =>
-  /** @type {ReviewSubject[]} */ (Object.keys(REVIEW_SUBJECT_NAMES))
-    .map((subject) => {
-      const subjectCount = checks.filter(
-        (check) => check.subject === subject,
-      ).length
-      const [nameOfOne, nameOfSeveral] = REVIEW_SUBJECT_NAMES[subject]
-      return {
-        subjectCount,
-        name: subjectCount > 1 ? nameOfSeveral : nameOfOne,
-      }
-    })
-    .filter(({ subjectCount }) => subjectCount > 0)
-    .map(({ subjectCount, name }) => `${subjectCount} ${name}`)
+  REVIEW_SUBJECTS.map((subject) => ({
+    subject,
+    count: checks.filter((check) => check.subject === subject).length,
+  }))
+    .filter(({ count }) => count > 0)
+    .map(({ subject, count }) =>
+      translate(`review.subject.${subject}`, { count }),
+    )
     .join(", ")
 
 /**
