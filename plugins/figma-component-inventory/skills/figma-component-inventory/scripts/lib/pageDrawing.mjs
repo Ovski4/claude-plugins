@@ -22,6 +22,8 @@ import {
   routeLeaders,
 } from "./labelPlacement.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
+import { fillText } from "../page/pageTexts.mjs"
+import { WRITTEN_FILES_LANGUAGE, writeInEveryLanguage } from "./languages.mjs"
 import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 
 /** @typedef {import("./figma.mjs").Box} Box */
@@ -29,6 +31,26 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /** @typedef {import("./verdicts.mjs").JudgedInstance} JudgedInstance */
 /** @typedef {import("./verdicts.mjs").VerdictKey} VerdictKey */
+/** @typedef {import("./languages.mjs").PageLanguage} PageLanguage */
+/** @typedef {import("./languages.mjs").TextInEveryLanguage} TextInEveryLanguage */
+
+// What the page says besides the verdicts' names and the words inventoryWording.mjs shares
+// with inventory.md.
+/** @type {Record<PageLanguage, Record<string, string>>} */
+const PAGE_WORDING = {
+  fr: {
+    screenLink: "Écran {number} — {name}",
+    openInFigma: "Ouvrir dans Figma",
+    builtOn: "Construit le {date} · {mockupAndCommit}",
+    everyUse: "Toutes ses utilisations",
+  },
+  en: {
+    screenLink: "Screen {number} — {name}",
+    openInFigma: "Open in Figma",
+    builtOn: "Built on {date} · {mockupAndCommit}",
+    everyUse: "All its uses",
+  },
+}
 /** @typedef {{ left: number, top: number, width: number, height: number }} DrawingBox */
 /** @typedef {import("./labelPlacement.mjs").Point} Point */
 
@@ -66,7 +88,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 /**
  * @typedef {DrawnCandidatePart & {
  *   title: string,
- *   detail: string,
+ *   detail: TextInEveryLanguage,
  *   textX: number,
  *   textAnchor: "start" | "end",
  *   titleY: number,
@@ -85,7 +107,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  */
 /**
  * @typedef {Pick<ScreenToDraw, "number" | "capture" | "figmaUrl" | "captureDataUrl"> & {
- *   linkText: string,
+ *   linkText: TextInEveryLanguage,
  *   tabName: string,
  *   ownBox: DrawingBox,
  *   outlines: DrawnOutline[],
@@ -103,7 +125,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * Under the images: why a component is not simply reused.
  * @typedef {DrawnCandidatePart & {
  *   badgeText: string,
- *   title: string,
+ *   title: TextInEveryLanguage,
  *   screens: number[],
  *   reason: string | null,
  *   developerDecision: string | null,
@@ -126,8 +148,8 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  */
 /**
  * @typedef {object} PageDrawing
- * @property {string} title
- * @property {string} fingerprintLine when the inventory was built, on which mock-up and which commit
+ * @property {TextInEveryLanguage} title
+ * @property {TextInEveryLanguage} fingerprintLine when the inventory was built, on which mock-up and which commit
  * @property {number} badgeHeight
  * @property {DrawnScreen[]} screens
  * @property {DrawingBox} commonBox what holds every screen's drawing: shown one at a time
@@ -145,7 +167,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * @property {string} figmaName
  * @property {CorrectableTarget[]} targets what a correction can apply to: the whole candidate first,
  *   then each of its outlines when it has several, named as the page shows them
- * @property {string} judgement what the page says now: "OrderSettings · À créer", one per verdict and component
+ * @property {TextInEveryLanguage} judgement what the page says now: "OrderSettings · À créer", one per verdict and component
  */
 /**
  * What the correction form starts from for one target, so that only what the developer
@@ -154,7 +176,7 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
  * @property {string} id "6" for the whole candidate; for one outline, "6b", or "6 · écran 2" when
  *   it is the only one on its screen, where its badge says "6"
  * @property {number} candidateNumber
- * @property {string} tabName "Toutes ses utilisations", "6b" or "écran 2": the form's title gives the number
+ * @property {TextInEveryLanguage} tabName "Toutes ses utilisations", "6b" or "écran 2": the form's title gives the number
  * @property {number[]} screens the numbers of the screens that draw it
  * @property {VerdictKey | null} verdict null for a whole candidate whose outlines have different verdicts
  * @property {string | null} codeComponent null when no component is named, or when the outlines of a
@@ -276,7 +298,10 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
         ...buildPart(candidate, verdict),
         anchor: box,
         title: `${nameOutlines(candidate, instances)}  ${codeComponent ?? "?"}`,
-        detail: `${candidate.figmaName}${instanceCount} · ${VERDICTS[verdict].label}`,
+        detail: writeInEveryLanguage(
+          (language) =>
+            `${candidate.figmaName}${instanceCount} · ${VERDICTS[verdict].labels[language]}`,
+        ),
       }
     }),
   )
@@ -344,7 +369,11 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
       .map(({ title, detail }) =>
         Math.max(
           title.length * LABEL_TITLE_CHARACTER_WIDTH,
-          detail.length * LABEL_DETAIL_CHARACTER_WIDTH,
+          // The column holds the label in whichever language the page is read.
+          ...Object.values(detail).map(
+            (detailInOneLanguage) =>
+              detailInOneLanguage.length * LABEL_DETAIL_CHARACTER_WIDTH,
+          ),
         ),
       )
     return labelWidths.length
@@ -402,7 +431,7 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
       screenNumbers.includes(instance.screen),
     ).length === instances.length
   return hasSeveralScreens && coversWholeScreens
-    ? `${candidate.number} · ${nameScreens(screenNumbers)}`
+    ? `${candidate.number} · ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)}`
     : nameOutlines(candidate, instances)
 }
 
@@ -411,7 +440,7 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
  * @param {JudgedCandidate} candidate
  * @param {JudgedInstance[]} instances
  * @param {string} id
- * @param {string} tabName
+ * @param {TextInEveryLanguage} tabName
  * @returns {CorrectableTarget}
  */
 function describeTarget(candidate, instances, id, tabName) {
@@ -446,7 +475,8 @@ function findSharedValue(instances, field) {
  * @param {ScreenToDraw[]} inventory.screens
  * @param {JudgedCandidate[]} inventory.judgedCandidates
  * @param {import("./inventorySummary.mjs").Fingerprint} inventory.fingerprint
- * @returns {PageDrawing} texts in French, as the page shows them
+ * @returns {PageDrawing} each of its own texts in every language the page is read in; the
+ *   model's notes and questions as verdicts.json has them
  */
 export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
   const hasSeveralScreens = screens.length > 1
@@ -473,9 +503,11 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     capture: pickBox(screen.capture),
     figmaUrl: screen.figmaUrl,
     captureDataUrl: screen.captureDataUrl,
-    linkText: hasSeveralScreens
-      ? `Écran ${screen.number} — ${screen.name}`
-      : "Ouvrir dans Figma",
+    linkText: writeInEveryLanguage((language) =>
+      hasSeveralScreens
+        ? fillText(PAGE_WORDING[language].screenLink, screen)
+        : PAGE_WORDING[language].openInFigma,
+    ),
     tabName: tabNames[screenIndex],
     ...drawScreen(screen, { outlinedCandidates, buildPart }),
   }))
@@ -502,7 +534,10 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           }),
           ...buildPart(candidate, verdict),
           badgeText: name,
-          title: `${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].label}`,
+          title: writeInEveryLanguage(
+            (language) =>
+              `${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].labels[language]}`,
+          ),
           screens: listScreenNumbers(instances),
           reason,
           developerDecision,
@@ -536,8 +571,15 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     )
 
   return {
-    title: titleInventory(screens),
-    fingerprintLine: `Construit le ${fingerprint.createdAt} · ${tellMockupAndCommit(fingerprint)}`,
+    title: writeInEveryLanguage((language) =>
+      titleInventory(screens, language),
+    ),
+    fingerprintLine: writeInEveryLanguage((language) =>
+      fillText(PAGE_WORDING[language].builtOn, {
+        date: fingerprint.createdAt,
+        mockupAndCommit: tellMockupAndCommit(fingerprint, language),
+      }),
+    ),
     badgeHeight: BADGE_HEIGHT,
     screens: drawnScreens.map((screen) => ({
       ...screen,
@@ -579,24 +621,27 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           candidate,
           candidate.instances,
           `${candidate.number}`,
-          "Toutes ses utilisations",
+          writeInEveryLanguage((language) => PAGE_WORDING[language].everyUse),
         ),
         ...(candidate.instances.length > 1
           ? candidate.instances.map((instance) => {
               const id = nameInstances(candidate, [instance], hasSeveralScreens)
               const badge = nameOutline(candidate, instance)
-              const tabName =
-                id === badge ? badge : nameScreens([instance.screen])
+              const tabName = writeInEveryLanguage((language) =>
+                id === badge ? badge : nameScreens([instance.screen], language),
+              )
               return describeTarget(candidate, [instance], id, tabName)
             })
           : []),
       ],
-      judgement: groupByJudgement(candidate.instances)
-        .map(
-          ([{ verdict, codeComponent }]) =>
-            `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].label}`,
-        )
-        .join(" / "),
+      judgement: writeInEveryLanguage((language) =>
+        groupByJudgement(candidate.instances)
+          .map(
+            ([{ verdict, codeComponent }]) =>
+              `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].labels[language]}`,
+          )
+          .join(" / "),
+      ),
     })),
   }
 }

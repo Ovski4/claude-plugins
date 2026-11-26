@@ -16,8 +16,8 @@
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
  *   stillToDecideCount: number,
- *   verdicts: { key: string, label: string, color: string, isDrawnOnThePage: boolean }[],
- *   correctionVerdicts: { key: string, label: string }[],
+ *   verdicts: { key: string, labels: Record<PageLanguage, string>, color: string, isDrawnOnThePage: boolean }[],
+ *   correctionVerdicts: { key: string, labels: Record<PageLanguage, string> }[],
  *   verdictsHash: string,
  * }} Inventory
  */
@@ -151,7 +151,7 @@ function createLabel(label) {
     createSvgElement(
       "text",
       { class: "label-detail", y: label.detailY, ...text },
-      label.detail,
+      inPageLanguage(label.detail),
     ),
   )
   return group
@@ -331,7 +331,7 @@ function drawScreen(screen) {
     )
   })
 
-  const figmaLink = createElement("a", screen.linkText)
+  const figmaLink = createElement("a", inPageLanguage(screen.linkText))
   figmaLink.setAttribute("href", screen.figmaUrl)
   const title = createElement("h2")
   title.append(figmaLink)
@@ -413,11 +413,12 @@ function drawTabs(drawnScreens, drawnExplanations) {
 }
 
 function drawHeader() {
-  document.title = translate("page.documentTitle", { subject: inventory.title })
+  const subject = inPageLanguage(inventory.title)
+  document.title = translate("page.documentTitle", { subject })
   showPageHeader({
-    subject: inventory.title,
+    subject,
     approvalDate: inventory.approvalDate,
-    fingerprintLine: inventory.fingerprintLine,
+    fingerprintLine: inPageLanguage(inventory.fingerprintLine),
   })
 
   // Each verdict's colour comes with the data: "--reused" for the page's own rules, and
@@ -435,7 +436,7 @@ function drawHeader() {
   const verdictsInTheLegend = inventory.verdicts.filter(
     (verdict) => verdict.isDrawnOnThePage,
   )
-  for (const { key, label } of verdictsInTheLegend) {
+  for (const { key, labels } of verdictsInTheLegend) {
     const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
     swatch.append(
       createSvgElement("line", {
@@ -448,7 +449,7 @@ function drawHeader() {
     )
     const item = createElement("li")
     item.className = key
-    item.append(swatch, label)
+    item.append(swatch, inPageLanguage(labels))
     getElement("legend").append(item)
   }
 }
@@ -499,7 +500,7 @@ function drawExplanations() {
     badge.className = "item-badge"
     const title = createElement("strong")
     title.className = "item-title"
-    title.append(badge, explanation.title)
+    title.append(badge, inPageLanguage(explanation.title))
     item.append(title)
     if (explanation.reason) item.append(explanation.reason)
     if (explanation.developerDecision !== null) {
@@ -642,7 +643,10 @@ const targetsById = new Map(
   ),
 )
 const verdictLabels = Object.fromEntries(
-  inventory.correctionVerdicts.map(({ key, label }) => [key, label]),
+  inventory.correctionVerdicts.map(({ key, labels }) => [
+    key,
+    inPageLanguage(labels),
+  ]),
 )
 const correctionForm = /** @type {HTMLFormElement} */ (getElement("correction"))
 /**
@@ -680,8 +684,12 @@ function createChoice(group, value, label) {
 }
 
 function drawCorrectionForm() {
-  for (const { key, label } of inventory.correctionVerdicts) {
-    const choice = createChoice("correction-verdict", key, label)
+  for (const { key, labels } of inventory.correctionVerdicts) {
+    const choice = createChoice(
+      "correction-verdict",
+      key,
+      inPageLanguage(labels),
+    )
     choice.className = key
     getElement("correction-verdicts").append(choice)
   }
@@ -724,12 +732,12 @@ function showCorrectionForm(candidateNumber, targetId) {
   correctionForm.hidden = !candidate
   if (!candidate) return
   getElement("correction-title").textContent =
-    `${candidate.number} · ${candidate.figmaName} — ${candidate.judgement}`
+    `${candidate.number} · ${candidate.figmaName} — ${inPageLanguage(candidate.judgement)}`
   const targetTabs = getElement("correction-targets")
   targetTabs.hidden = candidate.targets.length === 1
   targetTabs.replaceChildren(
     ...candidate.targets.map((target) => {
-      const tab = createTabButton(target.tabName, () => {
+      const tab = createTabButton(inPageLanguage(target.tabName), () => {
         pickedTarget = target
         fillCorrectionFields()
       })
@@ -892,7 +900,7 @@ function restoreCorrections() {
 
 function copyFeedbackText() {
   const text = buildFeedbackText(
-    inventory.title,
+    inPageLanguage(inventory.title),
     [...corrections.values()],
     verdictLabels,
   )

@@ -2,6 +2,7 @@
 // Writes the brief the model reads before filling specs.json: for each component to create
 // or to adapt, what the approved inventory says of it and what it holds on each screen,
 // named the way a zone's "parts" name it.
+import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
 import { extractPropsDeclarations } from "../../../figma-component-inventory/scripts/lib/brief.mjs"
 import {
   isBoxInside,
@@ -52,7 +53,7 @@ function listDrawnInstances(inventory) {
         icons,
         judgement:
           isReactComponent && verdict
-            ? [codeComponent, VERDICTS[verdict].label]
+            ? [codeComponent, VERDICTS[verdict].labels[WRITTEN_FILES_LANGUAGE]]
                 .filter(Boolean)
                 .join(", ")
             : NO_COMPONENT_OF_ITS_OWN,
@@ -155,7 +156,7 @@ export function buildSpecsBrief({ inventory, readCodeFile }) {
       ),
     ]
     lines.push(
-      `## ${component.codeComponent} — ${VERDICTS[component.verdict].label}`,
+      `## ${component.codeComponent} — ${VERDICTS[component.verdict].labels[WRITTEN_FILES_LANGUAGE]}`,
       "",
       `- Inventory candidate: ${figmaNames.join(", ")}`,
     )

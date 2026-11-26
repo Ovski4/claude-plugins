@@ -2,6 +2,7 @@
 // index.md, beside the folders of the inventories: one line per inventory, with what it
 // covers and where it stands, its specs included. Both skills' render.mjs write it again
 // each time they run, so that a session finds an inventory without opening every folder.
+import { WRITTEN_FILES_LANGUAGE } from "./languages.mjs"
 import fs from "node:fs"
 import path from "node:path"
 import {
@@ -52,7 +53,7 @@ function readIndexedInventory(inventoryFolder) {
       : null
     return {
       folder: path.basename(inventoryFolder),
-      title: titleInventory(screens),
+      title: titleInventory(screens, WRITTEN_FILES_LANGUAGE),
       screens: screens.map(
         /** @param {{ number: number, nodeId: string }} screen */
         ({ number, nodeId }) => ({

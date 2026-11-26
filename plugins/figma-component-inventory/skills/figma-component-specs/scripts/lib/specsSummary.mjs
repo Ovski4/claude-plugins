@@ -1,6 +1,7 @@
 // @ts-check
 // Writes specs.md: what the next steps of the workflow (tickets, code) read instead of the
 // page. One section per component, with its props, what changes and its zones.
+import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
 import {
   nameScreens,
   titleInventory,
@@ -52,7 +53,7 @@ const writePropRow = ({
 export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
   const { fingerprint, approvedOn, screens } = inventory
   const lines = [
-    `# Props des composants — ${titleInventory(screens)}`,
+    `# Props des composants — ${titleInventory(screens, WRITTEN_FILES_LANGUAGE)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Construit sur l'inventaire validé le ${approvedOn} : maquette Figma version ${fingerprint.figma.version}, code au commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
@@ -64,7 +65,7 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
     if (!spec) continue
     lines.push(
       "",
-      `## ${component.codeComponent} — ${VERDICTS[component.verdict].label}`,
+      `## ${component.codeComponent} — ${VERDICTS[component.verdict].labels[WRITTEN_FILES_LANGUAGE]}`,
     )
     if (component.codePath) lines.push("", `\`${component.codePath}\``)
     const decisionsAndChanges = [
@@ -98,7 +99,7 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
         ? ` : ${zone.props.map((name) => `\`${name}\``).join(", ")}`
         : ""
       lines.push(
-        `- **${zone.letter} — ${zone.label}** (${ZONE_KINDS[zone.kind].label}${drivenBy} ; ${nameScreens(screenNumbers)})`,
+        `- **${zone.letter} — ${zone.label}** (${ZONE_KINDS[zone.kind].label}${drivenBy} ; ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)})`,
         ...(zone.notes ?? []).map((note) => `  - ${note}`),
       )
     }

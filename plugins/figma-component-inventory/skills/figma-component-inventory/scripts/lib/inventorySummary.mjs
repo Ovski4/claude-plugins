@@ -1,5 +1,6 @@
 // @ts-check
 // Writes inventory.md: what the next steps of the workflow read instead of the page.
+import { WRITTEN_FILES_LANGUAGE } from "./languages.mjs"
 import {
   nameOutlines,
   namePartNotOutlined,
@@ -43,7 +44,7 @@ export function buildInventorySummary({
       : `[Figma](${buildFigmaNodeUrl(fileKey, nodeId)})`,
   )
   const lines = [
-    `# Inventaire des composants — ${titleInventory(screens)}`,
+    `# Inventaire des composants — ${titleInventory(screens, WRITTEN_FILES_LANGUAGE)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Maquette : ${figmaLinks.join(", ")}, modifiée le ${lastModified.slice(0, 10)} (version ${version}). Code : commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
@@ -69,7 +70,7 @@ export function buildInventorySummary({
           const screenNumbers = listScreenNumbers(instances)
           const where =
             hasSeveralScreens && screenNumbers.length < screens.length
-              ? `, ${nameScreens(screenNumbers)}`
+              ? `, ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)}`
               : ""
           const figmaLink = `[nœud](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
           return [
@@ -84,7 +85,12 @@ export function buildInventorySummary({
         }),
     )
     if (items.length)
-      lines.push("", `## ${VERDICTS[verdictKey].label}`, "", ...items)
+      lines.push(
+        "",
+        `## ${VERDICTS[verdictKey].labels[WRITTEN_FILES_LANGUAGE]}`,
+        "",
+        ...items,
+      )
   }
   const items = judgedCandidates.flatMap((candidate) =>
     candidate.outlined

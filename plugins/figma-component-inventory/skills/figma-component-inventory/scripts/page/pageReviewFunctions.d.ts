@@ -5,6 +5,7 @@ type ReviewCheck = import("./pageReview.mjs").ReviewCheck
 declare const showPageHeader: PageReview["showPageHeader"]
 declare const addPageTexts: PageReview["addPageTexts"]
 declare const translate: PageReview["translate"]
+declare const inPageLanguage: PageReview["inPageLanguage"]
 declare const showStaticTexts: PageReview["showStaticTexts"]
 declare const isTypingInAField: PageReview["isTypingInAField"]
 declare const copyWithConfirmation: PageReview["copyWithConfirmation"]

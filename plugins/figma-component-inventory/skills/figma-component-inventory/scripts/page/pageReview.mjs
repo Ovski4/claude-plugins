@@ -52,6 +52,13 @@ export const translate = (key, values) =>
   fillText(textsOfThePage[key] ?? key, values)
 
 /**
+ * A text render.mjs wrote into the page's data once per language, in the page's one.
+ * @param {Record<PageLanguage, string>} textInEveryLanguage { fr: "2 écrans", en: "2 screens" }
+ */
+export const inPageLanguage = (textInEveryLanguage) =>
+  textInEveryLanguage[pageLanguage]
+
+/**
  * Writes the texts page.html leaves empty: an element names its text in `data-text`, and
  * the text of its `aria-label` in `data-text-aria-label`.
  */

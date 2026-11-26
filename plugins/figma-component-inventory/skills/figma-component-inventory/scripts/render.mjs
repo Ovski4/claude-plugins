@@ -21,6 +21,7 @@ import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
+import { WRITTEN_FILES_LANGUAGE } from "./lib/languages.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
 import { buildPageDrawing } from "./lib/pageDrawing.mjs"
 import { readProjectSettings } from "./lib/projectSettings.mjs"
@@ -117,7 +118,7 @@ function main() {
   )
   const verdicts = VERDICT_KEYS.map((key) => ({
     key,
-    label: VERDICTS[key].label,
+    labels: VERDICTS[key].labels,
     color: VERDICTS[key].color,
     // The legend names only the verdicts the page draws.
     isDrawnOnThePage: verdictsOfOutlines.has(key),
@@ -129,7 +130,7 @@ function main() {
     verdicts,
     // The correction form offers every verdict, and one more for what is no component.
     correctionVerdicts: [
-      ...verdicts.map(({ key, label }) => ({ key, label })),
+      ...verdicts.map(({ key, labels }) => ({ key, labels })),
       NOT_A_COMPONENT,
     ],
     // Corrections kept in the browser are dropped once the verdicts change.
@@ -166,7 +167,8 @@ function main() {
   const countsPerVerdict = VERDICT_KEYS.filter((key) =>
     instancesByVerdict.has(key),
   ).map(
-    (key) => `${VERDICTS[key].label} ${instancesByVerdict.get(key)?.length}`,
+    (key) =>
+      `${VERDICTS[key].labels[WRITTEN_FILES_LANGUAGE]} ${instancesByVerdict.get(key)?.length}`,
   )
   console.log(pageFile)
   console.log(countsPerVerdict.join(" · "))

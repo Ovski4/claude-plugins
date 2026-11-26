@@ -202,10 +202,23 @@ test("the page gets each screen's drawing, with what is the same on every screen
     },
   })
 
-  assert.equal(drawing.title, "Editor (2 écrans)")
-  assert.equal(
-    drawing.fingerprintLine,
-    "Construit le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
+  assert.deepEqual(drawing.title, {
+    fr: "Editor (2 écrans)",
+    en: "Editor (2 screens)",
+  })
+  assert.deepEqual(drawing.fingerprintLine, {
+    fr: "Construit le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
+    en: "Built on 2026-11-23 · mock-up changed on 2026-11-20 · commit 34ee98aa6",
+  })
+  assert.deepEqual(
+    drawing.screens.map((screen) => screen.linkText),
+    [
+      { fr: "Écran 1 — Editor · Off", en: "Screen 1 — Editor · Off" },
+      {
+        fr: "Écran 2 — Editor · Continuous",
+        en: "Screen 2 — Editor · Continuous",
+      },
+    ],
   )
   assert.deepEqual(
     drawing.screens.map((screen) => [
@@ -215,7 +228,7 @@ test("the page gets each screen's drawing, with what is the same on every screen
           `${id}${isSameOnEveryScreen ? " same" : ""}`,
       ),
       screen.labels
-        .map(({ title, detail }) => `${title} (${detail})`)
+        .map(({ title, detail }) => `${title} (${detail.fr} | ${detail.en})`)
         .toSorted(),
     ]),
     [
@@ -223,17 +236,17 @@ test("the page gets each screen's drawing, with what is the same on every screen
         "1 · Off",
         ["1 same", "2"],
         [
-          "1  Editor (Editor · Réutilisé)",
-          "2  OrderOffNotice (Settings · À créer)",
+          "1  Editor (Editor · Réutilisé | Editor · Reused)",
+          "2  OrderOffNotice (Settings · À créer | Settings · To create)",
         ],
       ],
       [
         "2 · Continuous",
         ["1 same", "4", "2"],
         [
-          "1  Editor (Editor · Réutilisé)",
-          "2  OrderSettings (Settings · À créer)",
-          "4  Body (Body · À créer)",
+          "1  Editor (Editor · Réutilisé | Editor · Reused)",
+          "2  OrderSettings (Settings · À créer | Settings · To create)",
+          "4  Body (Body · À créer | Body · To create)",
         ],
       ],
     ],
@@ -256,11 +269,16 @@ test("the page gets each screen's drawing, with what is the same on every screen
     [
       [
         "2 · écran 1",
-        "OrderOffNotice — À créer",
+        { fr: "OrderOffNotice — À créer", en: "OrderOffNotice — To create" },
         [1],
         "Un composant par mode.",
       ],
-      ["2 · écran 2", "OrderSettings — À créer", [2], "Un composant par mode."],
+      [
+        "2 · écran 2",
+        { fr: "OrderSettings — À créer", en: "OrderSettings — To create" },
+        [2],
+        "Un composant par mode.",
+      ],
     ],
   )
   assert.deepEqual(
@@ -273,7 +291,7 @@ test("the page gets each screen's drawing, with what is the same on every screen
       number,
       targets.map(
         ({ id, tabName, screens, verdict, codeComponent }) =>
-          `${id} (${tabName}) [${screens}] ${verdict} ${codeComponent}`,
+          `${id} (${tabName.fr} | ${tabName.en}) [${screens}] ${verdict} ${codeComponent}`,
       ),
       judgement,
     ]),
@@ -281,22 +299,29 @@ test("the page gets each screen's drawing, with what is the same on every screen
       [
         1,
         [
-          "1 (Toutes ses utilisations) [1,2] reused Editor",
-          "1 · écran 1 (écran 1) [1] reused Editor",
-          "1 · écran 2 (écran 2) [2] reused Editor",
+          "1 (Toutes ses utilisations | All its uses) [1,2] reused Editor",
+          "1 · écran 1 (écran 1 | screen 1) [1] reused Editor",
+          "1 · écran 2 (écran 2 | screen 2) [2] reused Editor",
         ],
-        "Editor · Réutilisé",
+        { fr: "Editor · Réutilisé", en: "Editor · Reused" },
       ],
       [
         2,
         [
-          "2 (Toutes ses utilisations) [1,2] to-create null",
-          "2 · écran 1 (écran 1) [1] to-create OrderOffNotice",
-          "2 · écran 2 (écran 2) [2] to-create OrderSettings",
+          "2 (Toutes ses utilisations | All its uses) [1,2] to-create null",
+          "2 · écran 1 (écran 1 | screen 1) [1] to-create OrderOffNotice",
+          "2 · écran 2 (écran 2 | screen 2) [2] to-create OrderSettings",
         ],
-        "OrderOffNotice · À créer / OrderSettings · À créer",
+        {
+          fr: "OrderOffNotice · À créer / OrderSettings · À créer",
+          en: "OrderOffNotice · To create / OrderSettings · To create",
+        },
       ],
-      [4, ["4 (Toutes ses utilisations) [2] to-create Body"], "Body · À créer"],
+      [
+        4,
+        ["4 (Toutes ses utilisations | All its uses) [2] to-create Body"],
+        { fr: "Body · À créer", en: "Body · To create" },
+      ],
     ],
   )
 })

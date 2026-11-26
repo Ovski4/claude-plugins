@@ -2,6 +2,7 @@
 // Everything specs.html draws, worked out from the approved inventory and specs.json: per
 // component, the part of each capture it is drawn on and the outline of each zone there.
 // The page's script only places what this module gives it.
+import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
 import { buildFigmaNodeUrl } from "../../../figma-component-inventory/scripts/lib/figma.mjs"
 import { listScreenNumbers } from "../../../figma-component-inventory/scripts/lib/mergeScreens.mjs"
 import { VERDICTS } from "../../../figma-component-inventory/scripts/lib/verdicts.mjs"
@@ -342,7 +343,7 @@ export function buildSpecsPageDrawing({ inventory, specsFile }) {
         verdict: component.verdict,
       }),
       verdict: {
-        label: VERDICTS[component.verdict].label,
+        label: VERDICTS[component.verdict].labels[WRITTEN_FILES_LANGUAGE],
         color: COLOURS_IN_THE_TREE[component.verdict],
       },
       isToAdapt: component.isToAdapt,
@@ -377,8 +378,8 @@ export function buildSpecsPageDrawing({ inventory, specsFile }) {
     }
   })
   return {
-    fingerprintLine: `Construit sur l'inventaire validé le ${inventory.approvedOn} · ${tellMockupAndCommit(inventory.fingerprint)}`,
-    title: titleInventory(inventory.screens),
+    fingerprintLine: `Construit sur l'inventaire validé le ${inventory.approvedOn} · ${tellMockupAndCommit(inventory.fingerprint, WRITTEN_FILES_LANGUAGE)}`,
+    title: titleInventory(inventory.screens, WRITTEN_FILES_LANGUAGE),
     specsHash: hashComponents(specsFile.components),
     reviewKey: hashWhatIsReviewed(
       inventory.screens.map((screen) => screen.nodeId),

@@ -157,7 +157,8 @@ scripts/
     inventoryIndex.mjs      writes out/index.md: one line per inventory, with where it and its specs stand
     approvedInventory.mjs   an approved inventory as the steps after it read it; refuses any other
     inventorySummary.mjs    the content of inventory.md
-    inventoryWording.mjs    the French names that inventory.html and inventory.md share: outlines, screens, title
+    inventoryWording.mjs    the names that inventory.html and inventory.md share, in each language: outlines, screens, title
+    languages.mjs           a page's text written once per language, and the language of the files the next steps read
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     feedbackText.mjs        the developer's corrections on the page: what differs from the inventory, the text to paste; pasted whole into the page
@@ -300,7 +301,8 @@ A click on a component, on its label or on its reason isolates it: everything el
 and the capture is veiled except where that component is drawn, on every screen. A second
 click, a click beside the images or the Escape key shows everything back.
 
-Labels are in French, since its images go into Jira tickets. Every outline is dotted; only
+Labels are in the language the developer picks in the page's settings, French unless he
+picked English; the model's notes are in French. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its
 number and its label but gets no outline, which would hide it.
 
