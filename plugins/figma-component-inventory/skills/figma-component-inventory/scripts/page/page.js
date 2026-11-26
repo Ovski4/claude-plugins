@@ -399,18 +399,6 @@ function drawTabs(drawnScreens, drawnExplanations) {
   showTabOfScreen = show
 }
 
-/**
- * While the switch is on, the page's body carries a class named like the switch: the
- * page's styles react to it.
- * @param {string} switchId
- */
-function wireSwitch(switchId) {
-  getElement(switchId).addEventListener("change", (event) => {
-    const isOn = /** @type {HTMLInputElement} */ (event.target).checked
-    document.body.classList.toggle(switchId, isOn)
-  })
-}
-
 function drawHeader() {
   document.title = `Inventaire — ${inventory.title}`
   showPageHeader({
@@ -876,13 +864,13 @@ function copyFeedbackText() {
 
 drawHeader()
 const drawnScreens = inventory.screens.map(drawScreen)
-wireSwitch("texts-outside-leaves")
+wireSettingSwitch("texts-outside-leaves")
 const drawnExplanations = drawExplanations()
 drawNotOutlined()
 if (drawnScreens.length > 1) {
   drawTabs(drawnScreens, drawnExplanations)
   getElement("differences-switch").hidden = false
-  wireSwitch("differences-only")
+  wireSettingSwitch("differences-only")
 }
 drawCorrectionForm()
 restoreCorrections()
@@ -902,7 +890,7 @@ document.addEventListener("click", (event) => {
   const isOnTheDrawingOrAControl =
     event.target instanceof Element &&
     event.target.closest(
-      ".screens svg, [data-candidate], .feedback, button, label, a",
+      ".screens svg, [data-candidate], .feedback, .page-settings, button, label, a",
     )
   if (!isOnTheDrawingOrAControl) isolate(null)
 })

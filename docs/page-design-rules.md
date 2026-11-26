@@ -71,10 +71,18 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
    card. On a window too narrow for the tree, the capture and the panel side by side
    (under about 1270 px), the tree goes above first: the capture and its panel stay
    together as long as they can.
-4. **One line of hint**: what a click does and how to come back.
-5. **The capture and its side panel**, in `.capture-beside-panel`: side by side while the
+4. **The settings**, when the page has any: what changes the way the page is read, never
+   what it says. A round cog under the « i » of the header (`.settings-button`, in
+   `.status-buttons`) shows them in a panel over the page (`.page-settings`), which stays
+   while the developer ticks its boxes: the cog again, a click anywhere else or Escape
+   hides it. Each setting is a box to tick with what it does
+   (`.page-switch`). A page adds its boxes there and wires them with `wireSettingSwitch`
+   of the shared `pageReview.mjs`: the browser keeps each choice for every page of the
+   same kind. No setting sits elsewhere on the page.
+5. **One line of hint**: what a click does and how to come back.
+6. **The capture and its side panel**, in `.capture-beside-panel`: side by side while the
    window has room, the panel under the capture otherwise.
-6. **The corrections bar**, fixed at the bottom of the window. It covers what is under
+7. **The corrections bar**, fixed at the bottom of the window. It covers what is under
    it, and its height changes (the form opens, the corrections add up): the shared
    `pageReview.mjs` measures it into `--corrections-bar-height`, and `pageBase.css` ends
    the page, the side panel and what is scrolled into view above it. A page never sets a

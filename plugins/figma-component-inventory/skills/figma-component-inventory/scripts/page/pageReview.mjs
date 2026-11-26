@@ -3,8 +3,8 @@
 // file before each page's own page.js as a plain script, without its "export" words, so its
 // functions are that script's globals. It fills the page's header, makes the boxes the
 // developer ticks as he checks the page, keeps what is ticked in the browser, shows the
-// count in the bar at the bottom, invites him to approve once nothing blocks it, and tells
-// the stylesheet how high that bar is.
+// count in the bar at the bottom, invites him to approve once nothing blocks it, tells the
+// stylesheet how high that bar is, and keeps what he chooses in the page's settings.
 // The page has the elements "screen-name", "approval", "fingerprint", "feedback" and
 // "feedback-count".
 
@@ -56,6 +56,78 @@ document.addEventListener("keydown", (event) => {
   if (isLeavingAField && event.target instanceof HTMLElement)
     event.target.blur()
 })
+
+// The page's settings: what the developer chooses there is his way of reading these pages,
+// not a fact about one mock-up. The browser keeps each choice for every page of the same
+// kind.
+
+/**
+ * @param {string} storageKey
+ * @returns {boolean} false when nothing is kept, or when the browser keeps nothing
+ */
+function readKeptSetting(storageKey) {
+  try {
+    return localStorage.getItem(storageKey) === "on"
+  } catch {
+    return false
+  }
+}
+
+/**
+ * @param {string} storageKey
+ * @param {boolean} isOn
+ */
+function keepSetting(storageKey, isOn) {
+  try {
+    if (isOn) localStorage.setItem(storageKey, "on")
+    else localStorage.removeItem(storageKey)
+  } catch {
+    // The browser keeps nothing for this page: the choice lasts until it is closed.
+  }
+}
+
+// The cog of the header shows the settings over the page, and they stay there while the
+// developer ticks their boxes: the cog, Escape or a click anywhere else hides them.
+const settingsButton = document.getElementById("settings-button")
+const settingsPanel = document.getElementById("page-settings")
+if (settingsButton && settingsPanel) {
+  /** @param {boolean} areShown */
+  const showSettings = (areShown) => {
+    settingsPanel.hidden = !areShown
+    settingsButton.setAttribute("aria-expanded", String(areShown))
+  }
+  settingsButton.addEventListener("click", () =>
+    showSettings(settingsPanel.hidden),
+  )
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") showSettings(false)
+  })
+  document.addEventListener("click", (event) => {
+    const isOnTheSettings =
+      event.target instanceof Node &&
+      (settingsPanel.contains(event.target) ||
+        settingsButton.contains(event.target))
+    if (!isOnTheSettings) showSettings(false)
+  })
+}
+
+/**
+ * Wires a box of the page's settings: while it is ticked, the page's body carries a class
+ * named like the box, which the page's styles react to.
+ * @param {string} switchId the id of the box: "differences-only"
+ */
+export function wireSettingSwitch(switchId) {
+  const storageKey = `page-setting ${switchId}`
+  const box = /** @type {HTMLInputElement} */ (getSharedElement(switchId))
+  const showSetting = () =>
+    document.body.classList.toggle(switchId, box.checked)
+  box.checked = readKeptSetting(storageKey)
+  showSetting()
+  box.addEventListener("change", () => {
+    keepSetting(storageKey, box.checked)
+    showSetting()
+  })
+}
 
 const COPIED_SHOWN_FOR_MILLISECONDS = 1500
 

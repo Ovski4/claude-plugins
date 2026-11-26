@@ -76,14 +76,6 @@
 .screens section {
   padding: 12px 16px 16px;
 }
-.page-switch {
-  display: block;
-  margin: 0 0 8px;
-  cursor: pointer;
-}
-.page-switch[hidden] {
-  display: none;
-}
 [data-candidate] {
   cursor: pointer;
 }

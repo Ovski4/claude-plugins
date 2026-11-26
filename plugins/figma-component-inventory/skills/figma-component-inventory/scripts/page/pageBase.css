@@ -49,7 +49,7 @@ h1 {
 .page-status {
   position: relative;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
   margin-top: 8px;
 }
@@ -95,6 +95,66 @@ h1 {
   font-size: 12px;
   white-space: nowrap;
 }
+/* The round buttons of the header, one under the other: what the page is built on, then
+   its settings. */
+.status-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* A round cog: a click shows the page's settings; another click, a click elsewhere or
+   Escape hides them. */
+.settings-button {
+  width: 24px;
+  height: 24px;
+  padding: 3px;
+  border: 1px solid var(--text-muted);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.settings-button[aria-expanded="true"] {
+  background: var(--text);
+  color: var(--surface);
+}
+.settings-button svg {
+  display: block;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+/* Eight teeth: a thick dashed circle around the cog's rim. */
+.settings-button .cog-teeth {
+  stroke-width: 3;
+  stroke-dasharray: 3.34;
+}
+/* The settings, over the page while the developer ticks their boxes. */
+.page-settings {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 2;
+  box-sizing: border-box;
+  width: 360px;
+  max-width: calc(100vw - 64px);
+  padding: 12px 14px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.08);
+  font-size: 13px;
+}
+.page-settings[hidden] {
+  display: none;
+}
+.page-settings h2 {
+  margin: 0 0 8px;
+  color: var(--text-muted);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
 .info-bubble:hover + .fingerprint,
 .info-bubble:focus-visible + .fingerprint {
   display: block;
@@ -110,7 +170,8 @@ h1 {
   .page-status {
     margin-top: 0;
   }
-  .fingerprint {
+  .fingerprint,
+  .page-settings {
     right: 0;
     left: auto;
   }
@@ -133,6 +194,17 @@ h1 {
   margin: 0 0 8px;
   color: var(--text-muted);
   font-size: 12px;
+}
+/* One setting: a box to tick and what it changes on the page. */
+.page-switch {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 0 6px;
+  cursor: pointer;
+}
+.page-switch[hidden] {
+  display: none;
 }
 /* A white surface on the page's grey: a capture, a side panel. */
 .card {

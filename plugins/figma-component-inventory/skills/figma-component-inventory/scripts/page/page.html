@@ -16,28 +16,48 @@
       </div>
       <div class="page-status">
         <p class="approval" id="approval"></p>
-        <button
-          type="button"
-          class="info-bubble"
-          aria-label="Sur quoi la page est construite"
-          aria-describedby="fingerprint"
-        >
-          i
-        </button>
-        <p class="fingerprint" id="fingerprint" role="tooltip"></p>
+        <div class="status-buttons">
+          <button
+            type="button"
+            class="info-bubble"
+            aria-label="Sur quoi la page est construite"
+            aria-describedby="fingerprint"
+          >
+            i
+          </button>
+          <p class="fingerprint" id="fingerprint" role="tooltip"></p>
+          <button
+            type="button"
+            class="settings-button"
+            id="settings-button"
+            aria-label="Paramètres"
+            aria-expanded="false"
+            aria-controls="page-settings"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8.5" class="cog-teeth" />
+              <circle cx="12" cy="12" r="6.5" />
+              <circle cx="12" cy="12" r="2.5" />
+            </svg>
+          </button>
+        </div>
+        <div class="page-settings" id="page-settings" hidden>
+          <h2>Paramètres</h2>
+          <label class="page-switch">
+            <input type="checkbox" id="texts-outside-leaves" />
+            Textes hors sous-composant : montrer chaque texte qu'aucun
+            sous-composant ne contient
+          </label>
+          <label class="page-switch" id="differences-switch" hidden>
+            <input type="checkbox" id="differences-only" />
+            Différences seulement : estomper ce qui est identique sur tous les
+            écrans
+          </label>
+        </div>
       </div>
     </header>
     <ul class="legend" id="legend"></ul>
     <div class="tabs" id="tabs" role="tablist"></div>
-    <label class="page-switch">
-      <input type="checkbox" id="texts-outside-leaves" />
-      Textes hors sous-composant : montrer chaque texte qu'aucun sous-composant
-      ne contient
-    </label>
-    <label class="page-switch" id="differences-switch" hidden>
-      <input type="checkbox" id="differences-only" />
-      Différences seulement : estomper ce qui est identique sur tous les écrans
-    </label>
     <p class="page-hint">
       Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le
       corriger ; recliquer, cliquer à côté ou Échap pour revenir.
