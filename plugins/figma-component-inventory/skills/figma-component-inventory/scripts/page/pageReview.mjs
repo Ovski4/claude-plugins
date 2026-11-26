@@ -213,12 +213,11 @@ const COPIED_SHOWN_FOR_MILLISECONDS = 1500
  */
 export async function copyCorrectionsText(text) {
   const button = getSharedElement("feedback-copy")
-  const idleText = button.textContent
   try {
     await navigator.clipboard.writeText(text)
     button.textContent = translate("corrections.copied")
     setTimeout(
-      () => (button.textContent = idleText),
+      () => (button.textContent = translate("corrections.copy")),
       COPIED_SHOWN_FOR_MILLISECONDS,
     )
   } catch {
