@@ -1,22 +1,20 @@
 // @ts-check
-// Usage: node scripts/render.mjs <out-dir> [--approve=<code>]
+// Usage: node scripts/render.mjs <out-dir> [--approve]
 // Checks verdicts.json against candidates.json, then writes inventory.html: the capture of the
 // Figma screen with one numbered outline per component, coloured by verdict.
 // Nothing is drawn while a check fails: every problem is listed and the exit code is 3.
-// --approve=<code> is run by the developer: the page shows the command, with its code, once he has
-// ticked every box. The code names the verdicts the page shows: the approval is refused when they
-// changed since. It stamps verdicts.json and writes inventory.md, the list the next steps of the
-// workflow read. The stamp holds a hash of the verdicts: any later change makes the page a draft again. It also adds to the repo's
+// --approve is run once the developer says in the conversation that he approves; it is refused
+// while a verdict is "to-decide" (exit code 4). It stamps verdicts.json and writes inventory.md,
+// the list the next steps of the workflow read. The stamp holds a hash of the verdicts: any later change makes the page a draft again. It also adds to the repo's
 // Figma-to-code map the approved Figma components that existing code draws and that the map
 // does not name yet, so that the next screen is pre-filled.
 // Run from inside the repo whose code is judged: the code paths of verdicts.json are checked against it.
 import fs from "node:fs"
 import path from "node:path"
 import {
-  buildApproveCommand,
   EXIT_CODE_NOT_APPROVED,
   explainRefusedApproval,
-  readApprovalAsked,
+  isApprovalAsked,
 } from "./lib/approval.mjs"
 import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
@@ -44,7 +42,7 @@ import {
 
 const EXIT_CODE_FAILED = 1
 const EXIT_CODE_INVALID_VERDICTS = 3
-const USAGE = "Usage: node scripts/render.mjs <out-dir> [--approve=<code>]"
+const USAGE = "Usage: node scripts/render.mjs <out-dir> [--approve]"
 const PAGE_FILE_NAME = "inventory.html"
 const PAGE_FOLDER = path.join(import.meta.dirname, "page")
 // Builds the text of the developer's corrections, in the page.
@@ -58,7 +56,6 @@ function main() {
   const commandArguments = process.argv.slice(2)
   const outDir = commandArguments.find((argument) => !argument.startsWith("--"))
   if (!outDir) throw new CommandFailure(USAGE, EXIT_CODE_FAILED)
-  const { isApprovalAsked, givenCode } = readApprovalAsked(commandArguments)
   /** @param {string} fileName */
   const readJson = (fileName) =>
     JSON.parse(fs.readFileSync(path.join(outDir, fileName), "utf8"))
@@ -83,15 +80,12 @@ function main() {
     verdictsFile.verdicts,
   )
 
-  if (isApprovalAsked) {
-    const refusal = explainRefusedApproval({
-      givenCode,
-      contentToApprove: verdictsFile.verdicts,
-      pageFileName: PAGE_FILE_NAME,
-      stillToDecide: listNumbersStillToDecide(judgedCandidates).map(
+  if (isApprovalAsked(commandArguments)) {
+    const refusal = explainRefusedApproval(
+      listNumbersStillToDecide(judgedCandidates).map(
         (number) => `candidate ${number}`,
       ),
-    })
+    )
     if (refusal) throw new CommandFailure(refusal, EXIT_CODE_NOT_APPROVED)
     verdictsFile.approval = buildApproval(verdictsFile.verdicts, new Date())
     fs.writeFileSync(
@@ -123,15 +117,6 @@ function main() {
   }))
   const inventory = {
     approvalDate,
-    // What the developer runs once he has ticked every box; null on an approved page.
-    approveCommand: approvalDate
-      ? null
-      : buildApproveCommand({
-          workingFolder: repoRoot,
-          renderScript: import.meta.filename,
-          outDir: path.resolve(outDir),
-          contentToApprove: verdictsFile.verdicts,
-        }),
     verdicts,
     // The correction form offers every verdict, and one more for what is no component.
     correctionVerdicts: [

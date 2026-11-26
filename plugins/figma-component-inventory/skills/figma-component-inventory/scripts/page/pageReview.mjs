@@ -2,9 +2,9 @@
 // What inventory.html and specs.html do alike, beyond their look: render.mjs pastes this
 // file before each page's own page.js as a plain script, without its "export" words, so its
 // functions are that script's globals. It fills the page's header, makes the boxes the
-// developer ticks as he checks the page, keeps what is ticked in the browser, and shows the
-// count and the command that approves in the bar at the bottom, and tells the stylesheet
-// how high that bar is.
+// developer ticks as he checks the page, keeps what is ticked in the browser, shows the
+// count in the bar at the bottom, invites him to approve once nothing blocks it, and tells
+// the stylesheet how high that bar is.
 // The page has the elements "screen-name", "approval", "fingerprint", "feedback" and
 // "feedback-count".
 
@@ -196,10 +196,10 @@ export function createReviewBox(check, onToggle) {
 }
 
 /**
- * The count, the way to the next box and the command that approves, made at the first
- * call: the count and the button before the corrections' count, the command at the end of
- * the bar.
- * @type {{ count: HTMLElement, nextButton: HTMLElement, approve: HTMLElement, command: HTMLElement } | null}
+ * The count, the way to the next box and the invitation to approve, made at the first
+ * call: the count and the button before the corrections' count, the invitation at the end
+ * of the bar.
+ * @type {{ count: HTMLElement, nextButton: HTMLElement, approvalInvitation: HTMLElement } | null}
  */
 let reviewProgressElements = null
 /**
@@ -250,50 +250,39 @@ function createReviewProgressElements() {
   nextButton.type = "button"
   nextButton.textContent = "Suivant à vérifier →"
   nextButton.addEventListener("click", showNextToReview)
-  const command = document.createElement("code")
-  const copyButton = document.createElement("button")
-  copyButton.type = "button"
-  copyButton.textContent = "Copier la commande"
-  copyButton.addEventListener("click", () =>
-    copyWithConfirmation(copyButton, command.textContent ?? "", () =>
-      getSelection()?.selectAllChildren(command),
-    ),
-  )
-  const invitation = document.createElement("p")
-  invitation.textContent =
-    "Tout est vérifié. Pour valider, lancer dans le terminal :"
-  const approve = document.createElement("div")
-  approve.className = "approve"
-  approve.append(invitation, command, copyButton)
+  const approvalInvitation = document.createElement("p")
+  approvalInvitation.className = "approval-invitation"
+  approvalInvitation.textContent =
+    "Plus rien à trancher ni à corriger. Pour valider, le dire dans la conversation : « je valide »."
   getSharedElement("feedback-count").before(count, nextButton)
-  getSharedElement("feedback").append(approve)
-  return { count, nextButton, approve, command }
+  getSharedElement("feedback").append(approvalInvitation)
+  return { count, nextButton, approvalInvitation }
 }
 
 /**
- * In the bar at the bottom: how many boxes are ticked, and the command that approves once
- * all are and no correction is left. A correction says the page is not right yet, even on
- * something that has no box.
+ * In the bar at the bottom: how many boxes are ticked, and the invitation to approve. The
+ * boxes only help the developer keep track of what he has read: the invitation shows as
+ * soon as no question is open and no correction waits, ticked or not. A correction says
+ * the page is not right yet, even on something that has no box.
  * @param {ReviewCheck[]} checks every box of the page, shown or not
  * @param {object} page
- * @param {string | null} page.approveCommand null on an approved page
+ * @param {boolean} page.isApproved an approved page invites to nothing
  * @param {number} page.correctionCount
  * @param {(check: ReviewCheck) => void} page.showCheck brings a box into view, whatever
  *   the page has to show first (a tab, a component), then calls `pointAtReviewBox` on it
  */
 export function showReviewProgress(
   checks,
-  { approveCommand, correctionCount, showCheck },
+  { isApproved, correctionCount, showCheck },
 ) {
   reviewProgressElements ??= createReviewProgressElements()
-  const { count, nextButton, approve, command } = reviewProgressElements
+  const { count, nextButton, approvalInvitation } = reviewProgressElements
   nextToReview.checks = checks
   nextToReview.showCheck = showCheck
   nextButton.hidden = !checks.some(isLeftToReview)
   const reviewedCount = checks.filter(isReviewed).length
-  const isEverythingReviewed = reviewedCount === checks.length
   count.textContent = `${reviewedCount} / ${checks.length} vérifiés (${countReviewSubjects(checks)})`
-  approve.hidden =
-    approveCommand === null || !isEverythingReviewed || correctionCount > 0
-  command.textContent = approveCommand
+  const isSomethingOpen =
+    correctionCount > 0 || checks.some((check) => check.whyNotYet !== null)
+  approvalInvitation.hidden = isApproved || isSomethingOpen
 }

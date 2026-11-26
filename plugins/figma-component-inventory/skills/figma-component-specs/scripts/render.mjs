@@ -1,22 +1,19 @@
 // @ts-check
-// Usage: node scripts/render.mjs <inventory-out-dir> [--approve=<code>]
+// Usage: node scripts/render.mjs <inventory-out-dir> [--approve]
 // Checks specs.json of an approved inventory's folder, then writes specs.html there: one tab
 // per component to create or to adapt, its captures with one outline per zone, and the
 // props that drive each zone.
-// --approve=<code> is run by the developer: the page shows the command, with its code, once he
-// has ticked every box. The code names the specs the page shows: the approval is refused when
-// they changed since, and while a zone is "to-decide" (exit code 4). It stamps specs.json and
-// writes specs.md, what the next steps read.
+// --approve is run once the developer says in the conversation that he approves; it is refused
+// while a zone is "to-decide" (exit code 4). It stamps specs.json and writes specs.md, what
+// the next steps read.
 // Nothing is drawn while a check fails: every problem is listed and the exit code is 3.
 // An inventory that is not approved, or not in the promised format, stops with exit code 2.
 import fs from "node:fs"
 import path from "node:path"
 import {
-  buildApproveCommand,
   explainRefusedApproval,
-  readApprovalAsked,
+  isApprovalAsked,
 } from "../../figma-component-inventory/scripts/lib/approval.mjs"
-import { findRepoRoot } from "../../figma-component-inventory/scripts/lib/gitRepo.mjs"
 import { writeInventoryIndex } from "../../figma-component-inventory/scripts/lib/inventoryIndex.mjs"
 import {
   InventoryNotUsable,
@@ -43,8 +40,7 @@ import {
 import { buildSpecsPageDrawing } from "./lib/specsPageDrawing.mjs"
 import { buildSpecsSummary } from "./lib/specsSummary.mjs"
 
-const USAGE =
-  "Usage: node scripts/render.mjs <inventory-out-dir> [--approve=<code>]"
+const USAGE = "Usage: node scripts/render.mjs <inventory-out-dir> [--approve]"
 const PAGE_FILE_NAME = "specs.html"
 const SUMMARY_FILE_NAME = "specs.md"
 const PAGE_FOLDER = path.join(import.meta.dirname, "page")
@@ -75,14 +71,9 @@ function main() {
     throw new CommandFailure(message, EXIT_CODE_INVALID_SPECS)
   }
 
-  const { isApprovalAsked, givenCode } = readApprovalAsked(commandArguments)
-  if (isApprovalAsked) {
-    const refusal = explainRefusedApproval({
-      givenCode,
-      contentToApprove: specsFile.components,
-      pageFileName: PAGE_FILE_NAME,
-      stillToDecide: listZonesStillToDecide(specsFile),
-    })
+  const isApproving = isApprovalAsked(commandArguments)
+  if (isApproving) {
+    const refusal = explainRefusedApproval(listZonesStillToDecide(specsFile))
     if (refusal) throw new CommandFailure(refusal, EXIT_CODE_NOT_APPROVED)
     specsFile.approval = buildSpecsApproval(specsFile.components, new Date())
     fs.writeFileSync(specsPath, JSON.stringify(specsFile, null, 2))
@@ -100,15 +91,6 @@ function main() {
   )
   const specs = {
     ...drawing,
-    // What the developer runs once he has ticked every box; null on an approved page.
-    approveCommand: drawing.approvalDate
-      ? null
-      : buildApproveCommand({
-          workingFolder: findRepoRoot(),
-          renderScript: import.meta.filename,
-          outDir: path.resolve(outDir),
-          contentToApprove: specsFile.components,
-        }),
     // A capture is written once, whatever the number of components drawn on its screen.
     captureDataUrlsByFile: Object.fromEntries(
       [...captureFiles].map((file) => [
@@ -138,7 +120,7 @@ function main() {
       )
       .join(" · "),
   )
-  if (isApprovalAsked && drawing.approvalDate) {
+  if (isApproving && drawing.approvalDate) {
     const summaryFile = path.join(outDir, SUMMARY_FILE_NAME)
     fs.writeFileSync(
       summaryFile,

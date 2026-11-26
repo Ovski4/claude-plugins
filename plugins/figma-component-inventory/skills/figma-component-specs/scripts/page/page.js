@@ -12,10 +12,7 @@
 /** @typedef {import("../lib/specsFeedbackText.mjs").SpecCorrection} SpecCorrection */
 /**
  * What render.mjs writes into the page.
- * @typedef {SpecsPageDrawing & {
- *   captureDataUrlsByFile: Record<string, string>,
- *   approveCommand: string | null,
- * }} Specs
+ * @typedef {SpecsPageDrawing & { captureDataUrlsByFile: Record<string, string> }} Specs
  */
 
 /** @param {string} id */
@@ -379,10 +376,10 @@ function createZoneItems(lettersOnShownScreen) {
   return [createPanelHeading("Zones"), list]
 }
 
-/** The count of what is checked, and the command that approves once everything is. */
+/** The count of what is checked, and the invitation to approve once nothing blocks it. */
 function showReview() {
   showReviewProgress(componentsInTreeOrder.flatMap(listChecksOfComponent), {
-    approveCommand: specs.approveCommand,
+    isApproved: specs.approvalDate !== null,
     correctionCount: corrections.size,
     showCheck: showReviewBoxOf,
   })

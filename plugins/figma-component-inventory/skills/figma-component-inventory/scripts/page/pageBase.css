@@ -151,7 +151,6 @@ h1 {
 }
 .tabs button,
 .feedback-summary button,
-.approve button,
 .correction button {
   padding: 4px 12px;
   border: 1px solid var(--text-muted);
@@ -414,24 +413,10 @@ h1 {
 .component-tree button.reviewed::after {
   content: "✓";
 }
-/* Once every box is ticked: the command that approves, for the developer's terminal. */
-.approve {
-  display: flex;
+/* Once no question is open and no correction waits: how the developer approves. */
+.approval-invitation {
   flex-basis: 100%;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-.approve p {
   margin: 0;
   color: var(--text);
   font-weight: 600;
-}
-.approve code {
-  padding: 4px 8px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  background: var(--page-background);
-  font-size: 12px;
-  overflow-wrap: anywhere;
 }

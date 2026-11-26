@@ -171,19 +171,19 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   ticked and is not, on whatever tab or component holds it, and outlines it
   (`.review-check.pointed`). Whatever was picked is dropped first: the box is never shown
   faded. It goes away once nothing is left to tick.
-- The boxes, their count and the command are made by the shared
+- The boxes, their count and the invitation to approve are made by the shared
   `scripts/page/pageReview.mjs`, which `writeStandalonePage` pastes before the page's own
   `page.js`: a page says what its boxes are and when one cannot be ticked, never how a box
   is drawn, kept or counted. The same file fills the header (`showPageHeader`) and copies a
   text with its « Copié » (`copyWithConfirmation`): a page does not write these again.
 - A check is kept in the browser as a hash of what the developer read (`reviewHash`,
   worked out by the lib): a rebuilt page keeps the checks of what did not change.
-- Ticking everything approves nothing by itself: the page cannot write a file. Once every
-  box is ticked and no correction is left, the bar shows the command that approves, with
-  « Copier la commande ». The command carries a code that names the content the page shows
-  (`buildApproveCommand`): the script refuses it when the content changed since. The
-  command runs between parentheses, so that the developer's terminal stays in its folder.
-  The developer runs it; an approved page does not show it.
+- The boxes only help the developer keep track of what he has read: they approve nothing
+  and block nothing. The page cannot write a file, so the approval is given in the
+  conversation: once nothing waits for a decision and no correction is left, the bar
+  invites the developer to say there that he approves (`.approval-invitation`), ticked or
+  not, and the model runs the script's `--approve`. An approved page does not show the
+  invitation.
 
 ## Access
 

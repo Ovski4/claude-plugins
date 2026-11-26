@@ -111,7 +111,7 @@ node scripts/candidates.mjs <out-dir> <figma-url>…  # 1. script: reads Figma, 
 #                                                     2. model: fills verdicts.json
 node scripts/render.mjs <out-dir>                   # 3. script: checks verdicts.json, writes inventory.html
 #                                                     4. developer: corrections made on the page, pasted in the chat; the model applies them
-node scripts/render.mjs <out-dir> --approve=<code>  # 5. developer: the command the page shows once every box is ticked: stamp + inventory.md + map lines
+node scripts/render.mjs <out-dir> --approve         # 5. model, once the developer says in the chat that he approves: stamp + inventory.md + map lines
 ```
 
 Both commands run from the repo whose code is judged, since code paths are checked against
@@ -140,7 +140,7 @@ scripts/
   page/                   the parts of inventory.html, which render.mjs pastes into one file with lib/feedbackText.mjs
     page.html               its structure
     pageBase.css            what inventory.html and specs.html look alike by: colours, header, legend, tabs, cards, corrections bar
-    pageReview.mjs          what both pages do alike: the header's texts, the boxes the developer ticks, their count, the command that approves
+    pageReview.mjs          what both pages do alike: the header's texts, the boxes the developer ticks, their count, the invitation to approve
     page.css                the inventory page's own styles
     page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches, clicks and the correction form
     feedbackTextFunctions.d.ts tells the type check that page.js finds the functions of feedbackText.mjs in the page
@@ -217,10 +217,10 @@ What the model does not write:
 - `decidedBy: "developer"` and `developerDecision`: the entry is a correction the developer
   gave. `developerDecision` is one short French sentence saying what he decided, written so
   that it reads alone in `inventory.md`. No model changes the entry afterwards.
-- `approval` (written by `render.mjs --approve=<code>`, which the developer runs: the page
-  shows the command once he has ticked every box, and the code is refused when the verdicts
-  changed since that page): the date the developer approved and a hash of the verdicts. A page without a valid approval is shown as « Brouillon »; any later
-  change to a verdict cancels it.
+- `approval` (written by `render.mjs --approve`, which the model runs once the developer
+  says in the chat that he approves; refused while a verdict is `to-decide`): the date the
+  developer approved and a hash of the verdicts. A page without a valid approval is shown
+  as « Brouillon »; any later change to a verdict cancels it.
 
 ## Finding an inventory
 
@@ -334,7 +334,7 @@ node scripts/prepare.mjs <inventory-out-dir>   # 1. script: checks the inventory
 #                                                2. model: reads the code, fills specs.json
 node scripts/render.mjs <inventory-out-dir>    # 3. script: checks specs.json, writes specs.html
 # 4. developer: corrections made on the page, pasted in the chat; the model applies them
-node scripts/render.mjs <inventory-out-dir> --approve=<code>   # 5. developer: the command the page shows once every box is ticked: stamp + specs.md
+node scripts/render.mjs <inventory-out-dir> --approve   # 5. model, once the developer says in the chat that he approves: stamp + specs.md
 ```
 
 Both commands run from the repo the inventory judged. `prepare.mjs` keeps a `specs.json`
@@ -358,11 +358,10 @@ What the model does not decide, in `specs.json`:
 
 - `developerDecisions`, per component: one French sentence per thing the developer settled.
   No model changes what a sentence says afterwards.
-- `approval` (written by `render.mjs --approve=<code>`, which the developer runs: the page
-  shows the command once he has ticked every box, and the code is refused when the specs
-  changed since that page): the date the developer approved and a hash of the components. A page without a standing approval is shown as « Brouillon »; any
-  later change to the specs cancels it. The approval is refused while a zone is
-  `to-decide`.
+- `approval` (written by `render.mjs --approve`, which the model runs once the developer
+  says in the chat that he approves; refused while a zone is `to-decide`): the date the
+  developer approved and a hash of the components. A page without a standing approval is
+  shown as « Brouillon »; any later change to the specs cancels it.
 
 The code is in `skills/figma-component-specs`:
 
