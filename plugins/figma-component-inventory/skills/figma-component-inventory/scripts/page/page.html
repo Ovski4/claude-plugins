@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Inventaire des composants</title>
+    <title></title>
     <style>
       /*PAGE_STYLES*/
     </style>
@@ -11,7 +11,7 @@
   <body>
     <header class="page-header">
       <div>
-        <h1>Inventaire des composants</h1>
+        <h1 data-text="page.title"></h1>
         <p class="page-subject" id="screen-name"></p>
       </div>
       <div class="page-status">
@@ -20,7 +20,7 @@
           <button
             type="button"
             class="info-bubble"
-            aria-label="Sur quoi la page est construite"
+            data-text-aria-label="header.builtOn"
             aria-describedby="fingerprint"
           >
             i
@@ -30,7 +30,7 @@
             type="button"
             class="settings-button"
             id="settings-button"
-            aria-label="Paramètres"
+            data-text-aria-label="settings.title"
             aria-expanded="false"
             aria-controls="page-settings"
           >
@@ -42,38 +42,32 @@
           </button>
         </div>
         <div class="page-settings" id="page-settings" hidden>
-          <h2>Paramètres</h2>
+          <h2 data-text="settings.title"></h2>
           <label class="page-switch">
             <input type="checkbox" id="texts-outside-leaves" />
-            Textes hors sous-composant : montrer chaque texte qu'aucun
-            sous-composant ne contient
+            <span data-text="settings.textsOutsideLeaves"></span>
           </label>
           <label class="page-switch" id="differences-switch" hidden>
             <input type="checkbox" id="differences-only" />
-            Différences seulement : estomper ce qui est identique sur tous les
-            écrans
+            <span data-text="settings.differencesOnly"></span>
           </label>
           <label class="page-switch">
             <input type="checkbox" id="hide-out-of-scope" />
-            Sans le hors périmètre : cacher les composants hors périmètre et ne
-            plus les compter parmi ce qui est à vérifier
+            <span data-text="settings.hideOutOfScope"></span>
           </label>
         </div>
       </div>
     </header>
     <ul class="legend" id="legend"></ul>
     <div class="tabs" id="tabs" role="tablist"></div>
-    <p class="page-hint">
-      Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le
-      corriger ; recliquer, cliquer à côté ou Échap pour revenir.
-    </p>
+    <p class="page-hint" data-text="page.hint"></p>
     <div class="capture-beside-panel">
       <div class="screens" id="screens"></div>
       <aside class="side-panel card">
-        <h3>Composants</h3>
+        <h3 data-text="panel.components"></h3>
         <p class="page-hint" id="out-of-scope-left-out" hidden></p>
         <ul class="panel-items" id="explanations"></ul>
-        <h3 id="not-outlined-heading" hidden>Non entourés</h3>
+        <h3 id="not-outlined-heading" data-text="panel.notOutlined" hidden></h3>
         <ul class="panel-items not-outlined" id="not-outlined"></ul>
       </aside>
     </div>
@@ -87,7 +81,7 @@
           aria-label="Ce que la correction concerne"
         ></div>
         <fieldset class="correction-choices" id="correction-verdicts">
-          <legend>Verdict</legend>
+          <legend data-text="correction.verdict"></legend>
         </fieldset>
         <fieldset
           class="correction-choices"
@@ -95,7 +89,7 @@
           hidden
         ></fieldset>
         <label>
-          Composant React
+          <span data-text="correction.component"></span>
           <input
             id="correction-component"
             list="components-named-in-inventory"
@@ -104,25 +98,34 @@
           <datalist id="components-named-in-inventory"></datalist>
         </label>
         <label>
-          Même composant que
+          <span data-text="correction.sameAs"></span>
           <select id="correction-same-as"></select>
         </label>
         <label class="correction-note">
-          Note
+          <span data-text="correction.note"></span>
           <input id="correction-note" autocomplete="off" />
         </label>
-        <button type="button" id="correction-clear">
-          Annuler cette correction
-        </button>
+        <button
+          type="button"
+          id="correction-clear"
+          data-text="correction.clear"
+        ></button>
       </form>
       <div class="feedback-summary">
         <p class="feedback-count" id="feedback-count"></p>
-        <button type="button" id="feedback-copy" hidden>
-          Copier les corrections
-        </button>
-        <button type="button" id="feedback-reset" class="quiet-action" hidden>
-          Tout effacer
-        </button>
+        <button
+          type="button"
+          id="feedback-copy"
+          hidden
+          data-text="corrections.copy"
+        ></button>
+        <button
+          type="button"
+          id="feedback-reset"
+          class="quiet-action"
+          hidden
+          data-text="corrections.reset"
+        ></button>
         <ul class="feedback-lines" id="feedback-lines"></ul>
         <textarea id="feedback-text" rows="4" readonly hidden></textarea>
       </div>

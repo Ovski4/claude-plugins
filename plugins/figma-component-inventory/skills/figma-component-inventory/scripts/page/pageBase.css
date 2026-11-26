@@ -206,6 +206,16 @@ h1 {
 .page-switch[hidden] {
   display: none;
 }
+/* One setting picked in a list: its name, then the list. */
+.page-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 6px;
+}
+.page-choice select {
+  font: inherit;
+}
 /* A white surface on the page's grey: a capture, a side panel. */
 .card {
   border: 1px solid var(--border);

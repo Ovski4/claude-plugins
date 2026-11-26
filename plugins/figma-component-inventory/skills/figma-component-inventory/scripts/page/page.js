@@ -35,6 +35,9 @@ function getElement(id) {
   return element
 }
 
+addPageTexts(OWN_PAGE_TEXTS)
+showStaticTexts()
+
 const inventoryElement = getElement("inventory")
 /** @type {Inventory} */
 const inventory = JSON.parse(inventoryElement.textContent ?? "")
@@ -340,8 +343,7 @@ function drawScreen(screen) {
     createReviewCheck(
       {
         reviewHash: screen.reviewHash,
-        label:
-          "Écran vérifié : tout ce qui est entouré est juste, rien n'est oublié",
+        label: translate("review.screen"),
         subject: "screen",
         whyNotYet: null,
       },
@@ -370,7 +372,7 @@ function drawTabs(drawnScreens, drawnExplanations) {
       shown: /** @type {number | string} */ (screen.number),
       text: screen.tabName,
     })),
-    { shown: ALL_SCREENS, text: "Tous les écrans" },
+    { shown: ALL_SCREENS, text: translate("tabs.allScreens") },
   ]
   /** @type {number | string | null} */
   let shownNow = null
@@ -411,7 +413,7 @@ function drawTabs(drawnScreens, drawnExplanations) {
 }
 
 function drawHeader() {
-  document.title = `Inventaire — ${inventory.title}`
+  document.title = translate("page.documentTitle", { subject: inventory.title })
   showPageHeader({
     subject: inventory.title,
     approvalDate: inventory.approvalDate,
@@ -467,7 +469,7 @@ function drawNotOutlined() {
       createReviewCheck(
         {
           reviewHash,
-          label: "Vérifié : pas un composant à part",
+          label: translate("review.notAComponent"),
           subject: "component",
           whyNotYet: null,
         },
@@ -503,7 +505,11 @@ function drawExplanations() {
     if (explanation.developerDecision !== null) {
       const decision = createElement(
         "span",
-        `Décidé par le développeur${explanation.developerDecision ? ` : ${explanation.developerDecision}` : ""}`,
+        explanation.developerDecision
+          ? translate("panel.developerDecision", {
+              decision: explanation.developerDecision,
+            })
+          : translate("panel.developerDecided"),
       )
       decision.className = "developer-words"
       item.append(createElement("br"), decision)
@@ -514,7 +520,7 @@ function drawExplanations() {
       createReviewCheck(
         {
           reviewHash: explanation.reviewHash,
-          label: "Vérifié",
+          label: translate("review.component"),
           subject: "component",
           whyNotYet:
             explanation.verdict === "to-decide" ? WHY_NOT_YET.undecided : null,
@@ -575,7 +581,10 @@ function showReview() {
   const leftOutCount = drawnReviewBoxes.length - countedBoxes.length
   const leftOutLine = getElement("out-of-scope-left-out")
   leftOutLine.hidden = leftOutCount === 0
-  leftOutLine.textContent = `${leftOutCount} hors périmètre ${leftOutCount > 1 ? "masqués" : "masqué"} (voir les paramètres)`
+  leftOutLine.textContent = translate(
+    `panel.outOfScopeLeftOut.${leftOutCount > 1 ? "several" : "one"}`,
+    { count: leftOutCount },
+  )
   const checks = countedBoxes.map((drawn) => {
     const isCorrected = correctedNumbers.has(drawn.candidateNumber ?? undefined)
     const check = {
@@ -695,7 +704,7 @@ function drawCorrectionForm() {
   })
   getElement("feedback-copy").addEventListener("click", copyFeedbackText)
   getElement("feedback-reset").addEventListener("click", () => {
-    if (!window.confirm("Effacer toutes les corrections ?")) return
+    if (!window.confirm(translate("corrections.confirmReset"))) return
     corrections.clear()
     fillCorrectionFields()
     showCorrections()
@@ -759,7 +768,12 @@ function fillCorrectionFields() {
   const answers = getElement("correction-answers")
   answers.hidden = !pickedTarget.question
   answers.replaceChildren(
-    createElement("legend", `À trancher : ${pickedTarget.question}`),
+    createElement(
+      "legend",
+      translate("correction.toDecide", {
+        question: pickedTarget.question ?? "",
+      }),
+    ),
     ...pickedTarget.options.map((option) => {
       const choice = createChoice("correction-answer", option, option)
       choice.className = "to-decide"
@@ -837,7 +851,7 @@ function showCorrections() {
         `${correction.target} — ${listCorrectionFields(correction, verdictLabels).join(" · ")}`,
       )
       line.setAttribute("type", "button")
-      line.setAttribute("title", "Rouvrir cette correction")
+      line.setAttribute("title", translate("correction.reopen"))
       line.addEventListener("click", () => openCorrection(correction.target))
       const item = createElement("li")
       item.append(line)
@@ -845,8 +859,8 @@ function showCorrections() {
     }),
   )
   getElement("feedback-count").textContent = count
-    ? `${count} correction${count > 1 ? "s" : ""} à coller dans la conversation`
-    : "Aucune correction : cliquer sur un composant pour le corriger"
+    ? translate(`corrections.count.${count > 1 ? "several" : "one"}`, { count })
+    : translate("corrections.none")
   feedbackTextArea.hidden = true
   for (const id of ["feedback-copy", "feedback-reset"])
     getElement(id).hidden = !count

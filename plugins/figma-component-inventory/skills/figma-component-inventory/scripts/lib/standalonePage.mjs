@@ -13,6 +13,17 @@ const SHARED_STYLES_FILE = path.join(
   "page",
   "pageBase.css",
 )
+// The texts the pages of both skills show alike, in every language: pasted first, the
+// shared review script reads them.
+const SHARED_TEXTS_FILE = path.join(
+  import.meta.dirname,
+  "..",
+  "page",
+  "pageTexts.mjs",
+)
+// The texts only one page shows, in every language, in that page's folder: pasted before
+// its page.js.
+const OWN_TEXTS_FILE_NAME = "ownTexts.mjs"
 // What the pages of both skills tick alike: pasted before each page's own page.js.
 const SHARED_REVIEW_SCRIPT_FILE = path.join(
   import.meta.dirname,
@@ -21,7 +32,7 @@ const SHARED_REVIEW_SCRIPT_FILE = path.join(
   "pageReview.mjs",
 )
 // Each comment of page/page.html is replaced: by the shared styles and page.css, by the
-// feedback text module, by the shared review script and page.js, and by the data page.js
+// feedback text module, by the shared texts, the shared review script and page.js, and by the data page.js
 // draws.
 const PLACEHOLDERS_IN_PAGE = {
   styles: "/*PAGE_STYLES*/",
@@ -48,7 +59,7 @@ const readAsPlainScript = (moduleFile) =>
  * Writes the page: page/page.html of `pageFolder` with its styles, its scripts and its data
  * pasted in.
  * @param {object} input
- * @param {string} input.pageFolder holds page.html, page.css and page.js
+ * @param {string} input.pageFolder holds page.html, page.css, page.js and ownTexts.mjs
  * @param {string} input.feedbackTextModule the module that builds the corrections text: pasted as a plain script, its functions become the page's globals
  * @param {unknown} input.pageData what page.js draws
  * @param {string} input.pageFile where to write the page
@@ -62,6 +73,12 @@ export function writeStandalonePage({
   /** @param {string} fileName */
   const readPageFile = (fileName) =>
     fs.readFileSync(path.join(pageFolder, fileName), "utf8")
+  // TODO: specs.html still writes its own texts in French in page.html and page.js. Once
+  // they are in an ownTexts.mjs of its page folder, that file is required like the others.
+  const ownTextsFile = path.join(pageFolder, OWN_TEXTS_FILE_NAME)
+  const ownTextsScripts = fs.existsSync(ownTextsFile)
+    ? [readAsPlainScript(ownTextsFile)]
+    : []
   // "<" is escaped so that a note containing "</script>" cannot close the data's script.
   const pageDataAsJson = JSON.stringify(pageData).replace(/</g, "\\u003c")
   fs.writeFileSync(
@@ -75,10 +92,13 @@ export function writeStandalonePage({
       .replace(PLACEHOLDERS_IN_PAGE.feedbackText, () =>
         readAsPlainScript(feedbackTextModule),
       )
-      .replace(
-        PLACEHOLDERS_IN_PAGE.script,
-        () =>
-          `${readAsPlainScript(SHARED_REVIEW_SCRIPT_FILE)}\n${readPageFile("page.js")}`,
+      .replace(PLACEHOLDERS_IN_PAGE.script, () =>
+        [
+          readAsPlainScript(SHARED_TEXTS_FILE),
+          readAsPlainScript(SHARED_REVIEW_SCRIPT_FILE),
+          ...ownTextsScripts,
+          readPageFile("page.js"),
+        ].join("\n"),
       )
       .replace(PLACEHOLDERS_IN_PAGE.data, () => pageDataAsJson),
   )

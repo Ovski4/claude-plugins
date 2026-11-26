@@ -140,6 +140,8 @@ scripts/
   page/                   the parts of inventory.html, which render.mjs pastes into one file with lib/feedbackText.mjs
     page.html               its structure
     pageBase.css            what inventory.html and specs.html look alike by: colours, header, legend, tabs, cards, corrections bar
+    pageTexts.mjs           the texts both pages show, in French and in English
+    ownTexts.mjs            the texts only inventory.html shows, in French and in English
     pageReview.mjs          what both pages do alike: the header's texts, the boxes the developer ticks, their count, the invitation to approve
     page.css                the inventory page's own styles
     page.js                 draws what pageDrawing.mjs worked out; answers tabs, switches, clicks and the correction form

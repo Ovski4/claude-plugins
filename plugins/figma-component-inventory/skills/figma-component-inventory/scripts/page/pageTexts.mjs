@@ -1,0 +1,76 @@
+// @ts-check
+// The texts inventory.html and specs.html show alike, in each language the developer can
+// read the pages in. render.mjs pastes this file into the page before pageReview.mjs, as a
+// plain script without its "export" words: pageReview.mjs picks the language and gives the
+// texts through `translate`. Nothing here touches the page, so that the tests can load it.
+// A text in braces is replaced when the text is shown: "{date}".
+
+/** The languages of the pages, each under the name its own speakers give it. */
+export const PAGE_LANGUAGES = { fr: "Français", en: "English" }
+/** @typedef {keyof typeof PAGE_LANGUAGES} PageLanguage */
+
+/**
+ * The language of a page whose developer has not picked one.
+ * @type {PageLanguage}
+ */
+export const DEFAULT_PAGE_LANGUAGE = "fr"
+
+/** @type {Record<PageLanguage, Record<string, string>>} */
+export const SHARED_PAGE_TEXTS = {
+  fr: {
+    "header.builtOn": "Sur quoi la page est construite",
+    "settings.title": "Paramètres",
+    "settings.language": "Langue",
+    "approval.given": "Validé par le développeur le {date}",
+    "approval.missing": "Brouillon — pas encore validé par le développeur",
+    "approval.invitation":
+      "Plus rien à trancher ni à corriger. Pour valider, le dire dans la conversation : « je valide ».",
+    "review.count": "{reviewedCount} / {totalCount} vérifiés ({subjects})",
+    "review.next": "Suivant à vérifier →",
+    "review.notYet.corrected":
+      "Corrigé : à vérifier une fois la page reconstruite",
+    "review.notYet.undecided": "À trancher d'abord",
+    "review.subject.component.one": "composant",
+    "review.subject.component.several": "composants",
+    "review.subject.screen.one": "écran",
+    "review.subject.screen.several": "écrans",
+    "correction.note": "Note",
+    "correction.clear": "Annuler cette correction",
+    "corrections.copy": "Copier les corrections",
+    "corrections.copied": "Copié",
+    "corrections.reset": "Tout effacer",
+  },
+  en: {
+    "header.builtOn": "What the page is built on",
+    "settings.title": "Settings",
+    "settings.language": "Language",
+    "approval.given": "Approved by the developer on {date}",
+    "approval.missing": "Draft — not approved by the developer yet",
+    "approval.invitation":
+      "Nothing left to decide or to correct. To approve, say so in the conversation: “I approve”.",
+    "review.count": "{reviewedCount} / {totalCount} checked ({subjects})",
+    "review.next": "Next to check →",
+    "review.notYet.corrected": "Corrected: to check once the page is rebuilt",
+    "review.notYet.undecided": "To decide first",
+    "review.subject.component.one": "component",
+    "review.subject.component.several": "components",
+    "review.subject.screen.one": "screen",
+    "review.subject.screen.several": "screens",
+    "correction.note": "Note",
+    "correction.clear": "Cancel this correction",
+    "corrections.copy": "Copy the corrections",
+    "corrections.copied": "Copied",
+    "corrections.reset": "Clear all",
+  },
+}
+
+/**
+ * A text with its braces replaced: "Validé par le développeur le {date}" and
+ * { date: "2026-11-23" } give "Validé par le développeur le 2026-11-23".
+ * @param {string} text
+ * @param {Record<string, string | number>} [values] what each name in braces becomes
+ */
+export const fillText = (text, values = {}) =>
+  text.replace(/\{(\w+)\}/g, (inBraces, name) =>
+    name in values ? String(values[name]) : inBraces,
+  )

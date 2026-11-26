@@ -55,6 +55,20 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 - The page shows what there is to read. It never writes that a list is empty; the title
   of an empty section goes away with it.
 
+## Languages
+
+- A page is read in French or in English: the developer picks the language in the
+  settings, the browser keeps it for every page of the same kind, and the page loads
+  again in it. French is the language of a page nobody picked a language for.
+- No text is written in `page.html` or in a page script. A text has a name
+  (« approval.given ») and one sentence per language in a dictionary: `pageTexts.mjs` for
+  what both pages show, the `ownTexts.mjs` of the page's folder for the rest
+  (`addPageTexts`). A script asks for it with `translate(name, values)`; an element of
+  `page.html` names it in `data-text`, or in `data-text-aria-label` for its `aria-label`.
+- A value goes in braces (« {date} »), never glued to the sentence by the script: the
+  words around it do not come in the same order in every language.
+- A test checks that every language has every text, with the same names in braces.
+
 ## Layout, from top to bottom
 
 1. **Header.** On the left, the `h1` says what kind of page it is (« Inventaire des

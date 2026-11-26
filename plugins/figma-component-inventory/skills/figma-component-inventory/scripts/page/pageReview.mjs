@@ -4,13 +4,66 @@
 // functions are that script's globals. It fills the page's header, makes the boxes the
 // developer ticks as he checks the page, keeps what is ticked in the browser, shows the
 // count in the bar at the bottom, invites him to approve once nothing blocks it, tells the
-// stylesheet how high that bar is, and keeps what he chooses in the page's settings.
+// stylesheet how high that bar is, keeps what he chooses in the page's settings, and gives
+// every text in the language he picked there (the texts are in pageTexts.mjs, pasted
+// before this file).
 // The page has the elements "screen-name", "approval", "fingerprint", "feedback" and
 // "feedback-count".
 
 /** @param {string} id */
 const getSharedElement = (id) =>
   /** @type {HTMLElement} */ (document.getElementById(id))
+
+// The language of the page: the one the developer picked in the settings, kept by the
+// browser for every page of the same kind.
+const LANGUAGE_STORAGE_KEY = "page-language"
+
+/** @returns {PageLanguage} */
+function readKeptLanguage() {
+  try {
+    const kept = localStorage.getItem(LANGUAGE_STORAGE_KEY)
+    if (kept !== null && kept in PAGE_LANGUAGES)
+      return /** @type {PageLanguage} */ (kept)
+  } catch {
+    // The browser keeps nothing for this page: it is read in the default language.
+  }
+  return DEFAULT_PAGE_LANGUAGE
+}
+
+const pageLanguage = readKeptLanguage()
+document.documentElement.lang = pageLanguage
+/** The texts of the page in its language: the shared ones, then the page's own. */
+const textsOfThePage = { ...SHARED_PAGE_TEXTS[pageLanguage] }
+
+/**
+ * Adds the texts only one page shows to the shared ones.
+ * @param {Record<PageLanguage, Record<string, string>>} textsByLanguage
+ */
+export function addPageTexts(textsByLanguage) {
+  Object.assign(textsOfThePage, textsByLanguage[pageLanguage])
+}
+
+/**
+ * A text in the page's language.
+ * @param {string} key the text's name in the dictionaries: "approval.given"
+ * @param {Record<string, string | number>} [values] what each name in braces becomes
+ */
+export const translate = (key, values) =>
+  fillText(textsOfThePage[key] ?? key, values)
+
+/**
+ * Writes the texts page.html leaves empty: an element names its text in `data-text`, and
+ * the text of its `aria-label` in `data-text-aria-label`.
+ */
+export function showStaticTexts() {
+  for (const element of document.querySelectorAll("[data-text]"))
+    element.textContent = translate(element.getAttribute("data-text") ?? "")
+  for (const element of document.querySelectorAll("[data-text-aria-label]")) {
+    const key = element.getAttribute("data-text-aria-label") ?? ""
+    element.setAttribute("aria-label", translate(key))
+  }
+}
+showStaticTexts()
 
 // The corrections bar covers the bottom of the window, and its height changes: the form
 // opens, the corrections add up. The stylesheet reads that height to end the page above
@@ -35,8 +88,8 @@ export function showPageHeader({ subject, approvalDate, fingerprintLine }) {
   getSharedElement("screen-name").textContent = subject
   const approval = getSharedElement("approval")
   approval.textContent = approvalDate
-    ? `Validé par le développeur le ${approvalDate}`
-    : "Brouillon — pas encore validé par le développeur"
+    ? translate("approval.given", { date: approvalDate })
+    : translate("approval.missing")
   approval.classList.toggle("approved", Boolean(approvalDate))
   getSharedElement("fingerprint").textContent = fingerprintLine
 }
@@ -86,6 +139,30 @@ function keepSetting(storageKey, isOn) {
   }
 }
 
+/**
+ * The setting that picks the page's language. Every text is written when the page loads:
+ * the page is loaded again in the language picked. What the developer ticked and
+ * corrected is kept by the browser, so nothing is lost.
+ */
+function createLanguageChoice() {
+  const select = document.createElement("select")
+  for (const [language, name] of Object.entries(PAGE_LANGUAGES))
+    select.append(new Option(name, language, false, language === pageLanguage))
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, select.value)
+    } catch {
+      // The browser keeps nothing for this page: it stays in its language.
+      return
+    }
+    location.reload()
+  })
+  const choice = document.createElement("label")
+  choice.className = "page-choice"
+  choice.append(translate("settings.language"), select)
+  return choice
+}
+
 // The cog of the header shows the settings over the page, and they stay there while the
 // developer ticks their boxes: the cog, Escape or a click anywhere else hides them.
 const settingsButton = document.getElementById("settings-button")
@@ -102,6 +179,7 @@ if (settingsButton && settingsPanel) {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") showSettings(false)
   })
+  settingsPanel.append(createLanguageChoice())
   document.addEventListener("click", (event) => {
     const isOnTheSettings =
       event.target instanceof Node &&
@@ -145,7 +223,7 @@ export async function copyWithConfirmation(button, text, selectForManualCopy) {
   const idleText = button.textContent
   try {
     await navigator.clipboard.writeText(text)
-    button.textContent = "Copié"
+    button.textContent = translate("corrections.copied")
     setTimeout(
       () => (button.textContent = idleText),
       COPIED_SHOWN_FOR_MILLISECONDS,
@@ -157,8 +235,8 @@ export async function copyWithConfirmation(button, text, selectForManualCopy) {
 
 /** Why a box cannot be ticked yet, written in place of its label. */
 export const WHY_NOT_YET = {
-  corrected: "Corrigé : à vérifier une fois la page reconstruite",
-  undecided: "À trancher d'abord",
+  corrected: translate("review.notYet.corrected"),
+  undecided: translate("review.notYet.undecided"),
 }
 
 /**
@@ -166,8 +244,14 @@ export const WHY_NOT_YET = {
  * @typedef {keyof typeof REVIEW_SUBJECT_NAMES} ReviewSubject
  */
 const REVIEW_SUBJECT_NAMES = {
-  component: ["composant", "composants"],
-  screen: ["écran", "écrans"],
+  component: [
+    translate("review.subject.component.one"),
+    translate("review.subject.component.several"),
+  ],
+  screen: [
+    translate("review.subject.screen.one"),
+    translate("review.subject.screen.several"),
+  ],
 }
 
 /**
@@ -323,12 +407,11 @@ function createReviewProgressElements() {
   count.className = "review-count"
   const nextButton = document.createElement("button")
   nextButton.type = "button"
-  nextButton.textContent = "Suivant à vérifier →"
+  nextButton.textContent = translate("review.next")
   nextButton.addEventListener("click", showNextToReview)
   const approvalInvitation = document.createElement("p")
   approvalInvitation.className = "approval-invitation"
-  approvalInvitation.textContent =
-    "Plus rien à trancher ni à corriger. Pour valider, le dire dans la conversation : « je valide »."
+  approvalInvitation.textContent = translate("approval.invitation")
   getSharedElement("feedback-count").before(count, nextButton)
   getSharedElement("feedback").append(approvalInvitation)
   return { count, nextButton, approvalInvitation }
@@ -358,7 +441,11 @@ export function showReviewProgress(
   nextToReview.showCheck = showCheck
   nextButton.hidden = !checks.some(isLeftToReview)
   const reviewedCount = checks.filter(isReviewed).length
-  count.textContent = `${reviewedCount} / ${checks.length} vérifiés (${countReviewSubjects(checks)})`
+  count.textContent = translate("review.count", {
+    reviewedCount,
+    totalCount: checks.length,
+    subjects: countReviewSubjects(checks),
+  })
   approvalInvitation.hidden =
     isApproved || stillToDecideCount > 0 || correctionCount > 0
 }
