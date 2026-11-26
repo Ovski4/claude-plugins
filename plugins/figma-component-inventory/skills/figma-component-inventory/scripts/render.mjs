@@ -4,7 +4,8 @@
 // Figma screen with one numbered outline per component, coloured by verdict.
 // Nothing is drawn while a check fails: every problem is listed and the exit code is 3.
 // --approve is run once the developer says in the conversation that he approves; it is refused
-// while a verdict is "to-decide" (exit code 4). It stamps verdicts.json and writes inventory.md,
+// while a verdict is "to-decide", and when verdicts.json changed since inventory.html was drawn
+// (exit code 4). It stamps verdicts.json and writes inventory.md,
 // the list the next steps of the workflow read. The stamp holds a hash of the verdicts: any later change makes the page a draft again. It also adds to the repo's
 // Figma-to-code map the approved Figma components that existing code draws and that the map
 // does not name yet, so that the next screen is pre-filled.
@@ -12,7 +13,8 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
-  isApprovalAsked,
+  readWhetherApprovalIsAsked,
+  refuseApprovalOfContentNotOnThePage,
   refuseApprovalWhileUndecided,
 } from "./lib/approval.mjs"
 import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
@@ -31,6 +33,7 @@ import {
   applyVerdictsToCandidates,
   buildApproval,
   hashVerdicts,
+  VERDICTS_HASH_KEY,
   isApprovalStillValid,
   listNumbersStillToDecide,
   listVerdictProblems,
@@ -82,9 +85,15 @@ function main() {
   const candidatesStillToDecide = listNumbersStillToDecide(
     judgedCandidates,
   ).map((number) => `candidate ${number}`)
-  const isApproving = isApprovalAsked(commandArguments)
+  const pageFile = path.join(outDir, PAGE_FILE_NAME)
+  const isApproving = readWhetherApprovalIsAsked(commandArguments)
   if (isApproving) {
     refuseApprovalWhileUndecided(candidatesStillToDecide)
+    refuseApprovalOfContentNotOnThePage({
+      pageFile,
+      hashKey: VERDICTS_HASH_KEY,
+      contentToApprove: verdictsFile.verdicts,
+    })
     verdictsFile.approval = buildApproval(verdictsFile.verdicts, new Date())
     fs.writeFileSync(
       path.join(outDir, "verdicts.json"),
@@ -124,7 +133,7 @@ function main() {
       NOT_A_COMPONENT,
     ],
     // Corrections kept in the browser are dropped once the verdicts change.
-    verdictsHash: hashVerdicts(verdictsFile.verdicts),
+    [VERDICTS_HASH_KEY]: hashVerdicts(verdictsFile.verdicts),
     ...buildPageDrawing({
       screens: screens.map(
         /** @param {import("./lib/pageDrawing.mjs").ScreenToDraw & { nodeId: string, capture: { file: string } }} screen */
@@ -140,7 +149,6 @@ function main() {
       fingerprint,
     }),
   }
-  const pageFile = path.join(outDir, PAGE_FILE_NAME)
   writeStandalonePage({
     pageFolder: PAGE_FOLDER,
     feedbackTextModule: FEEDBACK_TEXT_MODULE,

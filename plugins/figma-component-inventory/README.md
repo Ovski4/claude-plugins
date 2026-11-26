@@ -218,7 +218,8 @@ What the model does not write:
   gave. `developerDecision` is one short French sentence saying what he decided, written so
   that it reads alone in `inventory.md`. No model changes the entry afterwards.
 - `approval` (written by `render.mjs --approve`, which the model runs once the developer
-  says in the chat that he approves; refused while a verdict is `to-decide`): the date the
+  says in the chat that he approves; refused while a verdict is `to-decide`, and when the
+  verdicts changed since `inventory.html` was drawn): the date the
   developer approved and a hash of the verdicts. A page without a valid approval is shown
   as « Brouillon »; any later change to a verdict cancels it.
 
@@ -359,7 +360,8 @@ What the model does not decide, in `specs.json`:
 - `developerDecisions`, per component: one French sentence per thing the developer settled.
   No model changes what a sentence says afterwards.
 - `approval` (written by `render.mjs --approve`, which the model runs once the developer
-  says in the chat that he approves; refused while a zone is `to-decide`): the date the
+  says in the chat that he approves; refused while a zone is `to-decide`, and when the
+  specs changed since `specs.html` was drawn): the date the
   developer approved and a hash of the components. A page without a standing approval is
   shown as « Brouillon »; any later change to the specs cancels it.
 

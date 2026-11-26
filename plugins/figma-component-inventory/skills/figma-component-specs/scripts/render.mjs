@@ -4,15 +4,17 @@
 // per component to create or to adapt, its captures with one outline per zone, and the
 // props that drive each zone.
 // --approve is run once the developer says in the conversation that he approves; it is refused
-// while a zone is "to-decide" (exit code 4). It stamps specs.json and writes specs.md, what
-// the next steps read.
+// while a zone is "to-decide", and when specs.json changed since specs.html was drawn (exit
+// code 4). It stamps specs.json and writes specs.md, what the next steps read.
 // Nothing is drawn while a check fails: every problem is listed and the exit code is 3.
 // An inventory that is not approved, or not in the promised format, stops with exit code 2.
 import fs from "node:fs"
 import path from "node:path"
 import {
-  isApprovalAsked,
+  readWhetherApprovalIsAsked,
+  refuseApprovalOfContentNotOnThePage,
   refuseApprovalWhileUndecided,
+  SPECS_HASH_KEY,
 } from "../../figma-component-inventory/scripts/lib/approval.mjs"
 import { writeInventoryIndex } from "../../figma-component-inventory/scripts/lib/inventoryIndex.mjs"
 import {
@@ -71,9 +73,15 @@ function main() {
   }
 
   const zonesStillToDecide = listZonesStillToDecide(specsFile)
-  const isApproving = isApprovalAsked(commandArguments)
+  const pageFile = path.join(outDir, PAGE_FILE_NAME)
+  const isApproving = readWhetherApprovalIsAsked(commandArguments)
   if (isApproving) {
     refuseApprovalWhileUndecided(zonesStillToDecide)
+    refuseApprovalOfContentNotOnThePage({
+      pageFile,
+      hashKey: SPECS_HASH_KEY,
+      contentToApprove: specsFile.components,
+    })
     specsFile.approval = buildSpecsApproval(specsFile.components, new Date())
     fs.writeFileSync(specsPath, JSON.stringify(specsFile, null, 2))
   } else if (specsFile.approval && !readStandingApprovalDate(specsFile)) {
@@ -100,7 +108,6 @@ function main() {
       ]),
     ),
   }
-  const pageFile = path.join(outDir, PAGE_FILE_NAME)
   writeStandalonePage({
     pageFolder: PAGE_FOLDER,
     feedbackTextModule: FEEDBACK_TEXT_MODULE,

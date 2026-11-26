@@ -4,17 +4,7 @@
 import fs from "node:fs"
 import path from "node:path"
 
-/** Stops the command: the message goes to the error output, the code tells the caller why. */
-export class CommandFailure extends Error {
-  /**
-   * @param {string} message
-   * @param {number} exitCode
-   */
-  constructor(message, exitCode) {
-    super(message)
-    this.exitCode = exitCode
-  }
-}
+export { CommandFailure } from "./commandFailure.mjs"
 
 // What the pages of both skills look alike by: pasted before each page's own page.css.
 const SHARED_STYLES_FILE = path.join(

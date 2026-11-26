@@ -266,8 +266,9 @@ function createReviewProgressElements() {
  * @param {ReviewCheck[]} checks every box of the page, shown or not
  * @param {object} page
  * @param {boolean} page.isApproved an approved page invites to nothing
- * @param {number} page.stillToDecideCount how many things the approving script would
- *   refuse on, as it counts them: the page and the script then never disagree
+ * @param {number} page.stillToDecideCount how many open questions the approving script
+ *   would refuse on, as it counts them. The corrections are known to the page only: the
+ *   script cannot refuse on them
  * @param {number} page.correctionCount
  * @param {(check: ReviewCheck) => void} page.showCheck brings a box into view, whatever
  *   the page has to show first (a tab, a component), then calls `pointAtReviewBox` on it
