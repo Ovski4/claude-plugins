@@ -15,6 +15,7 @@
  * What render.mjs writes into the page.
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
+ *   stillToDecideCount: number,
  *   verdicts: { key: string, label: string, color: string, isDrawnOnThePage: boolean }[],
  *   correctionVerdicts: { key: string, label: string }[],
  *   verdictsHash: string,
@@ -576,6 +577,7 @@ function showReview() {
   })
   showReviewProgress(checks, {
     isApproved: inventory.approvalDate !== null,
+    stillToDecideCount: inventory.stillToDecideCount,
     correctionCount: corrections.size,
     showCheck: showReviewBoxOf,
   })

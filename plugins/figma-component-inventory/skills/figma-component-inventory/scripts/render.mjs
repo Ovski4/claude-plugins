@@ -12,9 +12,8 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
-  EXIT_CODE_NOT_APPROVED,
-  explainRefusedApproval,
   isApprovalAsked,
+  refuseApprovalWhileUndecided,
 } from "./lib/approval.mjs"
 import { writeInventoryIndex } from "./lib/inventoryIndex.mjs"
 import { buildInventorySummary } from "./lib/inventorySummary.mjs"
@@ -80,13 +79,12 @@ function main() {
     verdictsFile.verdicts,
   )
 
-  if (isApprovalAsked(commandArguments)) {
-    const refusal = explainRefusedApproval(
-      listNumbersStillToDecide(judgedCandidates).map(
-        (number) => `candidate ${number}`,
-      ),
-    )
-    if (refusal) throw new CommandFailure(refusal, EXIT_CODE_NOT_APPROVED)
+  const candidatesStillToDecide = listNumbersStillToDecide(
+    judgedCandidates,
+  ).map((number) => `candidate ${number}`)
+  const isApproving = isApprovalAsked(commandArguments)
+  if (isApproving) {
+    refuseApprovalWhileUndecided(candidatesStillToDecide)
     verdictsFile.approval = buildApproval(verdictsFile.verdicts, new Date())
     fs.writeFileSync(
       path.join(outDir, "verdicts.json"),
@@ -117,6 +115,8 @@ function main() {
   }))
   const inventory = {
     approvalDate,
+    // What keeps the page from inviting the developer to approve, as the script counts it.
+    stillToDecideCount: candidatesStillToDecide.length,
     verdicts,
     // The correction form offers every verdict, and one more for what is no component.
     correctionVerdicts: [
@@ -168,7 +168,7 @@ function main() {
       : "Draft: not approved by the developer",
   )
 
-  if (isApprovalAsked && approvalDate) {
+  if (isApproving && approvalDate) {
     const summaryFile = path.join(outDir, "inventory.md")
     fs.writeFileSync(
       summaryFile,

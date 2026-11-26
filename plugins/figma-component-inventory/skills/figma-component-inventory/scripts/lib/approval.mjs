@@ -5,6 +5,7 @@
 // He approves in the conversation, once the page asks him nothing more: the model then runs
 // the render script with "--approve", which is refused while a question is open.
 import { createHash } from "node:crypto"
+import { CommandFailure } from "./standalonePage.mjs"
 
 /**
  * @template {string} HashKey
@@ -59,7 +60,7 @@ export function readStandingApprovalDate(hashKey, approval, content) {
     : null
 }
 
-/** The exit code of a render.mjs whose approval is refused, whatever the reason. */
+/** The exit code of a render.mjs whose approval is refused. */
 export const EXIT_CODE_NOT_APPROVED = 4
 // The file the specs skill fills in an inventory's folder, and the field of its approval
 // that holds the hash of the approved components.
@@ -76,12 +77,14 @@ export const isApprovalAsked = (commandArguments) =>
   commandArguments.includes(APPROVE_FLAG)
 
 /**
- * Why the approval is refused, or null when it can be given: nothing waits for the
- * developer's decision.
+ * Stops the command while something waits for the developer's decision: nothing is
+ * approved before he has answered.
  * @param {string[]} stillToDecide what still asks him a question: "candidate 7", "Select zone C"
- * @returns {string | null}
  */
-export const explainRefusedApproval = (stillToDecide) =>
-  stillToDecide.length
-    ? `Not approved: still "to-decide": ${stillToDecide.join(", ")}`
-    : null
+export function refuseApprovalWhileUndecided(stillToDecide) {
+  if (!stillToDecide.length) return
+  throw new CommandFailure(
+    `Not approved: still "to-decide": ${stillToDecide.join(", ")}`,
+    EXIT_CODE_NOT_APPROVED,
+  )
+}

@@ -11,8 +11,8 @@
 import fs from "node:fs"
 import path from "node:path"
 import {
-  explainRefusedApproval,
   isApprovalAsked,
+  refuseApprovalWhileUndecided,
 } from "../../figma-component-inventory/scripts/lib/approval.mjs"
 import { writeInventoryIndex } from "../../figma-component-inventory/scripts/lib/inventoryIndex.mjs"
 import {
@@ -28,7 +28,6 @@ import {
   EXIT_CODE_FAILED,
   EXIT_CODE_INVENTORY_NOT_USABLE,
   EXIT_CODE_INVALID_SPECS,
-  EXIT_CODE_NOT_APPROVED,
   SPECS_FILE_NAME,
 } from "./lib/commandOutcome.mjs"
 import { listSpecProblems } from "./lib/componentSpecs.mjs"
@@ -71,10 +70,10 @@ function main() {
     throw new CommandFailure(message, EXIT_CODE_INVALID_SPECS)
   }
 
+  const zonesStillToDecide = listZonesStillToDecide(specsFile)
   const isApproving = isApprovalAsked(commandArguments)
   if (isApproving) {
-    const refusal = explainRefusedApproval(listZonesStillToDecide(specsFile))
-    if (refusal) throw new CommandFailure(refusal, EXIT_CODE_NOT_APPROVED)
+    refuseApprovalWhileUndecided(zonesStillToDecide)
     specsFile.approval = buildSpecsApproval(specsFile.components, new Date())
     fs.writeFileSync(specsPath, JSON.stringify(specsFile, null, 2))
   } else if (specsFile.approval && !readStandingApprovalDate(specsFile)) {
@@ -91,6 +90,8 @@ function main() {
   )
   const specs = {
     ...drawing,
+    // What keeps the page from inviting the developer to approve, as the script counts it.
+    stillToDecideCount: zonesStillToDecide.length,
     // A capture is written once, whatever the number of components drawn on its screen.
     captureDataUrlsByFile: Object.fromEntries(
       [...captureFiles].map((file) => [

@@ -2,8 +2,8 @@
 import assert from "node:assert/strict"
 import { test } from "node:test"
 import {
-  explainRefusedApproval,
   isApprovalAsked,
+  refuseApprovalWhileUndecided,
 } from "../scripts/lib/approval.mjs"
 
 test("the command reads whether the approval is asked", () => {
@@ -12,9 +12,12 @@ test("the command reads whether the approval is asked", () => {
 })
 
 test("the approval is refused only while a question is open", () => {
-  assert.equal(explainRefusedApproval([]), null)
-  assert.equal(
-    explainRefusedApproval(["candidate 3", "candidate 7"]),
-    'Not approved: still "to-decide": candidate 3, candidate 7',
+  assert.doesNotThrow(() => refuseApprovalWhileUndecided([]))
+  assert.throws(
+    () => refuseApprovalWhileUndecided(["candidate 3", "candidate 7"]),
+    {
+      message: 'Not approved: still "to-decide": candidate 3, candidate 7',
+      exitCode: 4,
+    },
   )
 })

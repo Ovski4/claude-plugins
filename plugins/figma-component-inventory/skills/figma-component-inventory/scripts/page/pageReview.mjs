@@ -262,18 +262,19 @@ function createReviewProgressElements() {
 /**
  * In the bar at the bottom: how many boxes are ticked, and the invitation to approve. The
  * boxes only help the developer keep track of what he has read: the invitation shows as
- * soon as no question is open and no correction waits, ticked or not. A correction says
- * the page is not right yet, even on something that has no box.
+ * soon as no question is open and no correction waits, ticked or not.
  * @param {ReviewCheck[]} checks every box of the page, shown or not
  * @param {object} page
  * @param {boolean} page.isApproved an approved page invites to nothing
+ * @param {number} page.stillToDecideCount how many things the approving script would
+ *   refuse on, as it counts them: the page and the script then never disagree
  * @param {number} page.correctionCount
  * @param {(check: ReviewCheck) => void} page.showCheck brings a box into view, whatever
  *   the page has to show first (a tab, a component), then calls `pointAtReviewBox` on it
  */
 export function showReviewProgress(
   checks,
-  { isApproved, correctionCount, showCheck },
+  { isApproved, stillToDecideCount, correctionCount, showCheck },
 ) {
   reviewProgressElements ??= createReviewProgressElements()
   const { count, nextButton, approvalInvitation } = reviewProgressElements
@@ -282,7 +283,6 @@ export function showReviewProgress(
   nextButton.hidden = !checks.some(isLeftToReview)
   const reviewedCount = checks.filter(isReviewed).length
   count.textContent = `${reviewedCount} / ${checks.length} vérifiés (${countReviewSubjects(checks)})`
-  const isSomethingOpen =
-    correctionCount > 0 || checks.some((check) => check.whyNotYet !== null)
-  approvalInvitation.hidden = isApproved || isSomethingOpen
+  approvalInvitation.hidden =
+    isApproved || stillToDecideCount > 0 || correctionCount > 0
 }
