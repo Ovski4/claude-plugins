@@ -302,7 +302,9 @@ page), or there is none. It shows the texts no component holds: a label or a hel
 may deserve a component, or be a prop of the component beside it.
 
 A switch, « Sans le hors périmètre », hides everything drawn about the components that are
-out of scope and leaves their boxes out of the count of what is to check. It also hides
+out of scope and leaves their boxes out of the count of what is to check; a component
+that carries a correction stays, as the developer no longer sees it as out of scope. It
+also hides
 the texts whose only component around is out of scope; a text with no component around
 it stays, as nothing says whose it is. The three
 switches sit in the settings panel the cog of the header opens; the browser keeps each

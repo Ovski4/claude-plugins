@@ -213,12 +213,21 @@ function showBox(svg, { left, top, width, height }) {
 
 // The setting that leaves out what is out of scope: the developer sees at a glance that
 // such a component is none of the ticket's work, and reading each one teaches him nothing.
+// One he corrected stays: his correction says it is something else.
 const OUT_OF_SCOPE_VERDICT = "out-of-scope"
 const HIDE_OUT_OF_SCOPE_SWITCH_ID = "hide-out-of-scope"
-/** @param {string | null} verdict */
-const isLeftOutAsOutOfScope = (verdict) =>
+/**
+ * @param {{ verdict: string | null, candidateNumber: number | null }} drawn an outline, or
+ *   what a box to tick is about
+ * @param {Set<number | undefined>} correctedNumbers what `listCorrectedNumbers` gives
+ */
+const isLeftOutAsOutOfScope = (
+  { verdict, candidateNumber },
+  correctedNumbers,
+) =>
   verdict === OUT_OF_SCOPE_VERDICT &&
-  document.body.classList.contains(HIDE_OUT_OF_SCOPE_SWITCH_ID)
+  document.body.classList.contains(HIDE_OUT_OF_SCOPE_SWITCH_ID) &&
+  !correctedNumbers.has(candidateNumber ?? undefined)
 
 /**
  * The candidate whose outline is the smallest one around the point clicked, or null.
@@ -231,8 +240,9 @@ function findCandidateAt(svg, screen, event) {
   const { x, y } = new DOMPoint(event.clientX, event.clientY).matrixTransform(
     screenToSvg,
   )
+  const correctedNumbers = listCorrectedNumbers()
   const [smallest] = screen.outlines
-    .filter(({ verdict }) => !isLeftOutAsOutOfScope(verdict))
+    .filter((outline) => !isLeftOutAsOutOfScope(outline, correctedNumbers))
     .filter(
       ({ box }) =>
         x >= box.x &&
@@ -579,7 +589,7 @@ const listCorrectedNumbers = () =>
 function showReview() {
   const correctedNumbers = listCorrectedNumbers()
   const countedBoxes = drawnReviewBoxes.filter(
-    ({ verdict }) => !isLeftOutAsOutOfScope(verdict),
+    (drawn) => !isLeftOutAsOutOfScope(drawn, correctedNumbers),
   )
   const leftOutCount = drawnReviewBoxes.length - countedBoxes.length
   const leftOutLine = getElement("out-of-scope-left-out")
