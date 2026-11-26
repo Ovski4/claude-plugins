@@ -6,7 +6,7 @@ import {
   applyVerdictsToCandidates,
   buildApproval,
   buildVerdictsSkeleton,
-  isApprovalStillValid,
+  readStandingApprovalDate,
   listNumbersStillToDecide,
   listVerdictProblems,
 } from "../scripts/lib/verdicts.mjs"
@@ -286,31 +286,31 @@ test("an approval holds until a verdict changes, and inventory.md lists the appr
   const approval = buildApproval(validEntries, new Date("2026-11-23T10:00:00Z"))
   assert.equal(approval.date, "2026-11-23")
   assert.equal(
-    isApprovalStillValid({
+    readStandingApprovalDate({
       figmaVersion: FIGMA_VERSION,
       verdicts: validEntries,
       approval,
     }),
-    true,
+    "2026-11-23",
   )
   const changedEntries = [
     { ...validEntries[0], codeComponent: "IconButton" },
     ...validEntries.slice(1),
   ]
   assert.equal(
-    isApprovalStillValid({
+    readStandingApprovalDate({
       figmaVersion: FIGMA_VERSION,
       verdicts: changedEntries,
       approval,
     }),
-    false,
+    null,
   )
   assert.equal(
-    isApprovalStillValid({
+    readStandingApprovalDate({
       figmaVersion: FIGMA_VERSION,
       verdicts: validEntries,
     }),
-    false,
+    null,
   )
 
   const summary = buildInventorySummary({

@@ -6,8 +6,8 @@ import fs from "node:fs"
 import path from "node:path"
 import {
   applyVerdictsToCandidates,
-  isApprovalStillValid,
   listVerdictProblems,
+  readStandingApprovalDate,
 } from "./verdicts.mjs"
 
 /** @typedef {import("./figma.mjs").CaptureLocation} CaptureLocation */
@@ -175,14 +175,15 @@ export function readApprovedInventory({ candidatesFile, verdictsFile }) {
       "The developer has not approved this inventory: run render.mjs --approve once he agrees with the page.",
     )
   }
-  if (!isApprovalStillValid(verdictsFile)) {
+  const approvedOn = readStandingApprovalDate(verdictsFile)
+  if (!approvedOn) {
     throw new InventoryNotUsable(
       `Verdicts changed after the developer's approval of ${verdictsFile.approval.date}: he has to approve the inventory again.`,
     )
   }
   return {
     fingerprint,
-    approvedOn: verdictsFile.approval.date,
+    approvedOn,
     screens,
     judgedCandidates: applyVerdictsToCandidates(
       candidates,

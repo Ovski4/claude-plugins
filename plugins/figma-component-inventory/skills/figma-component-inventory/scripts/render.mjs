@@ -32,10 +32,10 @@ import {
   buildApproval,
   hashVerdicts,
   VERDICTS_HASH_KEY,
-  isApprovalStillValid,
   listNumbersStillToDecide,
   listVerdictProblems,
   NOT_A_COMPONENT_KEY,
+  readStandingApprovalDate,
   VERDICTS,
   VERDICT_KEYS,
 } from "./lib/verdicts.mjs"
@@ -99,10 +99,7 @@ function main() {
       JSON.stringify(verdictsFile, null, 2),
     )
   }
-  const approvalDate =
-    verdictsFile.approval && isApprovalStillValid(verdictsFile)
-      ? verdictsFile.approval.date
-      : null
+  const approvalDate = readStandingApprovalDate(verdictsFile)
   if (verdictsFile.approval && !approvalDate) {
     console.error(
       `The verdicts changed since the approval of ${verdictsFile.approval.date}: the page is a draft again`,

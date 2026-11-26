@@ -4,7 +4,7 @@
 import {
   buildApproval as buildApprovalOf,
   hashApprovedContent,
-  readStandingApprovalDate,
+  readStandingApprovalDate as readStandingApprovalDateOf,
 } from "./approval.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
 
@@ -485,8 +485,10 @@ export const buildApproval = (entries, now) =>
   buildApprovalOf(VERDICTS_HASH_KEY, entries, now)
 
 /**
- * False once any verdict has changed since the developer approved: the page is a draft again.
+ * The day of the approval while it stands: null when the developer has not approved, or
+ * when any verdict changed since, which makes the page a draft again.
  * @param {VerdictsFile} verdictsFile
+ * @returns {string | null}
  */
-export const isApprovalStillValid = ({ approval, verdicts }) =>
-  readStandingApprovalDate(VERDICTS_HASH_KEY, approval, verdicts) !== null
+export const readStandingApprovalDate = ({ approval, verdicts }) =>
+  readStandingApprovalDateOf(VERDICTS_HASH_KEY, approval, verdicts)
