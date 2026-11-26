@@ -31,6 +31,21 @@ function readKept(storageKey) {
 }
 
 /**
+ * A list the page keeps: what the developer ticked, his corrections.
+ * @template Item
+ * @param {string} storageKey
+ * @returns {Item[]} none when nothing is kept, or when what is kept is not a list
+ */
+function readKeptList(storageKey) {
+  try {
+    const kept = JSON.parse(readKept(storageKey) ?? "[]")
+    return Array.isArray(kept) ? kept : []
+  } catch {
+    return []
+  }
+}
+
+/**
  * @param {string} storageKey
  * @param {string | null} value null forgets what is kept under that name
  * @returns {boolean} false when the browser keeps nothing for this page
@@ -215,7 +230,7 @@ export async function copyCorrectionsText(text) {
     await navigator.clipboard.writeText(text)
     button.textContent = translate("corrections.copied")
     setTimeout(
-      () => (button.textContent = translate("corrections.copy")),
+      () => (button.textContent = translate(button.dataset.text ?? "")),
       COPIED_SHOWN_FOR_MILLISECONDS,
     )
   } catch {
@@ -232,16 +247,9 @@ export async function copyCorrectionsText(text) {
  * The corrections the browser kept for this page.
  * @template {ShownCorrection} Correction
  * @param {string} storageKey names the page and the content it was drawn from
- * @returns {Correction[]} none when nothing is kept, or when what is kept is not a list of corrections
+ * @returns {Correction[]}
  */
-export function readKeptCorrections(storageKey) {
-  try {
-    const kept = JSON.parse(readKept(storageKey) ?? "[]")
-    return Array.isArray(kept) ? kept : []
-  } catch {
-    return []
-  }
-}
+export const readKeptCorrections = (storageKey) => readKeptList(storageKey)
 
 /**
  * Lists the corrections in the bar with their count, shows the buttons that copy and clear
@@ -333,14 +341,10 @@ let reviewStorageKey = ""
  */
 export function restoreReview(storageKey, hashesOnThePage) {
   reviewStorageKey = storageKey
-  try {
-    /** @type {string[]} */
-    const saved = JSON.parse(readKept(storageKey) ?? "[]")
-    for (const reviewHash of saved)
-      if (hashesOnThePage.includes(reviewHash)) reviewedHashes.add(reviewHash)
-  } catch {
-    // What is kept cannot be read: the page starts with nothing checked.
-  }
+  /** @type {string[]} */
+  const saved = readKeptList(storageKey)
+  for (const reviewHash of saved)
+    if (hashesOnThePage.includes(reviewHash)) reviewedHashes.add(reviewHash)
 }
 
 /** @param {ReviewCheck} check */

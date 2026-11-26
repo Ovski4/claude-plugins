@@ -219,7 +219,7 @@ const HIDE_OUT_OF_SCOPE_SWITCH_ID = "hide-out-of-scope"
 /**
  * @param {{ verdict: string | null, candidateNumber: number | null }} drawn an outline, or
  *   what a box to tick is about
- * @param {Set<number | undefined>} correctedNumbers what `listCorrectedNumbers` gives
+ * @param {Set<number>} correctedNumbers what `listCorrectedNumbers` gives
  */
 const isLeftOutAsOutOfScope = (
   { verdict, candidateNumber },
@@ -227,7 +227,7 @@ const isLeftOutAsOutOfScope = (
 ) =>
   verdict === OUT_OF_SCOPE_VERDICT &&
   document.body.classList.contains(HIDE_OUT_OF_SCOPE_SWITCH_ID) &&
-  !correctedNumbers.has(candidateNumber ?? undefined)
+  !(candidateNumber !== null && correctedNumbers.has(candidateNumber))
 
 /**
  * The candidate whose outline is the smallest one around the point clicked, or null.
@@ -574,10 +574,15 @@ function createReviewCheck(check, subject) {
   return reviewBox
 }
 
-/** The numbers of the candidates that carry a correction, on all or some of their uses. */
+/**
+ * The numbers of the candidates that carry a correction, on all or some of their uses.
+ * @returns {Set<number>}
+ */
 const listCorrectedNumbers = () =>
   new Set(
-    [...corrections.keys()].map((id) => targetsById.get(id)?.candidateNumber),
+    [...corrections.keys()].flatMap(
+      (id) => targetsById.get(id)?.candidateNumber ?? [],
+    ),
   )
 
 /**
@@ -598,7 +603,9 @@ function showReview() {
     count: leftOutCount,
   })
   const checks = countedBoxes.map((drawn) => {
-    const isCorrected = correctedNumbers.has(drawn.candidateNumber ?? undefined)
+    const isCorrected =
+      drawn.candidateNumber !== null &&
+      correctedNumbers.has(drawn.candidateNumber)
     const check = {
       ...drawn.check,
       whyNotYet:

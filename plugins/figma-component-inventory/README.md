@@ -76,6 +76,9 @@ The repo declares its paths in
 | `figmaToCodeMap`          | The table that gives the component of each Figma component. `null` or absent: no name is pre-filled, the model finds every component in the code. At approval, the Figma components that existing code draws and the table does not name yet are added to its "Components" section. |
 | `language`                | The language of the repo's team, `"fr"` or `"en"`: both pages are read in it until a developer picks another in a page's settings, and the model writes its notes, questions and decisions in it. Absent: `"en"`.                                                                   |
 
+A repo whose settings file names no `language` gets English pages, and the model writes
+its notes in English: a French-speaking team adds `"language": "fr"`.
+
 All paths start at the repo's root. The output of each screen goes to
 `.claude/local/figma-component-inventory/out/<screen name>` of that repo.
 
@@ -304,10 +307,8 @@ may deserve a component, or be a prop of the component beside it.
 A switch, « Sans le hors périmètre », hides everything drawn about the components that are
 out of scope and leaves their boxes out of the count of what is to check; a component
 that carries a correction stays, as the developer no longer sees it as out of scope. It
-also hides
-the texts whose only component around is out of scope; a text with no component around
-it stays, as nothing says whose it is. The three
-switches sit in the settings panel the cog of the header opens; the browser keeps each
+also hides the texts whose only component around is out of scope; a text with no
+component around it stays, as nothing says whose it is. The three switches sit in the settings panel the cog of the header opens; the browser keeps each
 choice.
 
 A click on a component, on its label or on its reason isolates it: everything else fades
