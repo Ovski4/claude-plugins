@@ -3,6 +3,7 @@
 // whether it has a Figma-to-code map.
 import fs from "node:fs"
 import path from "node:path"
+import { DEFAULT_PAGE_LANGUAGE, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
 
 /**
  * @typedef {object} ProjectSettings
@@ -17,6 +18,9 @@ import path from "node:path"
  *   each Figma component, from the repo's root: "docs/design/figma-react-map.md". null when
  *   the repo has none: no name is pre-filled and every candidate gets the files with a
  *   close name.
+ * @property {import("../page/pageTexts.mjs").PageLanguage} language the language of the
+ *   repo's team, "fr" or "en": inventory.html and specs.html are read in it until a
+ *   developer picks another in the page's settings. "en" when the file names none.
  */
 
 const PROJECT_SETTINGS_PATH = ".claude/figma-component-inventory.json"
@@ -59,6 +63,9 @@ export function parseProjectSettings(settingsText) {
       '"designSystemFolder" must be a folder path or null',
     !isFilledStringOrAbsent(settings.figmaToCodeMap) &&
       '"figmaToCodeMap" must be a file path or null',
+    settings.language != null &&
+      !(settings.language in PAGE_LANGUAGES) &&
+      `"language" must be one of ${Object.keys(PAGE_LANGUAGES).join(", ")}`,
   ].filter((problem) => typeof problem === "string")
   if (problems.length)
     throw new Error(`${PROJECT_SETTINGS_PATH}: ${problems.join("; ")}`)
@@ -67,6 +74,7 @@ export function parseProjectSettings(settingsText) {
     componentFileExtensions: extensions,
     designSystemFolder: settings.designSystemFolder ?? null,
     figmaToCodeMap: settings.figmaToCodeMap ?? null,
+    language: settings.language ?? DEFAULT_PAGE_LANGUAGE,
   }
 }
 

@@ -20,6 +20,8 @@ import {
   loadApprovedInventory,
 } from "../../figma-component-inventory/scripts/lib/approvedInventory.mjs"
 import { CommandFailure } from "../../figma-component-inventory/scripts/lib/commandFailure.mjs"
+import { findRepoRoot } from "../../figma-component-inventory/scripts/lib/gitRepo.mjs"
+import { readProjectSettings } from "../../figma-component-inventory/scripts/lib/projectSettings.mjs"
 import {
   readCaptureAsDataUrl,
   readPageData,
@@ -110,6 +112,7 @@ function main() {
   writeStandalonePage({
     pageFolder: PAGE_FOLDER,
     feedbackTextModule: FEEDBACK_TEXT_MODULE,
+    projectLanguage: readProjectSettings(findRepoRoot()).language,
     pageData: specs,
     pageFile,
   })

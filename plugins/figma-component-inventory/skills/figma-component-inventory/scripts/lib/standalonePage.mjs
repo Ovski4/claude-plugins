@@ -19,10 +19,11 @@ const SHARED_REVIEW_SCRIPT_FILE = path.join(
   SHARED_PAGE_FOLDER,
   "pageReview.mjs",
 )
-// Each comment of page/page.html is replaced: by the shared header; by the shared styles
+// Each comment of page/page.html is replaced: by the repo's language; by the shared header; by the shared styles
 // and page.css; by the feedback text module; by the two dictionaries, the shared review
 // script and page.js, in that order; and by the data page.js draws.
 const PLACEHOLDERS_IN_PAGE = {
+  projectLanguage: "/*PROJECT_LANGUAGE*/",
   header: "<!--PAGE_HEADER-->",
   styles: "/*PAGE_STYLES*/",
   feedbackText: "/*FEEDBACK_TEXT_MODULE*/",
@@ -57,12 +58,15 @@ const readAsPlainScript = (moduleFile) =>
  * @param {string} input.pageFolder holds page.html, page.css, page.js and ownTexts.mjs;
  *   page.html may hold a template "own-settings", the settings only that page has
  * @param {string} input.feedbackTextModule the module that builds the corrections text: pasted as a plain script, its functions become the page's globals
+ * @param {import("../page/pageTexts.mjs").PageLanguage} input.projectLanguage the
+ *   language of the repo: the page's own until the developer picks another in its settings
  * @param {unknown} input.pageData what page.js draws
  * @param {string} input.pageFile where to write the page
  */
 export function writeStandalonePage({
   pageFolder,
   feedbackTextModule,
+  projectLanguage,
   pageData,
   pageFile,
 }) {
@@ -80,6 +84,7 @@ export function writeStandalonePage({
     pageFile,
     pageHtml
       .replace(OWN_SETTINGS_TEMPLATE, "")
+      .replace(PLACEHOLDERS_IN_PAGE.projectLanguage, projectLanguage)
       .replace(PLACEHOLDERS_IN_PAGE.header, () => header)
       .replace(
         PLACEHOLDERS_IN_PAGE.styles,

@@ -63,6 +63,7 @@ function main() {
   /** @type {import("./lib/verdicts.mjs").VerdictsFile} */
   const verdictsFile = readJson("verdicts.json")
   const repoRoot = findRepoRoot()
+  const { figmaToCodeMap, language } = readProjectSettings(repoRoot)
 
   const problems = listVerdictProblems({
     candidates,
@@ -146,6 +147,7 @@ function main() {
   writeStandalonePage({
     pageFolder: PAGE_FOLDER,
     feedbackTextModule: FEEDBACK_TEXT_MODULE,
+    projectLanguage: language,
     pageData: inventory,
     pageFile,
   })
@@ -183,7 +185,6 @@ function main() {
       }),
     )
     console.log(summaryFile)
-    const { figmaToCodeMap } = readProjectSettings(repoRoot)
     if (figmaToCodeMap !== null) {
       const mapFile = path.join(repoRoot, figmaToCodeMap)
       const { mapText, addedFigmaNames } = addApprovedComponentsToMap(

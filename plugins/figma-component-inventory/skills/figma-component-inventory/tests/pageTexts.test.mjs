@@ -19,7 +19,7 @@ const listNamesInBraces = (text) =>
 
 test("every language has every text, with the same names in braces", () => {
   assert.deepEqual(Object.keys(PAGE_LANGUAGES), ["fr", "en"])
-  assert.equal(DEFAULT_PAGE_LANGUAGE, "fr")
+  assert.equal(DEFAULT_PAGE_LANGUAGE, "en")
   for (const { fr, en } of [
     SHARED_PAGE_TEXTS,
     INVENTORY_PAGE_TEXTS,

@@ -46,13 +46,15 @@ function keep(storageKey, value) {
 }
 
 // The language of the page: the one the developer picked in the settings, kept by the
-// browser for every page of the same kind.
+// browser for every page of the same kind. Until he picks one, the language of the repo,
+// which render.mjs wrote on the page's <html>.
 const LANGUAGE_STORAGE_KEY = "page-language"
 const keptLanguage = readKept(LANGUAGE_STORAGE_KEY)
-const pageLanguage =
+const pageLanguage = /** @type {PageLanguage} */ (
   keptLanguage !== null && keptLanguage in PAGE_LANGUAGES
-    ? /** @type {PageLanguage} */ (keptLanguage)
-    : DEFAULT_PAGE_LANGUAGE
+    ? keptLanguage
+    : document.documentElement.lang
+)
 document.documentElement.lang = pageLanguage
 
 /**

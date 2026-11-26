@@ -61,7 +61,9 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
 
 - A page is read in French or in English: the developer picks the language in the
   settings, the browser keeps it for every page of the same kind, and the page loads
-  again in it. French is the language of a page nobody picked a language for.
+  again in it. A page nobody picked a language for is read in the repo's, the `language`
+  of its settings file, which `render.mjs` writes on the page's `<html>`: English when
+  the file names none.
 - No text is written in `page.html` or in a page script. A text has a name
   (« approval.given ») and one sentence per language in a dictionary: `pageTexts.mjs` for
   what both pages show, the `ownTexts.mjs` of the page's folder for the rest. A script

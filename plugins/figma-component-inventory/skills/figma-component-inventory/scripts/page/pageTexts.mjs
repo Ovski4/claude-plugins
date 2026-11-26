@@ -11,10 +11,10 @@ export const PAGE_LANGUAGES = { fr: "Français", en: "English" }
 /** @typedef {keyof typeof PAGE_LANGUAGES} PageLanguage */
 
 /**
- * The language of a page whose developer has not picked one.
+ * The language of a repo whose settings file names none.
  * @type {PageLanguage}
  */
-export const DEFAULT_PAGE_LANGUAGE = "fr"
+export const DEFAULT_PAGE_LANGUAGE = "en"
 
 /** @type {Record<PageLanguage, Record<string, string>>} */
 export const SHARED_PAGE_TEXTS = {

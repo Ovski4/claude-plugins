@@ -3,7 +3,6 @@
 type PageTexts = typeof import("./pageTexts.mjs")
 type PageLanguage = import("./pageTexts.mjs").PageLanguage
 declare const PAGE_LANGUAGES: PageTexts["PAGE_LANGUAGES"]
-declare const DEFAULT_PAGE_LANGUAGE: PageTexts["DEFAULT_PAGE_LANGUAGE"]
 declare const SHARED_PAGE_TEXTS: PageTexts["SHARED_PAGE_TEXTS"]
 declare const fillText: PageTexts["fillText"]
 declare const buildTranslate: PageTexts["buildTranslate"]

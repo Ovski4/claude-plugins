@@ -16,16 +16,23 @@ test("the settings file gives the repo's folders, and says what is wrong in it",
       componentFileExtensions: [".tsx", ".vue"],
       designSystemFolder: null,
       figmaToCodeMap: null,
+      language: "en",
     },
+  )
+  assert.equal(
+    parseProjectSettings(
+      '{ "componentsFolder": "src", "componentFileExtensions": [".tsx"], "language": "fr" }',
+    ).language,
+    "fr",
   )
   assert.throws(
     () =>
       parseProjectSettings(
-        '{ "componentFileExtensions": ["tsx"], "figmaToCodeMap": 3 }',
+        '{ "componentFileExtensions": ["tsx"], "figmaToCodeMap": 3, "language": "de" }',
       ),
     {
       message:
-        '.claude/figma-component-inventory.json: "componentsFolder" must be a folder path; "componentFileExtensions" must list at least one extension like ".tsx"; "figmaToCodeMap" must be a file path or null',
+        '.claude/figma-component-inventory.json: "componentsFolder" must be a folder path; "componentFileExtensions" must list at least one extension like ".tsx"; "figmaToCodeMap" must be a file path or null; "language" must be one of fr, en',
     },
   )
 

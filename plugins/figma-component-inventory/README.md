@@ -48,8 +48,9 @@ Worth having, not required:
 Other frameworks (Vue, Svelte) have not been tried: the instructions speak of React
 components, and only TypeScript props declarations are read.
 
-The pages are read in French or in English, as the developer picks in their settings; the
-model's notes and the files the next steps read are written in French.
+The pages are read in French or in English: in the repo's language (the `language`
+setting below) until the developer picks another in a page's settings. The model's notes
+and the files the next steps read are written in French.
 
 ## Settings
 
@@ -61,7 +62,8 @@ The repo declares its paths in
   "componentsFolder": "src/components",
   "componentFileExtensions": [".tsx"],
   "designSystemFolder": "src/components/ui",
-  "figmaToCodeMap": "docs/design/figma-react-map.md"
+  "figmaToCodeMap": "docs/design/figma-react-map.md",
+  "language": "fr"
 }
 ```
 
@@ -71,6 +73,7 @@ The repo declares its paths in
 | `componentFileExtensions` | The extensions of a component file. Test and Storybook files (`button.test.tsx`, `button.stories.tsx`) are left out. Required.                                                                                                                                                      |
 | `designSystemFolder`      | The folder of the shared components: its files are proposed to the model before a feature's own. `null` or absent: no file gets priority.                                                                                                                                           |
 | `figmaToCodeMap`          | The table that gives the component of each Figma component. `null` or absent: no name is pre-filled, the model finds every component in the code. At approval, the Figma components that existing code draws and the table does not name yet are added to its "Components" section. |
+| `language`                | The language of the repo's team, `"fr"` or `"en"`: both pages are read in it until a developer picks another in a page's settings. Absent: `"en"`.                                                                                                                                  |
 
 All paths start at the repo's root. The output of each screen goes to
 `.claude/local/figma-component-inventory/out/<screen name>` of that repo.
