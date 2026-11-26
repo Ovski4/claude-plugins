@@ -234,11 +234,12 @@ export async function copyCorrectionsText(text) {
  * The corrections the browser kept for this page.
  * @template {ShownCorrection} Correction
  * @param {string} storageKey names the page and the content it was drawn from
- * @returns {Correction[]} none when nothing is kept, or when it cannot be read
+ * @returns {Correction[]} none when nothing is kept, or when what is kept is not a list of corrections
  */
 export function readKeptCorrections(storageKey) {
   try {
-    return JSON.parse(readKept(storageKey) ?? "[]")
+    const kept = JSON.parse(readKept(storageKey) ?? "[]")
+    return Array.isArray(kept) ? kept : []
   } catch {
     return []
   }
