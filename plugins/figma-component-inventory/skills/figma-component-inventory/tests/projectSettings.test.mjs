@@ -36,6 +36,18 @@ test("the settings file gives the repo's folders, and says what is wrong in it",
     },
   )
 
+  // "constructor" is a name every object has: it is no language for all that.
+  assert.throws(
+    () =>
+      parseProjectSettings(
+        '{ "componentsFolder": "src", "componentFileExtensions": [".tsx"], "language": "constructor" }',
+      ),
+    {
+      message:
+        '.claude/figma-component-inventory.json: "language" must be one of fr, en',
+    },
+  )
+
   assert.equal(isComponentFile("src/ui/button.tsx", [".tsx", ".vue"]), true)
   assert.equal(isComponentFile("src/ui/Card.vue", [".tsx", ".vue"]), true)
   assert.equal(isComponentFile("src/ui/button.test.tsx", [".tsx"]), false)

@@ -51,9 +51,7 @@ function keep(storageKey, value) {
 const LANGUAGE_STORAGE_KEY = "page-language"
 const keptLanguage = readKept(LANGUAGE_STORAGE_KEY)
 const pageLanguage = /** @type {PageLanguage} */ (
-  keptLanguage !== null && keptLanguage in PAGE_LANGUAGES
-    ? keptLanguage
-    : document.documentElement.lang
+  isPageLanguage(keptLanguage) ? keptLanguage : document.documentElement.lang
 )
 document.documentElement.lang = pageLanguage
 

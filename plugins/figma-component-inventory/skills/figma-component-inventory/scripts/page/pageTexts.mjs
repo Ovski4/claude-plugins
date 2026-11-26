@@ -11,6 +11,15 @@ export const PAGE_LANGUAGES = { fr: "Français", en: "English" }
 /** @typedef {keyof typeof PAGE_LANGUAGES} PageLanguage */
 
 /**
+ * Whether a value read from a settings file or from the browser names a language of the
+ * pages.
+ * @param {unknown} value
+ * @returns {value is PageLanguage}
+ */
+export const isPageLanguage = (value) =>
+  typeof value === "string" && Object.hasOwn(PAGE_LANGUAGES, value)
+
+/**
  * The language of a repo whose settings file names none.
  * @type {PageLanguage}
  */

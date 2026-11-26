@@ -3,7 +3,11 @@
 // whether it has a Figma-to-code map.
 import fs from "node:fs"
 import path from "node:path"
-import { DEFAULT_PAGE_LANGUAGE, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
+import {
+  DEFAULT_PAGE_LANGUAGE,
+  isPageLanguage,
+  PAGE_LANGUAGES,
+} from "../page/pageTexts.mjs"
 
 /**
  * @typedef {object} ProjectSettings
@@ -64,7 +68,7 @@ export function parseProjectSettings(settingsText) {
     !isFilledStringOrAbsent(settings.figmaToCodeMap) &&
       '"figmaToCodeMap" must be a file path or null',
     settings.language != null &&
-      !(settings.language in PAGE_LANGUAGES) &&
+      !isPageLanguage(settings.language) &&
       `"language" must be one of ${Object.keys(PAGE_LANGUAGES).join(", ")}`,
   ].filter((problem) => typeof problem === "string")
   if (problems.length)
