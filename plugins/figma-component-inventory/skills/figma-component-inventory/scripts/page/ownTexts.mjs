@@ -12,6 +12,7 @@ export const OWN_PAGE_TEXTS = {
     "page.documentTitle": "Inventaire — {subject}",
     "page.builtOn": "Construit le {date} · {mockupAndCommit}",
     "screen.openInFigma": "Ouvrir dans Figma",
+    "correction.targets": "Ce que la correction concerne",
     "correction.everyUse": "Toutes ses utilisations",
     "page.hint":
       "Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le corriger ; recliquer, cliquer à côté ou Échap pour revenir.",
@@ -49,6 +50,7 @@ export const OWN_PAGE_TEXTS = {
     "page.documentTitle": "Inventory — {subject}",
     "page.builtOn": "Built on {date} · {mockupAndCommit}",
     "screen.openInFigma": "Open in Figma",
+    "correction.targets": "What the correction applies to",
     "correction.everyUse": "All its uses",
     "page.hint":
       "Click a component, its label or its reason to isolate and correct it; click it again, click beside it or press Escape to come back.",
