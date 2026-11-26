@@ -156,25 +156,28 @@ scripts/
     figma.mjs               Figma links, API calls, answers kept on disk, where the capture sits
     collectCandidates.mjs   Figma tree of one screen → candidates; reads no file
     mergeScreens.mjs        candidates of several screens → one list, and the areas that differ
-    projectSettings.mjs     the repo's settings file: its folders, its Figma-to-code map
+    projectSettings.mjs     the repo's settings file: its folders, its Figma-to-code map, its language
     figmaToCodeMap.mjs      what the repo's Figma-to-code map says of a Figma component
     brief.mjs               the content of brief.md
-    verdicts.mjs            the five verdicts (label, colour, required fields), the checks, the approval
+    verdicts.mjs            the five verdicts (colour, required fields), the checks, the approval
+    approval.mjs            the developer's approval of verdicts.json or specs.json: its stamp, whether it stands, when --approve is refused
     inventoryIndex.mjs      writes out/index.md: one line per inventory, with where it and its specs stand
     approvedInventory.mjs   an approved inventory as the steps after it read it; refuses any other
     inventorySummary.mjs    the content of inventory.md
     inventoryWording.mjs    how inventory.html and inventory.md both name outlines, screens and the inventory, with the dictionaries' words
     languages.mjs           a page's text composed once per language, and the language of the files the next steps read
+    standalonePage.mjs      writes a page of either skill as one HTML file, and reads back what a written page shows
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     feedbackText.mjs        the developer's corrections on the page: what differs from the inventory, the text to paste; pasted whole into the page
     gitRepo.mjs             the repo's root, current commit and tracked files
+    commandFailure.mjs      how a command of either skill stops, with an exit code that tells the caller why
     box.mjs                 comparisons between boxes
 tests/                    one test file per module of scripts/lib
 ```
 
 A verdict is declared once, in `VERDICTS` of `scripts/lib/verdicts.mjs`: the page takes its
-labels and colours from there.
+colours from there, and its labels from `scripts/page/pageTexts.mjs`.
 
 ```
 node --test                 # from skills/figma-component-inventory: the tests of tests/
@@ -407,5 +410,5 @@ tests/                    one test file per module of scripts/lib, and the fixtu
 ```
 
 A kind of zone is declared once, in `ZONE_KINDS` of `scripts/lib/componentSpecs.mjs`: the
-page takes its labels and colours from there. The tests and the type check run as for the
-inventory, from `skills/figma-component-specs`.
+page takes its colours from there, and its labels from `scripts/page/ownTexts.mjs`. The
+tests and the type check run as for the inventory, from `skills/figma-component-specs`.
