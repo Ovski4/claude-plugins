@@ -312,8 +312,8 @@ A click on a component, on its label or on its reason isolates it: everything el
 and the capture is veiled except where that component is drawn, on every screen. A second
 click, a click beside the images or the Escape key shows everything back.
 
-Labels are in the language the developer picks in the page's settings, French unless he
-picked English; the model's notes are in the repo's language. Every outline is dotted; only
+Labels are in the repo's language until the developer picks another in the page's
+settings; the model's notes are in the repo's language. Every outline is dotted; only
 the colour tells the verdict. A component thinner than 4 px (a 1 px divider) keeps its
 number and its label but gets no outline, which would hide it.
 
