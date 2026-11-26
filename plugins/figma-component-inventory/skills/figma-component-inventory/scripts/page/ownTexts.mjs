@@ -26,7 +26,6 @@ export const OWN_PAGE_TEXTS = {
     "panel.outOfScopeLeftOut.several":
       "{count} hors périmètre masqués (voir les paramètres)",
     "panel.developerDecided": "Décidé par le développeur",
-    "panel.developerDecision": "Décidé par le développeur : {decision}",
     "review.screen":
       "Écran vérifié : tout ce qui est entouré est juste, rien n'est oublié",
     "review.component": "Vérifié",
@@ -35,13 +34,8 @@ export const OWN_PAGE_TEXTS = {
     "correction.component": "Composant React",
     "correction.sameAs": "Même composant que",
     "correction.toDecide": "À trancher : {question}",
-    "correction.reopen": "Rouvrir cette correction",
     "corrections.none":
       "Aucune correction : cliquer sur un composant pour le corriger",
-    "corrections.count.one": "{count} correction à coller dans la conversation",
-    "corrections.count.several":
-      "{count} corrections à coller dans la conversation",
-    "corrections.confirmReset": "Effacer toutes les corrections ?",
   },
   en: {
     "page.title": "Component inventory",
@@ -62,7 +56,6 @@ export const OWN_PAGE_TEXTS = {
     "panel.outOfScopeLeftOut.several":
       "{count} out-of-scope components hidden (see the settings)",
     "panel.developerDecided": "Decided by the developer",
-    "panel.developerDecision": "Decided by the developer: {decision}",
     "review.screen":
       "Screen checked: everything outlined is right, nothing is missing",
     "review.component": "Checked",
@@ -71,11 +64,6 @@ export const OWN_PAGE_TEXTS = {
     "correction.component": "React component",
     "correction.sameAs": "Same component as",
     "correction.toDecide": "To decide: {question}",
-    "correction.reopen": "Reopen this correction",
     "corrections.none": "No correction: click a component to correct it",
-    "corrections.count.one": "{count} correction to paste in the conversation",
-    "corrections.count.several":
-      "{count} corrections to paste in the conversation",
-    "corrections.confirmReset": "Clear all the corrections?",
   },
 }

@@ -39,6 +39,12 @@ export const SHARED_PAGE_TEXTS = {
     "corrections.copy": "Copier les corrections",
     "corrections.copied": "Copié",
     "corrections.reset": "Tout effacer",
+    "corrections.confirmReset": "Effacer toutes les corrections ?",
+    "corrections.count.one": "{count} correction à coller dans la conversation",
+    "corrections.count.several":
+      "{count} corrections à coller dans la conversation",
+    "correction.reopen": "Rouvrir cette correction",
+    "panel.developerDecision": "Décidé par le développeur : {decision}",
   },
   en: {
     "header.builtOn": "What the page is built on",
@@ -61,6 +67,12 @@ export const SHARED_PAGE_TEXTS = {
     "corrections.copy": "Copy the corrections",
     "corrections.copied": "Copied",
     "corrections.reset": "Clear all",
+    "corrections.confirmReset": "Clear all the corrections?",
+    "corrections.count.one": "{count} correction to paste in the conversation",
+    "corrections.count.several":
+      "{count} corrections to paste in the conversation",
+    "correction.reopen": "Reopen this correction",
+    "panel.developerDecision": "Decided by the developer: {decision}",
   },
 }
 

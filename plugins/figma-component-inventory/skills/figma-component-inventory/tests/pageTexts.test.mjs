@@ -7,7 +7,8 @@ import {
   PAGE_LANGUAGES,
   SHARED_PAGE_TEXTS,
 } from "../scripts/page/pageTexts.mjs"
-import { OWN_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
+import { OWN_PAGE_TEXTS as INVENTORY_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
+import { OWN_PAGE_TEXTS as SPECS_PAGE_TEXTS } from "../../figma-component-specs/scripts/page/ownTexts.mjs"
 
 /** @param {string} text the names in braces of a text, sorted: ["date"] */
 const listNamesInBraces = (text) =>
@@ -16,7 +17,11 @@ const listNamesInBraces = (text) =>
 test("every language has every text, with the same names in braces", () => {
   assert.deepEqual(Object.keys(PAGE_LANGUAGES), ["fr", "en"])
   assert.equal(DEFAULT_PAGE_LANGUAGE, "fr")
-  for (const { fr, en } of [SHARED_PAGE_TEXTS, OWN_PAGE_TEXTS]) {
+  for (const { fr, en } of [
+    SHARED_PAGE_TEXTS,
+    INVENTORY_PAGE_TEXTS,
+    SPECS_PAGE_TEXTS,
+  ]) {
     assert.deepEqual(Object.keys(en), Object.keys(fr))
     for (const [key, frenchText] of Object.entries(fr)) {
       assert.deepEqual(
@@ -31,10 +36,12 @@ test("every language has every text, with the same names in braces", () => {
 
 test("a page's own texts take no name of the shared ones", () => {
   const sharedKeys = Object.keys(SHARED_PAGE_TEXTS.fr)
-  assert.deepEqual(
-    Object.keys(OWN_PAGE_TEXTS.fr).filter((key) => sharedKeys.includes(key)),
-    [],
-  )
+  for (const ownTexts of [INVENTORY_PAGE_TEXTS, SPECS_PAGE_TEXTS]) {
+    assert.deepEqual(
+      Object.keys(ownTexts.fr).filter((key) => sharedKeys.includes(key)),
+      [],
+    )
+  }
 })
 
 test("a text's braces are replaced by the values given, and left when none is", () => {

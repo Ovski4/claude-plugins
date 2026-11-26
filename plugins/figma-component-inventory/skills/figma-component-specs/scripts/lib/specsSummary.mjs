@@ -34,7 +34,7 @@ const writePropRow = ({
   change,
 }) =>
   `| ${[
-    `\`${name}\`${change ? ` (${PROP_CHANGE_LABELS[change].toLowerCase()})` : ""}`,
+    `\`${name}\`${change ? ` (${PROP_CHANGE_LABELS[change][WRITTEN_FILES_LANGUAGE].toLowerCase()})` : ""}`,
     typeBefore ? `\`${typeBefore}\` → \`${type}\`` : `\`${type}\``,
     required ? "oui" : "non",
     source,
@@ -99,7 +99,7 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
         ? ` : ${zone.props.map((name) => `\`${name}\``).join(", ")}`
         : ""
       lines.push(
-        `- **${zone.letter} — ${zone.label}** (${ZONE_KINDS[zone.kind].label}${drivenBy} ; ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)})`,
+        `- **${zone.letter} — ${zone.label}** (${ZONE_KINDS[zone.kind].labels[WRITTEN_FILES_LANGUAGE]}${drivenBy} ; ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)})`,
         ...(zone.notes ?? []).map((note) => `  - ${note}`),
       )
     }

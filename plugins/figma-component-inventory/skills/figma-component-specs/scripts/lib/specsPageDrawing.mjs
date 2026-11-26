@@ -2,7 +2,8 @@
 // Everything specs.html draws, worked out from the approved inventory and specs.json: per
 // component, the part of each capture it is drawn on and the outline of each zone there.
 // The page's script only places what this module gives it.
-import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
+import { writeInEveryLanguage } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
+import { fillText } from "../../../figma-component-inventory/scripts/page/pageTexts.mjs"
 import { buildFigmaNodeUrl } from "../../../figma-component-inventory/scripts/lib/figma.mjs"
 import { listScreenNumbers } from "../../../figma-component-inventory/scripts/lib/mergeScreens.mjs"
 import { VERDICTS } from "../../../figma-component-inventory/scripts/lib/verdicts.mjs"
@@ -31,6 +32,7 @@ import { hashWhatIsReviewed } from "../../../figma-component-inventory/scripts/l
 import { hashComponents, readStandingApprovalDate } from "./specsApproval.mjs"
 
 /** @typedef {import("./componentSpecs.mjs").ApprovedInventory} ApprovedInventory */
+/** @typedef {import("../../../figma-component-inventory/scripts/lib/languages.mjs").TextInEveryLanguage} TextInEveryLanguage */
 /** @typedef {import("./componentSpecs.mjs").SpecsFile} SpecsFile */
 /** @typedef {import("./componentSpecs.mjs").PropSpec} PropSpec */
 /** @typedef {import("./componentSpecs.mjs").ZoneSpec} ZoneSpec */
@@ -41,6 +43,13 @@ import { hashComponents, readStandingApprovalDate } from "./specsApproval.mjs"
 // inventory's blue of « À adapter » is hard to tell from the purple of « À créer », so a
 // component to adapt takes the inventory's green, which this page uses for nothing else.
 /** @type {Record<string, string>} */
+// The line that says what the page is built on, in each language a page is read in.
+/** @type {TextInEveryLanguage} */
+const BUILT_ON_WORDING = {
+  fr: "Construit sur l'inventaire validé le {date} · {mockupAndCommit}",
+  en: "Built on the inventory approved on {date} · {mockupAndCommit}",
+}
+
 const COLOURS_IN_THE_TREE = {
   "to-create": VERDICTS["to-create"].color,
   "to-adapt": VERDICTS.reused.color,
@@ -73,7 +82,7 @@ const COLOURS_IN_THE_TREE = {
  * @typedef {object} DrawnComponent
  * @property {string} codeComponent
  * @property {string | null} codePath
- * @property {{ label: string, color: string }} verdict the inventory's: "À créer" or "À adapter"
+ * @property {{ labels: TextInEveryLanguage, color: string }} verdict the inventory's: "À créer" or "À adapter"
  * @property {boolean} isToAdapt true when `props` holds only the props to add or to modify
  * @property {string[]} holdsDirectly the components to specify drawn inside it with no other one between the two: its children in the page's tree of components
  * @property {import("./componentSpecs.mjs").ChangeSpec[]} changes what changes without a prop; empty for a component to create
@@ -85,8 +94,8 @@ const COLOURS_IN_THE_TREE = {
  */
 /**
  * @typedef {object} SpecsPageDrawing
- * @property {string} fingerprintLine what the page is built on: the day the inventory was approved, the mock-up and the commit
- * @property {string} title the inventory's: its screen's name, or what several screens' names share, "Editor — regulation (6 écrans)"
+ * @property {TextInEveryLanguage} fingerprintLine what the page is built on: the day the inventory was approved, the mock-up and the commit
+ * @property {TextInEveryLanguage} title the inventory's: its screen's name, or what several screens' names share, "Editor — regulation (6 écrans)"
  * @property {string} specsHash changes with the specs: the corrections typed on the page are kept for these specs only
  * @property {string | null} approvalDate the day the developer approved these specs; null for a draft
  * @property {typeof ZONE_KINDS} zoneKinds the label and the colour of each kind of zone
@@ -343,7 +352,7 @@ export function buildSpecsPageDrawing({ inventory, specsFile }) {
         verdict: component.verdict,
       }),
       verdict: {
-        label: VERDICTS[component.verdict].labels[WRITTEN_FILES_LANGUAGE],
+        labels: VERDICTS[component.verdict].labels,
         color: COLOURS_IN_THE_TREE[component.verdict],
       },
       isToAdapt: component.isToAdapt,
@@ -378,8 +387,15 @@ export function buildSpecsPageDrawing({ inventory, specsFile }) {
     }
   })
   return {
-    fingerprintLine: `Construit sur l'inventaire validé le ${inventory.approvedOn} · ${tellMockupAndCommit(inventory.fingerprint, WRITTEN_FILES_LANGUAGE)}`,
-    title: titleInventory(inventory.screens, WRITTEN_FILES_LANGUAGE),
+    fingerprintLine: writeInEveryLanguage((language) =>
+      fillText(BUILT_ON_WORDING[language], {
+        date: inventory.approvedOn,
+        mockupAndCommit: tellMockupAndCommit(inventory.fingerprint, language),
+      }),
+    ),
+    title: writeInEveryLanguage((language) =>
+      titleInventory(inventory.screens, language),
+    ),
     specsHash: hashComponents(specsFile.components),
     reviewKey: hashWhatIsReviewed(
       inventory.screens.map((screen) => screen.nodeId),

@@ -38,6 +38,9 @@ function createElement(tagName, { className, text } = {}, children = []) {
   return element
 }
 
+addPageTexts(OWN_PAGE_TEXTS)
+showStaticTexts()
+
 const specsElement = getElement("specs")
 /** @type {Specs} */
 const specs = JSON.parse(specsElement.textContent ?? "")
@@ -125,7 +128,7 @@ function createPropCard(prop) {
   )
   const selectedZone = findSelectedZone()
   const rows = [
-    createElement("dt", { text: "Type" }),
+    createElement("dt", { text: translate("prop.type") }),
     createElement(
       "dd",
       {},
@@ -137,17 +140,17 @@ function createPropCard(prop) {
           ]
         : [createElement("code", { text: prop.type })],
     ),
-    createElement("dt", { text: "D'où vient la valeur" }),
+    createElement("dt", { text: translate("prop.source") }),
     createElement("dd", { text: prop.source }),
   ]
   if (prop.note) {
     rows.push(
-      createElement("dt", { text: "Règle" }),
+      createElement("dt", { text: translate("prop.rule") }),
       createElement("dd", { text: prop.note }),
     )
   }
   rows.push(
-    createElement("dt", { text: "Zones" }),
+    createElement("dt", { text: translate("prop.zones") }),
     createElement(
       "dd",
       { className: "prop-zones" },
@@ -157,14 +160,14 @@ function createPropCard(prop) {
   const tags = [
     createElement("span", {
       className: "prop-tag",
-      text: prop.required ? "obligatoire" : "optionnelle",
+      text: translate(prop.required ? "prop.required" : "prop.optional"),
     }),
   ]
   if (prop.change) {
     tags.unshift(
       createElement("span", {
         className: "prop-tag prop-change",
-        text: specs.propChangeLabels[prop.change],
+        text: inPageLanguage(specs.propChangeLabels[prop.change]),
       }),
     )
   }
@@ -201,12 +204,12 @@ function createComponentSummary() {
   const decisions = shownComponent.developerDecisions.map((decision) =>
     createElement("p", {
       className: "developer-words",
-      text: `Décidé par le développeur : ${decision}`,
+      text: translate("panel.developerDecision", { decision }),
     }),
   )
   if (!shownComponent.isToAdapt) {
     const propsHeading = shownComponent.props.length
-      ? [createElement("h2", { text: "Toutes les props" })]
+      ? [createElement("h2", { text: translate("panel.allProps") })]
       : []
     return [
       ...propsHeading,
@@ -214,7 +217,9 @@ function createComponentSummary() {
       ...decisions,
     ]
   }
-  const summary = [createElement("h2", { text: "Ce qui change" })]
+  const summary = [
+    createElement("h2", { text: translate("panel.whatChanges") }),
+  ]
   if (shownComponent.changes.length) {
     summary.push(
       createElement("table", { className: "changes" }, [
@@ -222,8 +227,8 @@ function createComponentSummary() {
           createElement(
             "tr",
             {},
-            ["", "Avant", "Après"].map((title) =>
-              createElement("th", { text: title }),
+            ["", translate("panel.before"), translate("panel.after")].map(
+              (title) => createElement("th", { text: title }),
             ),
           ),
         ]),
@@ -242,7 +247,10 @@ function createComponentSummary() {
     )
   }
   summary.push(
-    ...createPropsSection("Props nouvelles ou modifiées", shownComponent.props),
+    ...createPropsSection(
+      translate("panel.changedProps"),
+      shownComponent.props,
+    ),
     ...decisions,
   )
   return summary
@@ -259,7 +267,7 @@ function createComponentSummary() {
  */
 const describeComponentCheck = (component) => ({
   reviewHash: component.reviewHash,
-  label: "Composant vérifié : ses props, ses changements et ses décisions",
+  label: translate("review.component"),
   subject: "component",
   whyNotYet: corrections.has(nameCorrectionTarget(component.codeComponent))
     ? WHY_NOT_YET.corrected
@@ -287,7 +295,9 @@ function describeScreenCheck(component, screen) {
     : null
   return {
     reviewHash: screen.reviewHash,
-    label: `Écran vérifié : les zones de ${component.codeComponent} sont justes, rien n'est oublié`,
+    label: translate("review.screen", {
+      component: component.codeComponent,
+    }),
     subject: "screen",
     whyNotYet: isAZoneCorrected ? WHY_NOT_YET.corrected : whyNotWhileUndecided,
   }
@@ -308,7 +318,7 @@ function createZoneItem(zone) {
   const kind = specs.zoneKinds[zone.kind]
   const title = createElement("button", { className: "item-title" }, [
     createBadge(zone.letter, zone.kind),
-    `${zone.label} — ${kind.label}`,
+    `${zone.label} — ${inPageLanguage(kind.labels)}`,
   ])
   title.setAttribute("type", "button")
   title.setAttribute("aria-pressed", String(zone.letter === selectedZoneLetter))
@@ -318,7 +328,9 @@ function createZoneItem(zone) {
       ...(index ? [", "] : []),
       createElement("code", { text: name }),
     ])
-    lines.push(createElement("p", {}, ["Props : ", ...propNamesWithCommas]))
+    lines.push(
+      createElement("p", {}, [translate("zone.props"), ...propNamesWithCommas]),
+    )
   }
   lines.push(
     ...(zone.notes ?? []).map((note) => createElement("p", { text: note })),
@@ -342,7 +354,9 @@ function createZoneItem(zone) {
     // The zone says what the parent gives that component; its own specs are one click away.
     const link = createElement("button", {
       className: "open-component",
-      text: `Ouvrir ${componentToOpen.codeComponent} →`,
+      text: translate("zone.openComponent", {
+        component: componentToOpen.codeComponent,
+      }),
     })
     link.setAttribute("type", "button")
     link.addEventListener("click", (event) => {
@@ -376,7 +390,7 @@ function createZoneItems(lettersOnShownScreen) {
     zonesToReview.map(createZoneItem),
   )
   list.classList.toggle("has-picked", selectedZoneLetter !== "")
-  return [createPanelHeading("Zones"), list]
+  return [createPanelHeading(translate("panel.zones")), list]
 }
 
 /** The count of what is checked, and the invitation to approve once nothing blocks it. */
@@ -472,7 +486,13 @@ function createComponentTree(components) {
       // The mark's colour is said in words to who does not see it.
       button.setAttribute(
         "aria-label",
-        `${component.codeComponent}, ${component.verdict.label}${isComponentReviewed ? ", vérifié" : ""}`,
+        translate(
+          isComponentReviewed ? "tree.componentReviewed" : "tree.component",
+          {
+            component: component.codeComponent,
+            verdict: inPageLanguage(component.verdict.labels),
+          },
+        ),
       )
       if (component === shownComponent)
         button.setAttribute("aria-current", "true")
@@ -535,21 +555,29 @@ function draw() {
     })),
   )
   const sameScreens = screen.sameOnScreenNumbers
-  const sameScreensNote = sameScreens.length
-    ? ` · mêmes specs sur ${sameScreens.length > 1 ? "les écrans" : "l'écran"} ${sameScreens.join(", ")}`
-    : ""
+  const sizeTextKey =
+    sameScreens.length === 0
+      ? "screen.size"
+      : `screen.sizeSameSpecs.${sameScreens.length > 1 ? "several" : "one"}`
   const figmaLink = createElement("a", {
-    text: `Écran ${screen.screenNumber} — ${screen.screenName}`,
+    text: translate("screen.link", {
+      number: screen.screenNumber,
+      name: screen.screenName,
+    }),
   })
   figmaLink.setAttribute("href", screen.figmaUrl)
   getElement("screen-caption").replaceChildren(
     figmaLink,
     createElement("span", {
-      text: `${shownComponent.codeComponent} : ${screen.componentFrame.width} × ${screen.componentFrame.height} px${sameScreensNote}`,
+      text: translate(sizeTextKey, {
+        component: shownComponent.codeComponent,
+        width: screen.componentFrame.width,
+        height: screen.componentFrame.height,
+        screens: sameScreens.join(", "),
+      }),
     }),
     createElement("span", {
-      text:
-        shownComponent.codePath ?? "Pas encore de fichier : composant à créer.",
+      text: shownComponent.codePath ?? translate("screen.noFile"),
     }),
   )
 
@@ -564,7 +592,10 @@ function draw() {
     button.setAttribute("type", "button")
     button.setAttribute(
       "aria-label",
-      `Zone ${outline.zoneLetter} : ${zone?.label}`,
+      translate("outline.zone", {
+        letter: outline.zoneLetter,
+        label: zone?.label ?? "",
+      }),
     )
     button.classList.toggle(
       "selected",
@@ -674,11 +705,13 @@ function fillCorrectionForm() {
   const target = nameShownTarget()
   const correction = corrections.get(target)
   const options = findSelectedZone()?.options ?? []
-  getElement("correction-title").textContent = `Corriger ${target}`
+  getElement("correction-title").textContent = translate("correction.title", {
+    target,
+  })
   const answers = getElement("correction-answers")
   answers.hidden = !options.length
   answers.replaceChildren(
-    createElement("legend", { text: "À trancher : réponse à la question" }),
+    createElement("legend", { text: translate("correction.answer") }),
     ...options.map((option) => {
       const radio = /** @type {HTMLInputElement} */ (createElement("input"))
       radio.type = "radio"
@@ -705,14 +738,14 @@ function showCorrections() {
         text: `${correction.target} — ${listSpecCorrectionFields(correction).join(" · ")}`,
       })
       line.setAttribute("type", "button")
-      line.setAttribute("title", "Rouvrir cette correction")
+      line.setAttribute("title", translate("correction.reopen"))
       line.addEventListener("click", () => openCorrection(correction.target))
       return createElement("li", {}, [line])
     }),
   )
   getElement("feedback-count").textContent = count
-    ? `${count} correction${count > 1 ? "s" : ""} à coller dans la conversation`
-    : "Aucune correction : cliquer sur un composant ou une zone pour le corriger"
+    ? translate(`corrections.count.${count > 1 ? "several" : "one"}`, { count })
+    : translate("corrections.none")
   feedbackTextArea.hidden = true
   getElement("correction-clear").hidden = !corrections.has(nameShownTarget())
   for (const id of ["feedback-copy", "feedback-reset"])
@@ -752,7 +785,7 @@ function showWhatACorrectionBlocks() {
 }
 
 function copyFeedbackText() {
-  const text = buildSpecsFeedbackText(specs.title, listSortedCorrections())
+  const text = buildSpecsFeedbackText(subject, listSortedCorrections())
   copyWithConfirmation(getElement("feedback-copy"), text, () => {
     feedbackTextArea.value = text
     feedbackTextArea.hidden = false
@@ -774,7 +807,7 @@ getElement("correction-clear").addEventListener("click", () =>
 )
 getElement("feedback-copy").addEventListener("click", copyFeedbackText)
 getElement("feedback-reset").addEventListener("click", () => {
-  if (window.confirm("Effacer toutes les corrections ?"))
+  if (window.confirm(translate("corrections.confirmReset")))
     dropCorrections(corrections.keys())
 })
 try {
@@ -805,23 +838,27 @@ function selectZone(letter) {
   draw()
 }
 
-document.title = `Props — ${specs.title}`
+const subject = inPageLanguage(specs.title)
+document.title = translate("page.documentTitle", { subject })
 showPageHeader({
-  subject: specs.title,
+  subject,
   approvalDate: specs.approvalDate,
-  fingerprintLine: specs.fingerprintLine,
+  fingerprintLine: inPageLanguage(specs.fingerprintLine),
 })
 getElement("legend").replaceChildren(
   ...specs.zoneKindsInTheLegend.map((kindKey) => {
     const kind = specs.zoneKinds[kindKey]
-    const item = createElement("li", { text: kind.label })
+    const item = createElement("li", { text: inPageLanguage(kind.labels) })
     item.style.setProperty("--kind", kind.color)
     return item
   }),
 )
 // Under the tree: what the colour of a component's mark means, for the verdicts it shows.
 const coloursOfVerdictsInTheTree = new Map(
-  specs.components.map(({ verdict }) => [verdict.label, verdict.color]),
+  specs.components.map(({ verdict }) => [
+    inPageLanguage(verdict.labels),
+    verdict.color,
+  ]),
 )
 getElement("tree-legend").replaceChildren(
   ...[...coloursOfVerdictsInTheTree].map(([label, color]) => {

@@ -73,12 +73,6 @@ export function writeStandalonePage({
   /** @param {string} fileName */
   const readPageFile = (fileName) =>
     fs.readFileSync(path.join(pageFolder, fileName), "utf8")
-  // TODO: specs.html still writes its own texts in French in page.html and page.js. Once
-  // they are in an ownTexts.mjs of its page folder, that file is required like the others.
-  const ownTextsFile = path.join(pageFolder, OWN_TEXTS_FILE_NAME)
-  const ownTextsScripts = fs.existsSync(ownTextsFile)
-    ? [readAsPlainScript(ownTextsFile)]
-    : []
   // "<" is escaped so that a note containing "</script>" cannot close the data's script.
   const pageDataAsJson = JSON.stringify(pageData).replace(/</g, "\\u003c")
   fs.writeFileSync(
@@ -96,7 +90,7 @@ export function writeStandalonePage({
         [
           readAsPlainScript(SHARED_TEXTS_FILE),
           readAsPlainScript(SHARED_REVIEW_SCRIPT_FILE),
-          ...ownTextsScripts,
+          readAsPlainScript(path.join(pageFolder, OWN_TEXTS_FILE_NAME)),
           readPageFile("page.js"),
         ].join("\n"),
       )

@@ -386,6 +386,7 @@ scripts/
   page/                   the parts of specs.html, which render.mjs pastes into one file
     page.html               its structure
     page.css                its own styles, after the inventory skill's pageBase.css
+    ownTexts.mjs            the texts only specs.html shows, in French and in English
     page.js draws what specsPageDrawing.mjs worked out; answers tabs, clicks, keys and the correction form
     specsFeedbackTextFunctions.d.ts tells the type check that page.js finds the functions of specsFeedbackText.mjs in the page
   lib/

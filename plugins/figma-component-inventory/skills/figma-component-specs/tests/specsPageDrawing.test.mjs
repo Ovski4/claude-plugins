@@ -16,16 +16,31 @@ test("each component is cut out of its screen's capture, with its zones outlined
     specsFile: buildSpecsFile(),
   })
 
-  assert.equal(
-    fingerprintLine,
-    "Construit sur l'inventaire validé le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
-  )
+  assert.deepEqual(fingerprintLine, {
+    fr: "Construit sur l'inventaire validé le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
+    en: "Built on the inventory approved on 2026-11-23 · mock-up changed on 2026-11-20 · commit 34ee98aa6",
+  })
   assert.deepEqual(zoneKinds, {
-    prop: { label: "Pilotée par des props", color: "#be185d" },
-    fixed: { label: "Fixe, sans prop", color: "#64748b" },
-    change: { label: "Changement de style", color: "#0f766e" },
-    "not-drawn": { label: "Non dessiné", color: "#a16207" },
-    "to-decide": { label: "À trancher", color: "#dc2626" },
+    prop: {
+      labels: { fr: "Pilotée par des props", en: "Driven by props" },
+      color: "#be185d",
+    },
+    fixed: {
+      labels: { fr: "Fixe, sans prop", en: "Fixed, no prop" },
+      color: "#64748b",
+    },
+    change: {
+      labels: { fr: "Changement de style", en: "Style change" },
+      color: "#0f766e",
+    },
+    "not-drawn": {
+      labels: { fr: "Non dessiné", en: "Not drawn" },
+      color: "#a16207",
+    },
+    "to-decide": {
+      labels: { fr: "À trancher", en: "To decide" },
+      color: "#dc2626",
+    },
   })
   assert.deepEqual(zoneKindsInTheLegend, ["prop", "fixed", "change"])
   assert.deepEqual(
@@ -34,8 +49,8 @@ test("each component is cut out of its screen's capture, with its zones outlined
   )
 
   assert.deepEqual(propChangeLabels, {
-    "to-add": "Nouvelle",
-    "to-modify": "Modifiée",
+    "to-add": { fr: "Nouvelle", en: "New" },
+    "to-modify": { fr: "Modifiée", en: "Changed" },
   })
 
   const [select, settings] = components
@@ -45,7 +60,10 @@ test("each component is cut out of its screen's capture, with its zones outlined
   ])
   assert.equal(settings.isToAdapt, false)
   assert.deepEqual(settings.changes, [])
-  assert.deepEqual(settings.verdict, { label: "À créer", color: "#7c3aed" })
+  assert.deepEqual(settings.verdict, {
+    labels: { fr: "À créer", en: "To create" },
+    color: "#7c3aed",
+  })
   assert.deepEqual(settings.props, [
     {
       name: "targetTemperature",

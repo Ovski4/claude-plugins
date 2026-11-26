@@ -9,6 +9,7 @@ import {
 } from "../../../figma-component-inventory/scripts/lib/verdicts.mjs"
 
 /** @typedef {import("../../../figma-component-inventory/scripts/lib/approvedInventory.mjs").ApprovedInventory} ApprovedInventory */
+/** @typedef {import("../../../figma-component-inventory/scripts/lib/languages.mjs").TextInEveryLanguage} TextInEveryLanguage */
 /** @typedef {import("../../../figma-component-inventory/scripts/lib/verdicts.mjs").JudgedInstance} JudgedInstance */
 /** @typedef {import("../../../figma-component-inventory/scripts/lib/verdicts.mjs").VerdictKey} VerdictKey */
 /** @typedef {import("../../../figma-component-inventory/scripts/lib/figma.mjs").Box} Box */
@@ -87,24 +88,40 @@ import {
 const VERDICTS_TO_SPECIFY = ["to-create", "to-adapt"]
 
 /**
- * label: shown in the page, in French like the inventory's.
+ * labels: the kind's name in each language a page is read in.
  * color: of the zone's outline and of its letter.
- * @type {Record<ZoneKindKey, { label: string, color: string }>}
+ * @type {Record<ZoneKindKey, { labels: TextInEveryLanguage, color: string }>}
  */
 export const ZONE_KINDS = {
-  prop: { label: "Pilotée par des props", color: "#be185d" },
-  fixed: { label: "Fixe, sans prop", color: "#64748b" },
-  change: { label: "Changement de style", color: "#0f766e" },
-  "not-drawn": { label: "Non dessiné", color: "#a16207" },
-  "to-decide": { label: "À trancher", color: "#dc2626" },
+  prop: {
+    labels: { fr: "Pilotée par des props", en: "Driven by props" },
+    color: "#be185d",
+  },
+  fixed: {
+    labels: { fr: "Fixe, sans prop", en: "Fixed, no prop" },
+    color: "#64748b",
+  },
+  change: {
+    labels: { fr: "Changement de style", en: "Style change" },
+    color: "#0f766e",
+  },
+  "not-drawn": {
+    labels: { fr: "Non dessiné", en: "Not drawn" },
+    color: "#a16207",
+  },
+  "to-decide": {
+    labels: { fr: "À trancher", en: "To decide" },
+    color: "#dc2626",
+  },
 }
 /**
- * What happens to a prop of a component to adapt, as shown beside the prop, in French.
- * @type {Record<PropChangeKey, string>}
+ * What happens to a prop of a component to adapt, as shown beside the prop, in each
+ * language a page is read in.
+ * @type {Record<PropChangeKey, TextInEveryLanguage>}
  */
 export const PROP_CHANGE_LABELS = {
-  "to-add": "Nouvelle",
-  "to-modify": "Modifiée",
+  "to-add": { fr: "Nouvelle", en: "New" },
+  "to-modify": { fr: "Modifiée", en: "Changed" },
 }
 const PROP_CHANGE_KEYS = Object.keys(PROP_CHANGE_LABELS)
 export const ZONE_KIND_KEYS = /** @type {ZoneKindKey[]} */ (

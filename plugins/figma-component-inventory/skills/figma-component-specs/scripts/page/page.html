@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Props des composants</title>
+    <title></title>
     <style>
       /*PAGE_STYLES*/
     </style>
@@ -11,7 +11,7 @@
   <body>
     <header class="page-header">
       <div>
-        <h1>Props des composants à créer ou à adapter</h1>
+        <h1 data-text="page.title"></h1>
         <p class="page-subject" id="screen-name"></p>
       </div>
       <div class="page-status">
@@ -47,14 +47,10 @@
       </div>
     </header>
     <ul class="legend" id="legend"></ul>
-    <p class="page-hint">
-      Cliquer sur un encadré pour voir ses règles dans le panneau « Zones »,
-      faire ressortir ses props et le corriger ; recliquer, cliquer à côté ou
-      Échap pour revenir.
-    </p>
+    <p class="page-hint" data-text="page.hint"></p>
     <div class="capture-beside-panel">
-      <nav class="component-tree" aria-label="Composants">
-        <h3>Composants</h3>
+      <nav class="component-tree" data-text-aria-label="tree.title">
+        <h3 data-text="tree.title"></h3>
         <div id="component-tree"></div>
         <ul class="tree-legend" id="tree-legend"></ul>
       </nav>
@@ -63,7 +59,7 @@
           class="tabs"
           id="screen-tabs"
           role="tablist"
-          aria-label="Écran"
+          data-text-aria-label="screen.tabs"
         ></div>
         <figcaption id="screen-caption"></figcaption>
         <div class="cut" id="cut"></div>
