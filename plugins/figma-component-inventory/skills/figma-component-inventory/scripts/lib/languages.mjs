@@ -2,9 +2,10 @@
 // The languages of what the scripts write: a page is read in the language its developer
 // picks, so a script writes each of the page's texts once per language; the files the next
 // steps read are written in one language.
-import { PAGE_LANGUAGES } from "../page/pageTexts.mjs"
+import { buildTranslate, PAGE_LANGUAGES } from "../page/pageTexts.mjs"
 
 /** @typedef {import("../page/pageTexts.mjs").PageLanguage} PageLanguage */
+/** @typedef {import("../page/pageTexts.mjs").Translate} Translate */
 /**
  * A text of a page, written once per language: { fr: "2 écrans", en: "2 screens" }. The
  * page shows the one of its language.
@@ -18,16 +19,30 @@ import { PAGE_LANGUAGES } from "../page/pageTexts.mjs"
  */
 export const WRITTEN_FILES_LANGUAGE = "fr"
 
+/** The shared texts in the language of the written files, for what has no page of its own. */
+export const translateForWrittenFiles = buildTranslate(WRITTEN_FILES_LANGUAGE, {
+  fr: {},
+  en: {},
+})
+
 /**
- * @param {(language: PageLanguage) => string} writeIn writes the text in one language
- * @returns {TextInEveryLanguage}
+ * Gives what writes a text of one page in every language.
+ * @param {Record<PageLanguage, Record<string, string>>} ownTexts the texts only that page shows
+ * @returns {(write: (translate: Translate) => string) => TextInEveryLanguage} `write`
+ *   composes the text with the `translate` of one language
  */
-export const writeInEveryLanguage = (writeIn) =>
-  /** @type {TextInEveryLanguage} */ (
-    Object.fromEntries(
-      Object.keys(PAGE_LANGUAGES).map((language) => [
-        language,
-        writeIn(/** @type {PageLanguage} */ (language)),
-      ]),
+export function buildWriterInEveryLanguage(ownTexts) {
+  const translators = Object.keys(PAGE_LANGUAGES).map((language) => ({
+    language,
+    translate: buildTranslate(/** @type {PageLanguage} */ (language), ownTexts),
+  }))
+  return (write) =>
+    /** @type {TextInEveryLanguage} */ (
+      Object.fromEntries(
+        translators.map(({ language, translate }) => [
+          language,
+          write(translate),
+        ]),
+      )
     )
-  )
+}

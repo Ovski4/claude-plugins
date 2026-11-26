@@ -1,6 +1,6 @@
 // @ts-check
 // Writes inventory.md: what the next steps of the workflow read instead of the page.
-import { WRITTEN_FILES_LANGUAGE } from "./languages.mjs"
+import { translateForWrittenFiles } from "./languages.mjs"
 import {
   nameOutlines,
   namePartNotOutlined,
@@ -9,7 +9,7 @@ import {
 } from "./inventoryWording.mjs"
 import { buildFigmaNodeUrl } from "./figma.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
-import { groupByJudgement, VERDICTS, VERDICT_KEYS } from "./verdicts.mjs"
+import { groupByJudgement, VERDICT_KEYS } from "./verdicts.mjs"
 
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /**
@@ -44,7 +44,7 @@ export function buildInventorySummary({
       : `[Figma](${buildFigmaNodeUrl(fileKey, nodeId)})`,
   )
   const lines = [
-    `# Inventaire des composants — ${titleInventory(screens, WRITTEN_FILES_LANGUAGE)}`,
+    `# Inventaire des composants — ${titleInventory(screens, translateForWrittenFiles)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Maquette : ${figmaLinks.join(", ")}, modifiée le ${lastModified.slice(0, 10)} (version ${version}). Code : commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
@@ -70,7 +70,7 @@ export function buildInventorySummary({
           const screenNumbers = listScreenNumbers(instances)
           const where =
             hasSeveralScreens && screenNumbers.length < screens.length
-              ? `, ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)}`
+              ? `, ${nameScreens(screenNumbers, translateForWrittenFiles)}`
               : ""
           const figmaLink = `[nœud](${buildFigmaNodeUrl(fileKey, firstNodeId)})`
           return [
@@ -87,7 +87,7 @@ export function buildInventorySummary({
     if (items.length)
       lines.push(
         "",
-        `## ${VERDICTS[verdictKey].labels[WRITTEN_FILES_LANGUAGE]}`,
+        `## ${translateForWrittenFiles(`verdict.${verdictKey}`)}`,
         "",
         ...items,
       )

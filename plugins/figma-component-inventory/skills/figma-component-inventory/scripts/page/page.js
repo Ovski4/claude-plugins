@@ -16,8 +16,8 @@
  * @typedef {PageDrawing & {
  *   approvalDate: string | null,
  *   stillToDecideCount: number,
- *   verdicts: { key: string, labels: Record<PageLanguage, string>, color: string, isDrawnOnThePage: boolean }[],
- *   correctionVerdicts: { key: string, labels: Record<PageLanguage, string> }[],
+ *   verdicts: { key: string, color: string, isDrawnOnThePage: boolean }[],
+ *   correctionVerdictKeys: string[],
  *   verdictsHash: string,
  * }} Inventory
  */
@@ -438,7 +438,7 @@ function drawHeader() {
   const verdictsInTheLegend = inventory.verdicts.filter(
     (verdict) => verdict.isDrawnOnThePage,
   )
-  for (const { key, labels } of verdictsInTheLegend) {
+  for (const { key } of verdictsInTheLegend) {
     const swatch = createSvgElement("svg", { viewBox: "0 0 36 12" })
     swatch.append(
       createSvgElement("line", {
@@ -451,7 +451,7 @@ function drawHeader() {
     )
     const item = createElement("li")
     item.className = key
-    item.append(swatch, inPageLanguage(labels))
+    item.append(swatch, translate(`verdict.${key}`))
     getElement("legend").append(item)
   }
 }
@@ -645,9 +645,9 @@ const targetsById = new Map(
   ),
 )
 const verdictLabels = Object.fromEntries(
-  inventory.correctionVerdicts.map(({ key, labels }) => [
+  inventory.correctionVerdictKeys.map((key) => [
     key,
-    inPageLanguage(labels),
+    translate(`verdict.${key}`),
   ]),
 )
 const correctionForm = /** @type {HTMLFormElement} */ (getElement("correction"))
@@ -686,12 +686,8 @@ function createChoice(group, value, label) {
 }
 
 function drawCorrectionForm() {
-  for (const { key, labels } of inventory.correctionVerdicts) {
-    const choice = createChoice(
-      "correction-verdict",
-      key,
-      inPageLanguage(labels),
-    )
+  for (const [key, label] of Object.entries(verdictLabels)) {
+    const choice = createChoice("correction-verdict", key, label)
     choice.className = key
     getElement("correction-verdicts").append(choice)
   }

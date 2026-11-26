@@ -1,34 +1,14 @@
 // @ts-check
-// The words that inventory.html and inventory.md both use to name an inventory, its outlines and
-// its screens, so that the page and the summary always say the same thing, in each language
-// a page is read in.
+// How inventory.html and inventory.md both name an inventory, its outlines and its screens,
+// so that the page and the summary always say the same thing. The words come from the
+// pages' dictionaries, through the `translate` of the language to write in.
 
-import { fillText } from "../page/pageTexts.mjs"
-import { WRITTEN_FILES_LANGUAGE } from "./languages.mjs"
+import { translateForWrittenFiles } from "./languages.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
-
-/** @typedef {import("./languages.mjs").PageLanguage} PageLanguage */
-
-/** @type {Record<PageLanguage, Record<string, string>>} */
-const WORDING = {
-  fr: {
-    oneScreen: "écran {numbers}",
-    severalScreens: "écrans {numbers}",
-    mockupAndCommit: "maquette modifiée le {date} · commit {commit}",
-    sharedNameOfScreens: "{sharedStart} ({count} écrans)",
-    screensOfOneDesign: "{count} écrans d'un même design",
-  },
-  en: {
-    oneScreen: "screen {numbers}",
-    severalScreens: "screens {numbers}",
-    mockupAndCommit: "mock-up changed on {date} · commit {commit}",
-    sharedNameOfScreens: "{sharedStart} ({count} screens)",
-    screensOfOneDesign: "{count} screens of one design",
-  },
-}
 
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /** @typedef {import("./verdicts.mjs").JudgedInstance} JudgedInstance */
+/** @typedef {import("./languages.mjs").Translate} Translate */
 
 /**
  * What an outline's badge says: "6", or "6b" when the candidate has several instances.
@@ -60,7 +40,7 @@ export function nameOutlines(candidate, instances) {
  */
 export function namePartNotOutlined(candidate, part) {
   const where = part.isNamedByScreens
-    ? `${candidate.number} · ${nameScreens(listScreenNumbers(part.instances), WRITTEN_FILES_LANGUAGE)}`
+    ? `${candidate.number} · ${nameScreens(listScreenNumbers(part.instances), translateForWrittenFiles)}`
     : part.instances
         .map((instance) => `${candidate.number}${instance.letter}`)
         .join(" ")
@@ -69,15 +49,13 @@ export function namePartNotOutlined(candidate, part) {
 
 /**
  * @param {number[]} screenNumbers
- * @param {PageLanguage} language
+ * @param {Translate} translate
  * @returns {string} "écran 2", "écrans 1 4"
  */
-export function nameScreens(screenNumbers, language) {
-  const { oneScreen, severalScreens } = WORDING[language]
-  return fillText(screenNumbers.length > 1 ? severalScreens : oneScreen, {
+export const nameScreens = (screenNumbers, translate) =>
+  translate(screenNumbers.length > 1 ? "screens.several" : "screens.one", {
     numbers: screenNumbers.join(" "),
   })
-}
 
 const NAME_PART_SEPARATOR = " · "
 
@@ -126,11 +104,11 @@ export function nameScreenTabs(screens) {
 /**
  * The end of the line that says what a page is built on: the mock-up and the code.
  * @param {{ figma: { lastModified: string }, gitCommit: string }} fingerprint
- * @param {PageLanguage} language
+ * @param {Translate} translate
  * @returns {string} "maquette modifiée le 2026-11-20 · commit 34ee98aa6"
  */
-export const tellMockupAndCommit = ({ figma, gitCommit }, language) =>
-  fillText(WORDING[language].mockupAndCommit, {
+export const tellMockupAndCommit = ({ figma, gitCommit }, translate) =>
+  translate("header.mockupAndCommit", {
     date: figma.lastModified.slice(0, 10),
     commit: gitCommit,
   })
@@ -138,18 +116,19 @@ export const tellMockupAndCommit = ({ figma, gitCommit }, language) =>
 /**
  * What the inventory is about, from its screens' names alone.
  * @param {{ name: string }[]} screens
- * @param {PageLanguage} language
+ * @param {Translate} translate
  * @returns {string} the screen's name; for several screens what their names share,
  *   "Editor — regulation (6 écrans)", or "3 écrans d'un même design" when they share nothing
  */
-export function titleInventory(screens, language) {
+export function titleInventory(screens, translate) {
   if (screens.length === 1) return screens[0].name
   const { sharedStart } = splitNamesAtSharedStart(
     screens.map((screen) => screen.name),
   )
-  const { sharedNameOfScreens, screensOfOneDesign } = WORDING[language]
-  return fillText(sharedStart ? sharedNameOfScreens : screensOfOneDesign, {
-    sharedStart,
-    count: screens.length,
-  })
+  return translate(
+    sharedStart
+      ? "inventory.sharedNameOfScreens"
+      : "inventory.screensOfOneDesign",
+    { sharedStart, count: screens.length },
+  )
 }

@@ -2,7 +2,8 @@
 // The texts inventory.html and specs.html show alike, in each language the developer can
 // read the pages in. render.mjs pastes this file into the page before pageReview.mjs, as a
 // plain script without its "export" words: pageReview.mjs picks the language and gives the
-// texts through `translate`, the shared ones and those of the page's ownTexts.mjs. Nothing here touches the page, so that the tests can load it.
+// texts through `translate`, the shared ones and those of the page's ownTexts.mjs. The
+// scripts that write a page's data or a file take their words here too. Nothing here touches the page, so that the tests can load it.
 // A text in braces is replaced when the text is shown: "{date}".
 
 /** The languages of the pages, each under the name its own speakers give it. */
@@ -19,6 +20,18 @@ export const DEFAULT_PAGE_LANGUAGE = "fr"
 export const SHARED_PAGE_TEXTS = {
   fr: {
     "header.builtOn": "Sur quoi la page est construite",
+    "header.mockupAndCommit": "maquette modifiée le {date} · commit {commit}",
+    "inventory.sharedNameOfScreens": "{sharedStart} ({count} écrans)",
+    "inventory.screensOfOneDesign": "{count} écrans d'un même design",
+    "screens.one": "écran {numbers}",
+    "screens.several": "écrans {numbers}",
+    "screen.link": "Écran {number} — {name}",
+    "verdict.reused": "Réutilisé",
+    "verdict.to-adapt": "À adapter",
+    "verdict.to-create": "À créer",
+    "verdict.out-of-scope": "Hors périmètre",
+    "verdict.to-decide": "À trancher",
+    "verdict.not-a-component": "Pas un composant",
     "settings.title": "Paramètres",
     "settings.language": "Langue",
     "approval.given": "Validé par le développeur le {date}",
@@ -52,6 +65,18 @@ export const SHARED_PAGE_TEXTS = {
   },
   en: {
     "header.builtOn": "What the page is built on",
+    "header.mockupAndCommit": "mock-up changed on {date} · commit {commit}",
+    "inventory.sharedNameOfScreens": "{sharedStart} ({count} screens)",
+    "inventory.screensOfOneDesign": "{count} screens of one design",
+    "screens.one": "screen {numbers}",
+    "screens.several": "screens {numbers}",
+    "screen.link": "Screen {number} — {name}",
+    "verdict.reused": "Reused",
+    "verdict.to-adapt": "To adapt",
+    "verdict.to-create": "To create",
+    "verdict.out-of-scope": "Out of scope",
+    "verdict.to-decide": "To decide",
+    "verdict.not-a-component": "Not a component",
     "settings.title": "Settings",
     "settings.language": "Language",
     "approval.given": "Approved by the developer on {date}",

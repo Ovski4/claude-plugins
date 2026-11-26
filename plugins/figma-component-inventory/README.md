@@ -158,8 +158,8 @@ scripts/
     inventoryIndex.mjs      writes out/index.md: one line per inventory, with where it and its specs stand
     approvedInventory.mjs   an approved inventory as the steps after it read it; refuses any other
     inventorySummary.mjs    the content of inventory.md
-    inventoryWording.mjs    the names that inventory.html and inventory.md share, in each language: outlines, screens, title
-    languages.mjs           a page's text written once per language, and the language of the files the next steps read
+    inventoryWording.mjs    how inventory.html and inventory.md both name outlines, screens and the inventory, with the dictionaries' words
+    languages.mjs           a page's text composed once per language, and the language of the files the next steps read
     pageDrawing.mjs         everything inventory.html draws: outlines, labels, loose texts, what is the same on every screen
     labelPlacement.mjs      where the labels go beside a capture, and the line to their component
     feedbackText.mjs        the developer's corrections on the page: what differs from the inventory, the text to paste; pasted whole into the page

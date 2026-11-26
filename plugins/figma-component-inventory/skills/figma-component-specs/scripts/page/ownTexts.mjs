@@ -11,13 +11,21 @@ export const OWN_PAGE_TEXTS = {
   fr: {
     "page.title": "Props des composants à créer ou à adapter",
     "page.documentTitle": "Props — {subject}",
+    "page.builtOn":
+      "Construit sur l'inventaire validé le {date} · {mockupAndCommit}",
+    "zoneKind.prop": "Pilotée par des props",
+    "zoneKind.fixed": "Fixe, sans prop",
+    "zoneKind.change": "Changement de style",
+    "zoneKind.not-drawn": "Non dessiné",
+    "zoneKind.to-decide": "À trancher",
+    "propChange.to-add": "Nouvelle",
+    "propChange.to-modify": "Modifiée",
     "page.hint":
       "Cliquer sur un encadré pour voir ses règles dans le panneau « Zones », faire ressortir ses props et le corriger ; recliquer, cliquer à côté ou Échap pour revenir.",
     "tree.title": "Composants",
     "tree.component": "{component}, {verdict}",
     "tree.componentReviewed": "{component}, {verdict}, vérifié",
     "screen.tabs": "Écran",
-    "screen.link": "Écran {number} — {name}",
     "screen.size": "{component} : {width} × {height} px",
     "screen.sizeSameSpecs.one":
       "{component} : {width} × {height} px · mêmes specs sur l'écran {screens}",
@@ -52,13 +60,21 @@ export const OWN_PAGE_TEXTS = {
   en: {
     "page.title": "Props of the components to create or to adapt",
     "page.documentTitle": "Props — {subject}",
+    "page.builtOn":
+      "Built on the inventory approved on {date} · {mockupAndCommit}",
+    "zoneKind.prop": "Driven by props",
+    "zoneKind.fixed": "Fixed, no prop",
+    "zoneKind.change": "Style change",
+    "zoneKind.not-drawn": "Not drawn",
+    "zoneKind.to-decide": "To decide",
+    "propChange.to-add": "New",
+    "propChange.to-modify": "Changed",
     "page.hint":
       "Click an outline to see its rules in the “Zones” panel, bring out its props and correct it; click it again, click beside it or press Escape to come back.",
     "tree.title": "Components",
     "tree.component": "{component}, {verdict}",
     "tree.componentReviewed": "{component}, {verdict}, checked",
     "screen.tabs": "Screen",
-    "screen.link": "Screen {number} — {name}",
     "screen.size": "{component}: {width} × {height} px",
     "screen.sizeSameSpecs.one":
       "{component}: {width} × {height} px · same specs on screen {screens}",

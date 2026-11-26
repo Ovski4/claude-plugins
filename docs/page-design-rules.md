@@ -39,8 +39,8 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   share a colour: « Changement de style » is not the purple of « À créer ».
 - Red is kept for what waits on the developer (« À trancher », a draft).
 - The colours of a set of categories (verdicts, kinds of zone) are declared once in the
-  lib that defines the set, with their label in each language, and sent to the page with
-  the data.
+  lib that defines the set and sent to the page with the data; their names are in the
+  dictionaries (see "Languages").
   The page's CSS never repeats them.
 - A colour that carries text, or text on it, has a contrast of 4.5 to 1 at least with
   `--surface`: « À adapter » is `#0369a1`, not a lighter blue.
@@ -69,11 +69,15 @@ Use the variables of `pageBase.css`, never a raw colour for these roles:
   `data-text`, or in `data-text-aria-label` for its `aria-label`.
 - A value goes in braces (« {date} »), never glued to the sentence by the script: the
   words around it do not come in the same order in every language.
-- A text that `render.mjs` builds from the inventory (« Editor (2 écrans) », a verdict's
-  name on a label) is written into the page's data once per language
-  (`writeInEveryLanguage` of `lib/languages.mjs`), and the page shows the one of its
-  language (`inPageLanguage`). What is sized from a text (a column of labels) takes the
-  longest of the languages.
+- The scripts take their words from the same dictionaries, never from a table of their
+  own: a verdict's name is the text « verdict.to-create », a kind of zone
+  « zoneKind.prop ». A category sent to the page carries its key and its colour, and the
+  page names it with `translate`.
+- A text that `render.mjs` has to compose from the inventory (« Editor (2 écrans) », a
+  label's « Settings · À créer ») is written into the page's data once per language,
+  with the `translate` of each (`buildWriterInEveryLanguage` of `lib/languages.mjs`), and
+  the page shows the one of its language (`inPageLanguage`). What is sized from a text (a
+  column of labels) takes the longest of the languages.
 - A test checks that every language has every text, with the same names in braces.
 
 ## Layout, from top to bottom

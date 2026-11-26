@@ -22,7 +22,7 @@ import { buildInventorySummary } from "./lib/inventorySummary.mjs"
 import { buildFigmaNodeUrl } from "./lib/figma.mjs"
 import { addApprovedComponentsToMap } from "./lib/figmaToCodeMap.mjs"
 import { CommandFailure } from "./lib/commandFailure.mjs"
-import { WRITTEN_FILES_LANGUAGE } from "./lib/languages.mjs"
+import { translateForWrittenFiles } from "./lib/languages.mjs"
 import { findRepoRoot } from "./lib/gitRepo.mjs"
 import { buildPageDrawing } from "./lib/pageDrawing.mjs"
 import { readProjectSettings } from "./lib/projectSettings.mjs"
@@ -38,7 +38,7 @@ import {
   isApprovalStillValid,
   listNumbersStillToDecide,
   listVerdictProblems,
-  NOT_A_COMPONENT,
+  NOT_A_COMPONENT_KEY,
   VERDICTS,
   VERDICT_KEYS,
 } from "./lib/verdicts.mjs"
@@ -118,7 +118,6 @@ function main() {
   )
   const verdicts = VERDICT_KEYS.map((key) => ({
     key,
-    labels: VERDICTS[key].labels,
     color: VERDICTS[key].color,
     // The legend names only the verdicts the page draws.
     isDrawnOnThePage: verdictsOfOutlines.has(key),
@@ -129,10 +128,7 @@ function main() {
     stillToDecideCount: candidatesStillToDecide.length,
     verdicts,
     // The correction form offers every verdict, and one more for what is no component.
-    correctionVerdicts: [
-      ...verdicts.map(({ key, labels }) => ({ key, labels })),
-      NOT_A_COMPONENT,
-    ],
+    correctionVerdictKeys: [...VERDICT_KEYS, NOT_A_COMPONENT_KEY],
     // Corrections kept in the browser are dropped once the verdicts change.
     [VERDICTS_HASH_KEY]: hashVerdicts(verdictsFile.verdicts),
     ...buildPageDrawing({
@@ -168,7 +164,7 @@ function main() {
     instancesByVerdict.has(key),
   ).map(
     (key) =>
-      `${VERDICTS[key].labels[WRITTEN_FILES_LANGUAGE]} ${instancesByVerdict.get(key)?.length}`,
+      `${translateForWrittenFiles(`verdict.${key}`)} ${instancesByVerdict.get(key)?.length}`,
   )
   console.log(pageFile)
   console.log(countsPerVerdict.join(" · "))

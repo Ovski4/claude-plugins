@@ -10,6 +10,9 @@ export const OWN_PAGE_TEXTS = {
   fr: {
     "page.title": "Inventaire des composants",
     "page.documentTitle": "Inventaire — {subject}",
+    "page.builtOn": "Construit le {date} · {mockupAndCommit}",
+    "screen.openInFigma": "Ouvrir dans Figma",
+    "correction.everyUse": "Toutes ses utilisations",
     "page.hint":
       "Cliquer sur un composant, son étiquette ou sa raison pour l'isoler et le corriger ; recliquer, cliquer à côté ou Échap pour revenir.",
     "settings.textsOutsideLeaves":
@@ -44,6 +47,9 @@ export const OWN_PAGE_TEXTS = {
   en: {
     "page.title": "Component inventory",
     "page.documentTitle": "Inventory — {subject}",
+    "page.builtOn": "Built on {date} · {mockupAndCommit}",
+    "screen.openInFigma": "Open in Figma",
+    "correction.everyUse": "All its uses",
     "page.hint":
       "Click a component, its label or its reason to isolate and correct it; click it again, click beside it or press Escape to come back.",
     "settings.textsOutsideLeaves":

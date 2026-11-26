@@ -22,8 +22,11 @@ import {
   routeLeaders,
 } from "./labelPlacement.mjs"
 import { listScreenNumbers } from "./mergeScreens.mjs"
-import { fillText } from "../page/pageTexts.mjs"
-import { WRITTEN_FILES_LANGUAGE, writeInEveryLanguage } from "./languages.mjs"
+import { OWN_PAGE_TEXTS } from "../page/ownTexts.mjs"
+import {
+  buildWriterInEveryLanguage,
+  translateForWrittenFiles,
+} from "./languages.mjs"
 import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 
 /** @typedef {import("./figma.mjs").Box} Box */
@@ -31,26 +34,10 @@ import { groupByJudgement, VERDICTS } from "./verdicts.mjs"
 /** @typedef {import("./verdicts.mjs").JudgedCandidate} JudgedCandidate */
 /** @typedef {import("./verdicts.mjs").JudgedInstance} JudgedInstance */
 /** @typedef {import("./verdicts.mjs").VerdictKey} VerdictKey */
-/** @typedef {import("./languages.mjs").PageLanguage} PageLanguage */
 /** @typedef {import("./languages.mjs").TextInEveryLanguage} TextInEveryLanguage */
 
-// What the page says besides the verdicts' names and the words inventoryWording.mjs shares
-// with inventory.md.
-/** @type {Record<PageLanguage, Record<string, string>>} */
-const PAGE_WORDING = {
-  fr: {
-    screenLink: "Écran {number} — {name}",
-    openInFigma: "Ouvrir dans Figma",
-    builtOn: "Construit le {date} · {mockupAndCommit}",
-    everyUse: "Toutes ses utilisations",
-  },
-  en: {
-    screenLink: "Screen {number} — {name}",
-    openInFigma: "Open in Figma",
-    builtOn: "Built on {date} · {mockupAndCommit}",
-    everyUse: "All its uses",
-  },
-}
+// Writes a text of inventory.html in every language, from the page's dictionaries.
+const writeInEveryLanguage = buildWriterInEveryLanguage(OWN_PAGE_TEXTS)
 /** @typedef {{ left: number, top: number, width: number, height: number }} DrawingBox */
 /** @typedef {import("./labelPlacement.mjs").Point} Point */
 
@@ -302,8 +289,8 @@ function drawScreen(screen, { outlinedCandidates, buildPart }) {
         anchor: box,
         title: `${nameOutlines(candidate, instances)}  ${codeComponent ?? "?"}`,
         detail: writeInEveryLanguage(
-          (language) =>
-            `${candidate.figmaName}${instanceCount} · ${VERDICTS[verdict].labels[language]}`,
+          (translate) =>
+            `${candidate.figmaName}${instanceCount} · ${translate(`verdict.${verdict}`)}`,
         ),
       }
     }),
@@ -434,7 +421,7 @@ function nameInstances(candidate, instances, hasSeveralScreens) {
       screenNumbers.includes(instance.screen),
     ).length === instances.length
   return hasSeveralScreens && coversWholeScreens
-    ? `${candidate.number} · ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)}`
+    ? `${candidate.number} · ${nameScreens(screenNumbers, translateForWrittenFiles)}`
     : nameOutlines(candidate, instances)
 }
 
@@ -506,10 +493,10 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     capture: pickBox(screen.capture),
     figmaUrl: screen.figmaUrl,
     captureDataUrl: screen.captureDataUrl,
-    linkText: writeInEveryLanguage((language) =>
+    linkText: writeInEveryLanguage((translate) =>
       hasSeveralScreens
-        ? fillText(PAGE_WORDING[language].screenLink, screen)
-        : PAGE_WORDING[language].openInFigma,
+        ? translate("screen.link", { number: screen.number, name: screen.name })
+        : translate("screen.openInFigma"),
     ),
     tabName: tabNames[screenIndex],
     ...drawScreen(screen, { outlinedCandidates, buildPart }),
@@ -538,8 +525,8 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           ...buildPart(candidate, verdict),
           badgeText: name,
           title: writeInEveryLanguage(
-            (language) =>
-              `${codeComponent ?? candidate.figmaName} — ${VERDICTS[verdict].labels[language]}`,
+            (translate) =>
+              `${codeComponent ?? candidate.figmaName} — ${translate(`verdict.${verdict}`)}`,
           ),
           screens: listScreenNumbers(instances),
           reason,
@@ -574,13 +561,13 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
     )
 
   return {
-    title: writeInEveryLanguage((language) =>
-      titleInventory(screens, language),
+    title: writeInEveryLanguage((translate) =>
+      titleInventory(screens, translate),
     ),
-    fingerprintLine: writeInEveryLanguage((language) =>
-      fillText(PAGE_WORDING[language].builtOn, {
+    fingerprintLine: writeInEveryLanguage((translate) =>
+      translate("page.builtOn", {
         date: fingerprint.createdAt,
-        mockupAndCommit: tellMockupAndCommit(fingerprint, language),
+        mockupAndCommit: tellMockupAndCommit(fingerprint, translate),
       }),
     ),
     badgeHeight: BADGE_HEIGHT,
@@ -624,24 +611,26 @@ export function buildPageDrawing({ screens, judgedCandidates, fingerprint }) {
           candidate,
           candidate.instances,
           `${candidate.number}`,
-          writeInEveryLanguage((language) => PAGE_WORDING[language].everyUse),
+          writeInEveryLanguage((translate) => translate("correction.everyUse")),
         ),
         ...(candidate.instances.length > 1
           ? candidate.instances.map((instance) => {
               const id = nameInstances(candidate, [instance], hasSeveralScreens)
               const badge = nameOutline(candidate, instance)
-              const tabName = writeInEveryLanguage((language) =>
-                id === badge ? badge : nameScreens([instance.screen], language),
+              const tabName = writeInEveryLanguage((translate) =>
+                id === badge
+                  ? badge
+                  : nameScreens([instance.screen], translate),
               )
               return describeTarget(candidate, [instance], id, tabName)
             })
           : []),
       ],
-      judgement: writeInEveryLanguage((language) =>
+      judgement: writeInEveryLanguage((translate) =>
         groupByJudgement(candidate.instances)
           .map(
             ([{ verdict, codeComponent }]) =>
-              `${codeComponent ?? candidate.figmaName} · ${VERDICTS[verdict].labels[language]}`,
+              `${codeComponent ?? candidate.figmaName} · ${translate(`verdict.${verdict}`)}`,
           )
           .join(" / "),
       ),

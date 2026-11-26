@@ -2,18 +2,20 @@
 // Writes specs.md: what the next steps of the workflow (tickets, code) read instead of the
 // page. One section per component, with its props, what changes and its zones.
 import { WRITTEN_FILES_LANGUAGE } from "../../../figma-component-inventory/scripts/lib/languages.mjs"
+import { buildTranslate } from "../../../figma-component-inventory/scripts/page/pageTexts.mjs"
+import { OWN_PAGE_TEXTS } from "../page/ownTexts.mjs"
 import {
   nameScreens,
   titleInventory,
 } from "../../../figma-component-inventory/scripts/lib/inventoryWording.mjs"
 import { listScreenNumbers } from "../../../figma-component-inventory/scripts/lib/mergeScreens.mjs"
-import { VERDICTS } from "../../../figma-component-inventory/scripts/lib/verdicts.mjs"
 import {
   listBoxesOfZonePart,
   listComponentsToSpecify,
-  PROP_CHANGE_LABELS,
-  ZONE_KINDS,
 } from "./componentSpecs.mjs"
+
+// specs.md takes its words from the specs page's dictionaries, in the language of the files.
+const translate = buildTranslate(WRITTEN_FILES_LANGUAGE, OWN_PAGE_TEXTS)
 
 /** @typedef {import("./componentSpecs.mjs").ApprovedInventory} ApprovedInventory */
 /** @typedef {import("./componentSpecs.mjs").SpecsFile} SpecsFile */
@@ -34,7 +36,7 @@ const writePropRow = ({
   change,
 }) =>
   `| ${[
-    `\`${name}\`${change ? ` (${PROP_CHANGE_LABELS[change][WRITTEN_FILES_LANGUAGE].toLowerCase()})` : ""}`,
+    `\`${name}\`${change ? ` (${translate(`propChange.${change}`).toLowerCase()})` : ""}`,
     typeBefore ? `\`${typeBefore}\` → \`${type}\`` : `\`${type}\``,
     required ? "oui" : "non",
     source,
@@ -53,7 +55,7 @@ const writePropRow = ({
 export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
   const { fingerprint, approvedOn, screens } = inventory
   const lines = [
-    `# Props des composants — ${titleInventory(screens, WRITTEN_FILES_LANGUAGE)}`,
+    `# Props des composants — ${titleInventory(screens, translate)}`,
     "",
     `Validé par le développeur le ${approvalDate}. Construit sur l'inventaire validé le ${approvedOn} : maquette Figma version ${fingerprint.figma.version}, code au commit ${fingerprint.gitCommit}.`,
     "Les décisions marquées « développeur » font foi : ne pas les rejuger.",
@@ -65,7 +67,7 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
     if (!spec) continue
     lines.push(
       "",
-      `## ${component.codeComponent} — ${VERDICTS[component.verdict].labels[WRITTEN_FILES_LANGUAGE]}`,
+      `## ${component.codeComponent} — ${translate(`verdict.${component.verdict}`)}`,
     )
     if (component.codePath) lines.push("", `\`${component.codePath}\``)
     const decisionsAndChanges = [
@@ -99,7 +101,7 @@ export function buildSpecsSummary({ inventory, specsFile, approvalDate }) {
         ? ` : ${zone.props.map((name) => `\`${name}\``).join(", ")}`
         : ""
       lines.push(
-        `- **${zone.letter} — ${zone.label}** (${ZONE_KINDS[zone.kind].labels[WRITTEN_FILES_LANGUAGE]}${drivenBy} ; ${nameScreens(screenNumbers, WRITTEN_FILES_LANGUAGE)})`,
+        `- **${zone.letter} — ${zone.label}** (${translate(`zoneKind.${zone.kind}`)}${drivenBy} ; ${nameScreens(screenNumbers, translate)})`,
         ...(zone.notes ?? []).map((note) => `  - ${note}`),
       )
     }

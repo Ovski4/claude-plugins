@@ -164,7 +164,7 @@ function createPropCard(prop) {
     tags.unshift(
       createElement("span", {
         className: "prop-tag prop-change",
-        text: inPageLanguage(specs.propChangeLabels[prop.change]),
+        text: translate(`propChange.${prop.change}`),
       }),
     )
   }
@@ -315,7 +315,7 @@ function createZoneItem(zone) {
   const kind = specs.zoneKinds[zone.kind]
   const title = createElement("button", { className: "item-title" }, [
     createBadge(zone.letter, zone.kind),
-    `${zone.label} — ${inPageLanguage(kind.labels)}`,
+    `${zone.label} — ${translate(`zoneKind.${zone.kind}`)}`,
   ])
   title.setAttribute("type", "button")
   title.setAttribute("aria-pressed", String(zone.letter === selectedZoneLetter))
@@ -487,7 +487,7 @@ function createComponentTree(components) {
           isComponentReviewed ? "tree.componentReviewed" : "tree.component",
           {
             component: component.codeComponent,
-            verdict: inPageLanguage(component.verdict.labels),
+            verdict: translate(`verdict.${component.verdict.key}`),
           },
         ),
       )
@@ -849,7 +849,9 @@ showPageHeader({
 getElement("legend").replaceChildren(
   ...specs.zoneKindsInTheLegend.map((kindKey) => {
     const kind = specs.zoneKinds[kindKey]
-    const item = createElement("li", { text: inPageLanguage(kind.labels) })
+    const item = createElement("li", {
+      text: translate(`zoneKind.${kindKey}`),
+    })
     item.style.setProperty("--kind", kind.color)
     return item
   }),
@@ -857,7 +859,7 @@ getElement("legend").replaceChildren(
 // Under the tree: what the colour of a component's mark means, for the verdicts it shows.
 const coloursOfVerdictsInTheTree = new Map(
   specs.components.map(({ verdict }) => [
-    inPageLanguage(verdict.labels),
+    translate(`verdict.${verdict.key}`),
     verdict.color,
   ]),
 )

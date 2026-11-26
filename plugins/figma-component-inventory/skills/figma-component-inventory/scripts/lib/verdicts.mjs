@@ -82,39 +82,34 @@ export const VERDICTS_HASH_KEY = "verdictsHash"
  */
 
 /**
- * labels: the verdict's name in each language a page is read in.
+ * A verdict's name is the text "verdict.<key>" of the pages' shared dictionary.
  * color: of the outline and of every text about it in the page.
  * requiredFields: what the model must give with this verdict.
  * needsExistingCodePath: true when codePath must be a file of the repo.
- * @type {Record<VerdictKey, { labels: import("./languages.mjs").TextInEveryLanguage, color: string, requiredFields: (keyof Judgement)[], needsExistingCodePath: boolean }>}
+ * @type {Record<VerdictKey, { color: string, requiredFields: (keyof Judgement)[], needsExistingCodePath: boolean }>}
  */
 export const VERDICTS = {
   reused: {
-    labels: { fr: "Réutilisé", en: "Reused" },
     color: "#15803d",
     requiredFields: ["codeComponent", "codePath", "note"],
     needsExistingCodePath: true,
   },
   "to-adapt": {
-    labels: { fr: "À adapter", en: "To adapt" },
     color: "#0369a1",
     requiredFields: ["codeComponent", "codePath", "note"],
     needsExistingCodePath: true,
   },
   "to-create": {
-    labels: { fr: "À créer", en: "To create" },
     color: "#7c3aed",
     requiredFields: ["codeComponent", "note"],
     needsExistingCodePath: false,
   },
   "out-of-scope": {
-    labels: { fr: "Hors périmètre", en: "Out of scope" },
     color: "#be185d",
     requiredFields: ["note"],
     needsExistingCodePath: false,
   },
   "to-decide": {
-    labels: { fr: "À trancher", en: "To decide" },
     color: "#dc2626",
     requiredFields: ["note", "question", "options"],
     needsExistingCodePath: false,
@@ -124,10 +119,7 @@ export const VERDICT_KEYS = /** @type {VerdictKey[]} */ (Object.keys(VERDICTS))
 
 // What the developer picks on the page for an outline that is no React component of its own
 // (a plain paragraph of its parent, say): the model then writes `"outlined": false`.
-export const NOT_A_COMPONENT = {
-  key: "not-a-component",
-  labels: { fr: "Pas un composant", en: "Not a component" },
-}
+export const NOT_A_COMPONENT_KEY = "not-a-component"
 const VERDICT_WAITING_FOR_THE_DEVELOPER = "to-decide"
 export const MIN_QUIZ_OPTIONS = 2
 export const MAX_QUIZ_OPTIONS = 4

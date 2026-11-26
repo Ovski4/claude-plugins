@@ -5,53 +5,28 @@ import { buildSpecsPageDrawing } from "../scripts/lib/specsPageDrawing.mjs"
 import { buildApprovedInventory, buildSpecsFile } from "./specsFixtures.mjs"
 
 test("each component is cut out of its screen's capture, with its zones outlined inside the cut", () => {
-  const {
-    components,
-    zoneKinds,
-    zoneKindsInTheLegend,
-    propChangeLabels,
-    fingerprintLine,
-  } = buildSpecsPageDrawing({
-    inventory: buildApprovedInventory(),
-    specsFile: buildSpecsFile(),
-  })
+  const { components, zoneKinds, zoneKindsInTheLegend, fingerprintLine } =
+    buildSpecsPageDrawing({
+      inventory: buildApprovedInventory(),
+      specsFile: buildSpecsFile(),
+    })
 
   assert.deepEqual(fingerprintLine, {
     fr: "Construit sur l'inventaire validé le 2026-11-23 · maquette modifiée le 2026-11-20 · commit 34ee98aa6",
     en: "Built on the inventory approved on 2026-11-23 · mock-up changed on 2026-11-20 · commit 34ee98aa6",
   })
   assert.deepEqual(zoneKinds, {
-    prop: {
-      labels: { fr: "Pilotée par des props", en: "Driven by props" },
-      color: "#be185d",
-    },
-    fixed: {
-      labels: { fr: "Fixe, sans prop", en: "Fixed, no prop" },
-      color: "#64748b",
-    },
-    change: {
-      labels: { fr: "Changement de style", en: "Style change" },
-      color: "#0f766e",
-    },
-    "not-drawn": {
-      labels: { fr: "Non dessiné", en: "Not drawn" },
-      color: "#a16207",
-    },
-    "to-decide": {
-      labels: { fr: "À trancher", en: "To decide" },
-      color: "#dc2626",
-    },
+    prop: { color: "#be185d" },
+    fixed: { color: "#64748b" },
+    change: { color: "#0f766e" },
+    "not-drawn": { color: "#a16207" },
+    "to-decide": { color: "#dc2626" },
   })
   assert.deepEqual(zoneKindsInTheLegend, ["prop", "fixed", "change"])
   assert.deepEqual(
     components.map((component) => component.codeComponent),
     ["Select", "OrderDeliverySettings"],
   )
-
-  assert.deepEqual(propChangeLabels, {
-    "to-add": { fr: "Nouvelle", en: "New" },
-    "to-modify": { fr: "Modifiée", en: "Changed" },
-  })
 
   const [select, settings] = components
   assert.equal(select.isToAdapt, true)
@@ -60,10 +35,7 @@ test("each component is cut out of its screen's capture, with its zones outlined
   ])
   assert.equal(settings.isToAdapt, false)
   assert.deepEqual(settings.changes, [])
-  assert.deepEqual(settings.verdict, {
-    labels: { fr: "À créer", en: "To create" },
-    color: "#7c3aed",
-  })
+  assert.deepEqual(settings.verdict, { key: "to-create", color: "#7c3aed" })
   assert.deepEqual(settings.props, [
     {
       name: "targetTemperature",

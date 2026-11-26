@@ -9,6 +9,8 @@ import {
 } from "../scripts/page/pageTexts.mjs"
 import { OWN_PAGE_TEXTS as INVENTORY_PAGE_TEXTS } from "../scripts/page/ownTexts.mjs"
 import { OWN_PAGE_TEXTS as SPECS_PAGE_TEXTS } from "../../figma-component-specs/scripts/page/ownTexts.mjs"
+import { ZONE_KIND_KEYS } from "../../figma-component-specs/scripts/lib/componentSpecs.mjs"
+import { NOT_A_COMPONENT_KEY, VERDICT_KEYS } from "../scripts/lib/verdicts.mjs"
 
 /** @param {string} text the names in braces of a text, sorted: ["date"] */
 const listNamesInBraces = (text) =>
@@ -42,6 +44,15 @@ test("a page's own texts take no name of the shared ones", () => {
       [],
     )
   }
+})
+
+test("every verdict and every kind of zone has its name in the dictionaries", () => {
+  for (const key of [...VERDICT_KEYS, NOT_A_COMPONENT_KEY])
+    assert.ok(SHARED_PAGE_TEXTS.fr[`verdict.${key}`], key)
+  for (const key of ZONE_KIND_KEYS)
+    assert.ok(SPECS_PAGE_TEXTS.fr[`zoneKind.${key}`], key)
+  for (const key of ["to-add", "to-modify"])
+    assert.ok(SPECS_PAGE_TEXTS.fr[`propChange.${key}`], key)
 })
 
 test("a text's braces are replaced by the values given, and left when none is", () => {
