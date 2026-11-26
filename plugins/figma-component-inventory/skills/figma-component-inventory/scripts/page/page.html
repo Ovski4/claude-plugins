@@ -53,6 +53,11 @@
             Différences seulement : estomper ce qui est identique sur tous les
             écrans
           </label>
+          <label class="page-switch">
+            <input type="checkbox" id="hide-out-of-scope" />
+            Sans le hors périmètre : cacher les composants hors périmètre et ne
+            plus les compter parmi ce qui est à vérifier
+          </label>
         </div>
       </div>
     </header>
@@ -66,6 +71,7 @@
       <div class="screens" id="screens"></div>
       <aside class="side-panel card">
         <h3>Composants</h3>
+        <p class="page-hint" id="out-of-scope-left-out" hidden></p>
         <ul class="panel-items" id="explanations"></ul>
         <h3 id="not-outlined-heading" hidden>Non entourés</h3>
         <ul class="panel-items not-outlined" id="not-outlined"></ul>

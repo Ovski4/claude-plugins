@@ -289,6 +289,11 @@ the smallest outlined component around it is the screen's outermost one (the dia
 page), or there is none. It shows the texts no component holds: a label or a help text that
 may deserve a component, or be a prop of the component beside it.
 
+A switch, « Sans le hors périmètre », hides everything drawn about the components that are
+out of scope and leaves their boxes out of the count of what is to check. The three
+switches sit in the settings panel the cog of the header opens; the browser keeps each
+choice.
+
 A click on a component, on its label or on its reason isolates it: everything else fades
 and the capture is veiled except where that component is drawn, on every screen. A second
 click, a click beside the images or the Escape key shows everything back.

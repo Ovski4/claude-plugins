@@ -206,6 +206,15 @@ function showBox(svg, { left, top, width, height }) {
   svg.setAttribute("width", String(width))
 }
 
+// The setting that leaves out what is out of scope: the developer sees at a glance that
+// such a component is none of the ticket's work, and reading each one teaches him nothing.
+const OUT_OF_SCOPE_VERDICT = "out-of-scope"
+const HIDE_OUT_OF_SCOPE_SWITCH_ID = "hide-out-of-scope"
+/** @param {string | null} verdict */
+const isLeftOutAsOutOfScope = (verdict) =>
+  verdict === OUT_OF_SCOPE_VERDICT &&
+  document.body.classList.contains(HIDE_OUT_OF_SCOPE_SWITCH_ID)
+
 /**
  * The candidate whose outline is the smallest one around the point clicked, or null.
  * @param {SVGSVGElement} svg
@@ -218,6 +227,7 @@ function findCandidateAt(svg, screen, event) {
     screenToSvg,
   )
   const [smallest] = screen.outlines
+    .filter(({ verdict }) => !isLeftOutAsOutOfScope(verdict))
     .filter(
       ({ box }) =>
         x >= box.x &&
@@ -337,6 +347,7 @@ function drawScreen(screen) {
       },
       {
         candidateNumber: null,
+        verdict: null,
         tabOfScreen: screen.number,
         drawnOnScreens: [screen.number],
       },
@@ -460,7 +471,12 @@ function drawNotOutlined() {
           subject: "component",
           whyNotYet: null,
         },
-        { candidateNumber: null, tabOfScreen: null, drawnOnScreens: [] },
+        {
+          candidateNumber: null,
+          verdict: null,
+          tabOfScreen: null,
+          drawnOnScreens: [],
+        },
       ),
     )
     getElement("not-outlined").append(item)
@@ -505,6 +521,7 @@ function drawExplanations() {
         },
         {
           candidateNumber: explanation.candidateNumber,
+          verdict: explanation.verdict,
           tabOfScreen: null,
           drawnOnScreens: explanation.screens,
         },
@@ -521,6 +538,7 @@ function drawExplanations() {
  * @property {HTMLElement} reviewBox
  * @property {ReviewCheck} check as it stands while nothing is corrected
  * @property {number | null} candidateNumber the outlined component it is about; null for a screen and for what has no outline
+ * @property {string | null} verdict the verdict of that component; null for a screen and for what has no outline
  * @property {number | null} tabOfScreen the screen it is about; null for a component
  * @property {number[]} drawnOnScreens the screens whose tab shows the box; empty for a box every tab shows
  */
@@ -529,7 +547,7 @@ const drawnReviewBoxes = []
 
 /**
  * @param {ReviewCheck} check
- * @param {Pick<DrawnReviewBox, "candidateNumber" | "tabOfScreen" | "drawnOnScreens">} subject
+ * @param {Omit<DrawnReviewBox, "reviewBox" | "check">} subject
  */
 function createReviewCheck(check, subject) {
   const reviewBox = createReviewBox(check, showReview)
@@ -546,10 +564,19 @@ const listCorrectedNumbers = () =>
 /**
  * Ticks what the developer has checked and counts it. A component that waits for his
  * decision, or that carries a correction, cannot be ticked: it is not right as it is.
+ * What the settings leave out as out of scope is neither counted nor offered as the next
+ * box to tick.
  */
 function showReview() {
   const correctedNumbers = listCorrectedNumbers()
-  const checks = drawnReviewBoxes.map((drawn) => {
+  const countedBoxes = drawnReviewBoxes.filter(
+    ({ verdict }) => !isLeftOutAsOutOfScope(verdict),
+  )
+  const leftOutCount = drawnReviewBoxes.length - countedBoxes.length
+  const leftOutLine = getElement("out-of-scope-left-out")
+  leftOutLine.hidden = leftOutCount === 0
+  leftOutLine.textContent = `${leftOutCount} hors périmètre ${leftOutCount > 1 ? "masqués" : "masqué"} (voir les paramètres)`
+  const checks = countedBoxes.map((drawn) => {
     const isCorrected = correctedNumbers.has(drawn.candidateNumber ?? undefined)
     const check = {
       ...drawn.check,
@@ -865,6 +892,11 @@ function copyFeedbackText() {
 drawHeader()
 const drawnScreens = inventory.screens.map(drawScreen)
 wireSettingSwitch("texts-outside-leaves")
+wireSettingSwitch(HIDE_OUT_OF_SCOPE_SWITCH_ID, () => {
+  // An isolated component may be one that has just been hidden.
+  isolate(null)
+  showReview()
+})
 const drawnExplanations = drawExplanations()
 drawNotOutlined()
 if (drawnScreens.length > 1) {

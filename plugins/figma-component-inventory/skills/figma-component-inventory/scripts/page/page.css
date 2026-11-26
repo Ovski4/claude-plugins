@@ -123,6 +123,11 @@
 .differences-only .veil-over-same-components {
   display: inline;
 }
+/* Everything drawn about a component that is out of scope: its outlines, its labels, its
+   reason in the panel and its entry in the legend. */
+.hide-out-of-scope :is(.screens, .panel-items, .legend) .out-of-scope {
+  display: none;
+}
 .screens h2 {
   margin: 0 0 8px;
   font-size: 14px;

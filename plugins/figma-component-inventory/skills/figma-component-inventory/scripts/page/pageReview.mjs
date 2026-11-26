@@ -115,8 +115,10 @@ if (settingsButton && settingsPanel) {
  * Wires a box of the page's settings: while it is ticked, the page's body carries a class
  * named like the box, which the page's styles react to.
  * @param {string} switchId the id of the box: "differences-only"
+ * @param {() => void} [onChange] called once the developer ticked or unticked the box,
+ *   for what the page's styles cannot do alone (a count to work out again)
  */
-export function wireSettingSwitch(switchId) {
+export function wireSettingSwitch(switchId, onChange) {
   const storageKey = `page-setting ${switchId}`
   const box = /** @type {HTMLInputElement} */ (getSharedElement(switchId))
   const showSetting = () =>
@@ -126,6 +128,7 @@ export function wireSettingSwitch(switchId) {
   box.addEventListener("change", () => {
     keepSetting(storageKey, box.checked)
     showSetting()
+    onChange?.()
   })
 }
 
